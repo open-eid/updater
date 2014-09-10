@@ -79,8 +79,8 @@ else()
 	find_package( Qt5Widgets REQUIRED )
 	find_package( Qt5LinguistTools REQUIRED )
 
-	include_directories( ${CMAKE_CURRENT_BINARY_DIR} qtsingleapplication/src )
-	add_subdirectory(qtsingleapplication)
+	include_directories( ${CMAKE_CURRENT_BINARY_DIR} common/qtsingleapplication/src )
+	add_subdirectory( common/qtsingleapplication )
 
 	configure_file( translations.qrc translations.qrc COPYONLY )
 	qt5_add_translation( SOURCES idupdater_et.ts idupdater_ru.ts common/translations/qtbase_et.ts common/translations/qtbase_ru.ts )
