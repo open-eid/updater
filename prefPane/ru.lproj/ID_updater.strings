@@ -1,0 +1,45 @@
+
+/* Class = "NSWindow"; title = "ID-updater"; ObjectID = "12"; */
+"12.title" = "Проверка обновлений програмного обеспечения ID-карты";
+
+/* Class = "NSMenuItem"; title = "Remove"; ObjectID = "3bN-hp-rYM"; */
+"3bN-hp-rYM.title" = "Удалить";
+
+/* Class = "NSMenuItem"; title = "Once a day"; ObjectID = "47t-6c-CcN"; */
+"47t-6c-CcN.title" = "Раз в день";
+
+/* Class = "NSTextFieldCell"; title = "Ready"; ObjectID = "93X-h4-Pxn"; */
+"93X-h4-Pxn.title" = "Ready";
+
+/* Class = "NSMenuItem"; title = "Once a month"; ObjectID = "DGb-lH-Nqo"; */
+"DGb-lH-Nqo.title" = "Раз в месяц";
+
+/* Class = "NSMenu"; title = "OtherViews"; ObjectID = "Kq2-Mx-1ek"; */
+"Kq2-Mx-1ek.title" = "OtherViews";
+
+/* Class = "NSTextFieldCell"; title = "Changelog:"; ObjectID = "MH3-Hn-7hU"; */
+"MH3-Hn-7hU.title" = "История обновлений:";
+
+/* Class = "NSButtonCell"; title = "Download update"; ObjectID = "OBO-RW-cVT"; */
+"OBO-RW-cVT.title" = "Начать установку";
+
+/* Class = "NSTextFieldCell"; title = "0 KB/s"; ObjectID = "PII-Zr-eT8"; */
+"PII-Zr-eT8.title" = "0 KB/s";
+
+/* Class = "NSTabViewItem"; label = "Updates"; ObjectID = "XOS-WI-hKa"; */
+"XOS-WI-hKa.label" = "Обновления";
+
+/* Class = "NSTextFieldCell"; title = "Installed:"; ObjectID = "Xr7-Ls-jOQ"; */
+"Xr7-Ls-jOQ.title" = "На Вашем компьютере установлена версия:";
+
+/* Class = "NSTextFieldCell"; title = "Available:"; ObjectID = "ZgI-Qu-BYN"; */
+"ZgI-Qu-BYN.title" = "Обновлённая версия:";
+
+/* Class = "NSTextFieldCell"; title = "Check updates"; ObjectID = "dPb-83-7q8"; */
+"dPb-83-7q8.title" = "Проверить на обновления";
+
+/* Class = "NSTabViewItem"; label = "Version info"; ObjectID = "hng-hr-Q6P"; */
+"hng-hr-Q6P.label" = "Версия информация";
+
+/* Class = "NSMenuItem"; title = "Once a week"; ObjectID = "wj9-Or-Pru"; */
+"wj9-Or-Pru.title" = "Раз в неделю";

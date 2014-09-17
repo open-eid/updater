@@ -1,0 +1,84 @@
+/* Class = "NSWindow"; title = "ID-updater"; ObjectID = "12"; */
+"ID-updater" = "ID-tarkvara uuenduste kontroll";
+
+/* Class = "NSMenuItem"; title = "Remove"; ObjectID = "3bN-hp-rYM"; */
+"Remove" = "Eemalda";
+
+/* Class = "NSMenuItem"; title = "Once a day"; ObjectID = "47t-6c-CcN"; */
+"Once a day" = "Kord päevas";
+
+/* Class = "NSTextFieldCell"; title = "Ready"; ObjectID = "93X-h4-Pxn"; */
+"Ready" = "Ready";
+
+/* Class = "NSMenuItem"; title = "Once a month"; ObjectID = "DGb-lH-Nqo"; */
+"Once a month" = "Kord kuus";
+
+/* Class = "NSMenu"; title = "OtherViews"; ObjectID = "Kq2-Mx-1ek"; */
+"Kq2-Mx-1ek.title" = "OtherViews";
+
+/* Class = "NSTextFieldCell"; title = "Changelog:"; ObjectID = "MH3-Hn-7hU"; */
+"Changelog:" = "Muudatuste ajalugu:";
+
+/* Class = "NSButtonCell"; title = "Download update"; ObjectID = "OBO-RW-cVT"; */
+"Download update" = "Alusta paigaldust";
+
+/* Class = "NSTextFieldCell"; title = "0 KB/s"; ObjectID = "PII-Zr-eT8"; */
+"PII-Zr-eT8.title" = "0 KB/s";
+
+/* Class = "NSTabViewItem"; label = "Updates"; ObjectID = "XOS-WI-hKa"; */
+"Updates" = "Uuendused";
+
+/* Class = "NSTextFieldCell"; title = "Installed:"; ObjectID = "Xr7-Ls-jOQ"; */
+"Installed:" = "Sinu arvutis olev tarkvara versioon:";
+
+/* Class = "NSTextFieldCell"; title = "Available:"; ObjectID = "ZgI-Qu-BYN"; */
+"Available:" = "Paigaldatav tarkvara versioon:";
+
+/* Class = "NSTextFieldCell"; title = "Check updates"; ObjectID = "dPb-83-7q8"; */
+"Check updates" = "Kontrolli uuendusi";
+
+/* Class = "NSTabViewItem"; label = "Version info"; ObjectID = "hng-hr-Q6P"; */
+"Version info" = "Versiooni info";
+
+/* Class = "NSMenuItem"; title = "Once a week"; ObjectID = "wj9-Or-Pru"; */
+"Once a week" = "Kord nädalas";
+
+/* No comment provided by engineer. */
+"Browser plugin" = "Browser plugin";
+
+/* No comment provided by engineer. */
+"DigiDoc client" = "DigiDoc klient";
+
+/* No comment provided by engineer. */
+"Failed to copy signature" = "Failed to copy signature";
+
+/* No comment provided by engineer. */
+"Failed to open xar archive: %@" = "Failed to open xar archive: %@";
+
+/* No comment provided by engineer. */
+"Failed to verify signature" = "Failed to verify signature";
+
+/* No comment provided by engineer. */
+"http://www.id.ee/eng/changelog" = "http://www.id.ee/changelog";
+
+/* No comment provided by engineer. */
+"ID-Card Utility" = "ID-Card Utility";
+
+/* No comment provided by engineer. */
+"No matching certificate" = "No matching certificate";
+
+/* No comment provided by engineer. */
+"PKCS11" = "PKCS11";
+
+/* No comment provided by engineer. */
+"PKCS11 loader" = "PKCS11 loader";
+
+/* No comment provided by engineer. */
+"Tokend" = "Tokend";
+
+/* No comment provided by engineer. */
+"Update available" = "Uuendus on saadaval";
+
+/* No comment provided by engineer. */
+"Update message" = "Update message";
+

@@ -1,0 +1,7 @@
+Id-updater version 3.8 release notes
+
+- Created new ID-card software updater for OSX platform by using the platform’s own tools. The ID-Updater application can be managed from System Preferences.
+- Improved Updater’s execution in Windows platform, the updater is run on laptops regardless of whether the user is on battery power or AC power. 
+- Improved Updater system to distribute the server’s load when necessary. 
+- Changed the user-agent data that is sent to the server with Windows Updater, the version number of the whole .msi package is now sent instead of only the version number of the Updater.
+
