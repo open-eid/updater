@@ -110,11 +110,6 @@
     [update request];
 }
 
-- (void)dealloc {
-    [update release];
-    [super dealloc];
-}
-
 #pragma mark - Auhtorization delegate
 
 - (void)authorizationViewDidAuthorize:(SFAuthorizationView *)view {
@@ -159,8 +154,8 @@
     availableLabel.hidden = NO;
     available.hidden = NO;
     install.hidden = NO;
-    available.stringValue = [_available retain];
-    filename = [_filename retain];
+    available.stringValue = _available;
+    filename = _filename;
 
     NSUserNotificationCenter *center = [NSUserNotificationCenter defaultUserNotificationCenter];
     if (center) {
@@ -301,7 +296,7 @@
     [progress startAnimation:self];
     NSString *tmp = [NSString stringWithFormat:@"%@/%@", NSTemporaryDirectory(), filename];
     [NSFileManager.defaultManager createFileAtPath:tmp contents:nil attributes:nil];
-    file = [[NSFileHandle fileHandleForWritingAtPath:tmp] retain];
+    file = [NSFileHandle fileHandleForWritingAtPath:tmp];
     NSURL *url = [NSURL URLWithString:[NSString stringWithFormat:@"%@/%@", update.url, filename]];
     [NSURLConnection connectionWithRequest:[NSURLRequest requestWithURL:url] delegate:self];
     lastRecvd = 0;

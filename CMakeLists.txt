@@ -63,7 +63,7 @@ if( APPLE )
 		BUNDLE YES
 		BUNDLE_EXTENSION prefPane
 		RESOURCES mac/Resources/Icon.icns
-		COMPILE_FLAGS "-Wno-deprecated-declarations -Wno-unused-parameter -fobjc-gc"
+		COMPILE_FLAGS "-Wno-deprecated-declarations -Wno-unused-parameter -fobjc-arc"
 		LINKER_LANGUAGE C
 		XCODE_ATTRIBUTE_WRAPPER_EXTENSION prefPane
 		MACOSX_BUNDLE_INFO_PLIST ${CMAKE_CURRENT_SOURCE_DIR}/prefPane/Info.plist.cmake
