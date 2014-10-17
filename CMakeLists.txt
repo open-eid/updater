@@ -19,27 +19,15 @@ if( APPLE )
 	)
 	target_link_libraries( id-updater-helper "-framework Foundation -framework PCSC" )
 
-	add_custom_command( OUTPUT ID_updater.nib et/ID_updater.nib et/ID_updater.xib ru/ID_updater.nib ru/ID_updater.xib
+	add_custom_command( OUTPUT ID_updater.nib
 		COMMAND ibtool --errors --warnings --notices --output-format human-readable-text
 			--compile ID_updater.nib ${CMAKE_CURRENT_SOURCE_DIR}/prefPane/Base.lproj/ID_updater.xib
-		# 10.7 support
-		COMMAND mkdir -p et ru
-		COMMAND ibtool --strings-file ${CMAKE_CURRENT_SOURCE_DIR}/prefPane/et.lproj/ID_updater.strings
-			 --write et/ID_updater.xib ${CMAKE_CURRENT_SOURCE_DIR}/prefPane/Base.lproj/ID_updater.xib
-		COMMAND ibtool --strings-file ${CMAKE_CURRENT_SOURCE_DIR}/prefPane/ru.lproj/ID_updater.strings
-			 --write ru/ID_updater.xib ${CMAKE_CURRENT_SOURCE_DIR}/prefPane/Base.lproj/ID_updater.xib
-		COMMAND ibtool --errors --warnings --notices --output-format human-readable-text
-			--compile et/ID_updater.nib et/ID_updater.xib
-		COMMAND ibtool --errors --warnings --notices --output-format human-readable-text
-			--compile ru/ID_updater.nib ru/ID_updater.xib
 	)
 
 	find_package( OpenSSL REQUIRED )
 	find_library( XAR xar )
 	add_library( ${PROGNAME} MODULE
 		ID_updater.nib
-		et/ID_updater.nib
-		ru/ID_updater.nib
 		prefPane/Base.lproj/ID_updater.xib
 		prefPane/en.lproj/Localizable.strings
 		prefPane/en.lproj/ID_updater.strings
@@ -52,12 +40,12 @@ if( APPLE )
 		prefPane/update.m
 	)
 	set_source_files_properties( ID_updater.nib
-		PROPERTIES MACOSX_PACKAGE_LOCATION Resources/Base.lproj ) # Installed to next section for 10.7 support
-	set_source_files_properties( prefPane/en.lproj/ID_updater.strings prefPane/en.lproj/Localizable.strings ID_updater.nib
+		PROPERTIES MACOSX_PACKAGE_LOCATION Resources/Base.lproj )
+	set_source_files_properties( prefPane/en.lproj/ID_updater.strings prefPane/en.lproj/Localizable.strings
 		PROPERTIES MACOSX_PACKAGE_LOCATION Resources/en.lproj )
-	set_source_files_properties( prefPane/et.lproj/ID_updater.strings prefPane/et.lproj/Localizable.strings et/ID_updater.nib
+	set_source_files_properties( prefPane/et.lproj/ID_updater.strings prefPane/et.lproj/Localizable.strings
 		PROPERTIES MACOSX_PACKAGE_LOCATION Resources/et.lproj )
-	set_source_files_properties( prefPane/ru.lproj/ID_updater.strings prefPane/ru.lproj/Localizable.strings ru/ID_updater.nib
+	set_source_files_properties( prefPane/ru.lproj/ID_updater.strings prefPane/ru.lproj/Localizable.strings
 		PROPERTIES MACOSX_PACKAGE_LOCATION Resources/ru.lproj )
 	set_target_properties( ${PROGNAME} PROPERTIES
 		BUNDLE YES
@@ -71,8 +59,9 @@ if( APPLE )
 	target_link_libraries( ${PROGNAME} ${XAR} ${OPENSSL_CRYPTO_LIBRARY}
 		"-framework Security -framework Cocoa -framework PreferencePanes -framework PCSC"
 	)
+	add_custom_command( TARGET ${PROGNAME} POST_BUILD
+		COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:id-updater-helper> $<TARGET_FILE_DIR:${PROGNAME}>/../Resources )
 	install( DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/${PROGNAME}.prefPane DESTINATION /Library/PreferencePanes )
-	install( TARGETS id-updater-helper DESTINATION /Library/PreferencePanes/id-updater.prefPane/Contents/Resources )
 else()
 	cmake_policy( SET CMP0020 NEW )
 	find_package( Qt5Network REQUIRED )
