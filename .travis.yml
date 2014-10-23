@@ -1,0 +1,6 @@
+language: objective-c
+script:
+- mkdir build
+- cd build
+- cmake ..
+- make
