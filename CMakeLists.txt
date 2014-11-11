@@ -62,6 +62,22 @@ if( APPLE )
 	add_custom_command( TARGET ${PROGNAME} POST_BUILD
 		COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:id-updater-helper> $<TARGET_FILE_DIR:${PROGNAME}>/../Resources )
 	install( DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/${PROGNAME}.prefPane DESTINATION /Library/PreferencePanes )
+
+	add_custom_target( codesign DEPENDS id-updater-helper
+		COMMAND codesign -f -s \"$$SIGNCERT\" $<TARGET_FILE_DIR:${PROGNAME}>/../Resources/id-updater-helper
+		COMMAND codesign -f -s \"$$SIGNCERT\" $<TARGET_FILE:${PROGNAME}>
+	)
+	add_custom_target( pkgbuild DEPENDS codesign
+		COMMAND make install DESTDIR=install \; pkgbuild
+			--root install
+			--sign \"$$INSTCERT\"
+			updater_${VERSION}$ENV{VER_SUFFIX}.pkg
+	)
+	add_custom_target( zipdebug DEPENDS ${PROGNAME}
+		COMMAND dsymutil -o ${PROGNAME}.dSYM $<TARGET_FILE:${PROGNAME}>
+		COMMAND dsymutil -o ${PROGNAME}.dSYM $<TARGET_FILE:id-updater-helper>
+		COMMAND zip -r updater-dbg_${VERSION}$ENV{VER_SUFFIX}.zip ${PROGNAME}.dSYM
+	)
 else()
 	cmake_policy( SET CMP0020 NEW )
 	find_package( Qt5Network REQUIRED )
