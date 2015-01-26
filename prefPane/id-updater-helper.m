@@ -65,8 +65,7 @@ int main(int argc, const char * argv[])
         }
 
         if (strcmp(argv[1], "-remove") == 0) {
-            NSTask *task = [NSTask launchedTaskWithLaunchPath:@"/bin/launchctl" arguments:@[@"unload", @PATH]];
-            [task waitUntilExit];
+            system("/bin/launchctl unload -w " PATH);
             NSError *error;
             [[NSFileManager defaultManager] removeItemAtPath:@PATH error:&error];
             return 0;
@@ -98,8 +97,7 @@ int main(int argc, const char * argv[])
         NSString *errorstr;
         NSData *data = [NSPropertyListSerialization dataFromPropertyList:settings format:NSPropertyListXMLFormat_v1_0 errorDescription:&errorstr];
         [data writeToFile:@PATH atomically:YES];
-        NSTask *task = [NSTask launchedTaskWithLaunchPath:@"/bin/launchctl" arguments:@[@"load", @PATH]];
-        [task waitUntilExit];
+        system("/bin/launchctl load -w " PATH);
     }
     return 0;
 }
