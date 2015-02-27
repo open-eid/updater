@@ -57,6 +57,7 @@ signals:
 
 private:
 	QString applicationOs();
+	void chromeCheck();
 	void reply( QNetworkReply *reply );
 
 	bool m_autoupdate, m_autoclose;

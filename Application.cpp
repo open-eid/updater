@@ -187,7 +187,7 @@ int Application::run()
 
 	if( isRunning() )
 		return !sendMessage( args.join( " " ) );
-	connect( this, SIGNAL(messageReceived(const QString&)), SLOT(messageReceived(const QString&)) );
+	connect( this, &QtSingleApplication::messageReceived, this, &Application::messageReceived );
 
 	w = new idupdater( this );
 	w->checkUpdates( url, args.contains( "-autoupdate" ), args.contains( "-autoclose" ) );

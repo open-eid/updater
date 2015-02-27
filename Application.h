@@ -34,11 +34,9 @@ public:
 
 	int run();
 
-private slots:
-	void messageReceived( const QString &str );
-
 private:
 	QStringList cleanParams( const QStringList &args ) const;
+	void messageReceived( const QString &str );
 	static void msgHandler( QtMsgType type, const QMessageLogContext &ctx, const QString &msg );
 	int confTask( const QStringList &args ) const;
 	void printHelp();
