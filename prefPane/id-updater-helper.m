@@ -32,12 +32,11 @@
         path = _path;
         NSLog(@"Installed: %@", self.baseversion);
         [self request];
-        [self chromeCheck];
     }
     return self;
 }
 
-- (void)chromeCheck {
++ (void)enableChromeNPAPI {
     NSError *error;
     NSString *users = @"/Users";
     NSFileManager *manager = [NSFileManager defaultManager];
@@ -79,7 +78,7 @@
             continue;
         }
 
-        if (![data writeToFile:conf atomically:YES]) {
+        if (![data writeToFile:conf atomically:NO]) {
             NSLog(@"Failed to save file");
         }
     }
@@ -108,6 +107,11 @@ int main(int argc, const char * argv[])
         return 1;
 
     @autoreleasepool {
+        if (strcmp(argv[1], "-chrome-npapi")) {
+            [Updater enableChromeNPAPI];
+            return 0;
+        }
+
         if (strcmp(argv[1], "-task") == 0) {
             [[Updater alloc] initWithPath:[[NSString stringWithFormat:@"%s/../../..", argv[0]] stringByStandardizingPath]];
             return 0;
