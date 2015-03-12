@@ -51,13 +51,14 @@ public:
 	void checkUpdates( const QString &url, bool autoupdate, bool autoclose );
 	void startInstall();
 
+	static bool lessThanVersion( const QString &current, const QString &available );
+
 signals:
 	void error( const QString &msg );
 	void status( const QString &msg );
 
 private:
 	QString applicationOs();
-	void chromeCheck();
 	void reply( QNetworkReply *reply );
 
 	bool m_autoupdate, m_autoclose;

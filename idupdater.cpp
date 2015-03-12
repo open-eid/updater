@@ -25,9 +25,6 @@
 #include <QDebug>
 #include <QDir>
 #include <QElapsedTimer>
-#include <QJsonArray>
-#include <QJsonDocument>
-#include <QJsonObject>
 #include <QLibrary>
 #include <QNetworkReply>
 #include <QPushButton>
@@ -36,7 +33,7 @@
 
 #include <qt_windows.h>
 
-static bool lessThanVersion( const QString &current, const QString &available )
+bool idupdater::lessThanVersion( const QString &current, const QString &available )
 {
 	QStringList curList = current.split('.');
 	QStringList avaList = available.split('.');
@@ -89,7 +86,7 @@ void idupdaterui::setError( const QString &msg )
 
 void idupdaterui::setInfo( const QString &version, const QString &available )
 {
-	setDownloadEnabled( lessThanVersion( version, available ) );
+	setDownloadEnabled( idupdater::lessThanVersion( version, available ) );
 	m_installedVer->setText( version );
 	m_availableVer->setText( available );
 }
@@ -131,7 +128,6 @@ idupdater::idupdater( QObject *parent )
 	qDebug() << "User-Agent:" << userAgent;
 	request.setRawHeader( "User-Agent", userAgent.toUtf8() );
 	connect( this, &QNetworkAccessManager::finished, this, &idupdater::reply );
-	chromeCheck();
 }
 
 QString idupdater::applicationOs()
@@ -184,41 +180,6 @@ QString idupdater::applicationOs()
 		}
 	}
 	return tr("Unknown OS");
-}
-
-void idupdater::chromeCheck()
-{
-	for( const QString &user: QDir("/Users").entryList() )
-	{
-		static QStringList ignore( { ".", "..", "Public", "All Users", "Default", "Default User" } );
-		if( ignore.contains(user) )
-			continue;
-
-		QFile conf( "/Users/" + user + "/AppData/Local/Google/Chrome/User Data/Local State");
-		qDebug() << "User" << conf.fileName();
-		if( !conf.open(QFile::ReadWrite) )
-			continue;
-
-		QJsonDocument doc = QJsonDocument::fromJson(conf.readAll());
-		QJsonObject obj = doc.object();
-		QString ver = obj.value("user_experience_metrics").toObject().value("stability").toObject().value("stats_version").toString();
-		qDebug() << "Chrome version" << ver;
-		if( lessThanVersion( ver, "42.0.0.0" ) )
-			continue;
-
-		QJsonObject browser = obj.value("browser").toObject();
-		QJsonArray list = browser.value("enabled_labs_experiments").toArray();
-		qDebug() << "enable-npapi" << list.contains("enable-npapi");
-		if( list.contains("enable-npapi") )
-			continue;
-
-		list << "enable-npapi";
-		browser["enabled_labs_experiments"] = list;
-		obj["browser"] = browser;
-		doc.setObject(obj);
-		conf.seek(0);
-		conf.write( doc.toJson() );
-	}
 }
 
 void idupdater::reply( QNetworkReply *reply )

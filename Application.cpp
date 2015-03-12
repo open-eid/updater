@@ -27,6 +27,9 @@
 #include <QDebug>
 #include <QDir>
 #include <QIcon>
+#include <QJsonArray>
+#include <QJsonDocument>
+#include <QJsonObject>
 #include <QLocale>
 #include <QMenu>
 #include <QMessageBox>
@@ -94,6 +97,7 @@ QStringList Application::cleanParams( const QStringList &args ) const
 	ret.removeAll("-task");
 	ret.removeAll("-autoclose");
 	ret.removeAll("-status");
+	ret.removeAll("-chrome-npapi");
 	return ret;
 }
 
@@ -102,6 +106,8 @@ int Application::confTask( const QStringList &args ) const
 	ScheduledUpdateTask task( "id-updater.exe", TASK_NAME );
 	if( args.contains("-status") )
 		return task.status();
+	if( args.contains("-chrome-npapi") )
+		return enableChromeNPAPI();
 	if( args.contains("-daily") )
 		return task.configure( ScheduledUpdateTask::DAILY, cleanParams( args ) );
 	if( args.contains("-weekly") )
@@ -111,6 +117,43 @@ int Application::confTask( const QStringList &args ) const
 	if( args.contains("-remove") )
 		task.remove();
 	return true;
+}
+
+
+int Application::enableChromeNPAPI() const
+{
+	for( const QString &user: QDir("/Users").entryList() )
+	{
+		static QStringList ignore( { ".", "..", "Public", "All Users", "Default", "Default User" } );
+		if( ignore.contains(user) )
+			continue;
+
+		QFile conf( "/Users/" + user + "/AppData/Local/Google/Chrome/User Data/Local State");
+		qDebug() << "User" << conf.fileName();
+		if( !conf.open(QFile::ReadWrite) )
+			continue;
+
+		QJsonDocument doc = QJsonDocument::fromJson(conf.readAll());
+		QJsonObject obj = doc.object();
+		QString ver = obj.value("user_experience_metrics").toObject().value("stability").toObject().value("stats_version").toString();
+		qDebug() << "Chrome version" << ver;
+		if( idupdater::lessThanVersion( ver, "42.0.0.0" ) )
+			continue;
+
+		QJsonObject browser = obj.value("browser").toObject();
+		QJsonArray list = browser.value("enabled_labs_experiments").toArray();
+		qDebug() << "enable-npapi" << list.contains("enable-npapi");
+		if( list.contains("enable-npapi") )
+			continue;
+
+		list << "enable-npapi";
+		browser["enabled_labs_experiments"] = list;
+		obj["browser"] = browser;
+		doc.setObject(obj);
+		conf.seek(0);
+		conf.write( doc.toJson() );
+	}
+	return 0;
 }
 
 void Application::messageReceived( const QString &str )
@@ -171,7 +214,7 @@ int Application::run()
 		return !result;
 	}
 
-	if( args.contains("-status") )
+	if( args.contains("-status") || args.contains("-chrome-npapi") )
 		return confTask( args );
 
 	if( args.contains("-task") )
