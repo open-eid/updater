@@ -42,6 +42,7 @@
         self.clientversion = [self versionInfo:@"ee.ria.qdigidocclient"];
         self.utilityversion = [self versionInfo:@"ee.ria.qesteidutil"];
         self.pluginversion = [self versionInfo:@"ee.ria.esteidfirefoxplugin"];
+        self.chromepluginversion = [self versionInfo:@"ee.ria.chrome-token-signing"];
         self.pkcs11version = [self versionInfo:@"ee.ria.esteid-pkcs11"];
         self.tokendversion = [self versionInfo:@"ee.ria.esteid-tokend"];
         self.loaderversion = [self versionInfo:@"ee.ria.esteidpkcs11loader"];

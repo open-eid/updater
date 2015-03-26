@@ -33,6 +33,7 @@
 @property(retain) NSString *clientversion;
 @property(retain) NSString *utilityversion;
 @property(retain) NSString *pluginversion;
+@property(retain) NSString *chromepluginversion;
 @property(retain) NSString *pkcs11version;
 @property(retain) NSString *tokendversion;
 @property(retain) NSString *loaderversion;

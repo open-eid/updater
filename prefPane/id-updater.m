@@ -100,10 +100,11 @@
     [changelogurl addAttribute:NSLinkAttributeName value:[changelogurl string] range:NSMakeRange(0, [changelogurl length])];
     [[changelog textStorage] setAttributedString:changelogurl];
 
-    info.stringValue = [NSString stringWithFormat:@"%@ (%@)\n%@ (%@)\n%@ (%@)\n%@ (%@)\n%@ (%@)\n%@ (%@)",
+    info.stringValue = [NSString stringWithFormat:@"%@ (%@)\n%@ (%@)\n%@ (%@)\n%@ (%@)\n%@ (%@)\n%@ (%@)\n%@ (%@)",
                         NSLocalizedString(@"DigiDoc client", nil), update.clientversion,
                         NSLocalizedString(@"ID-Card Utility", nil), update.utilityversion,
                         NSLocalizedString(@"Browser plugin", nil), update.pluginversion,
+                        NSLocalizedString(@"Chrome browser plugin", nil), update.chromepluginversion,
                         NSLocalizedString(@"PKCS11", nil), update.pkcs11version,
                         NSLocalizedString(@"Tokend", nil), update.tokendversion,
                         NSLocalizedString(@"PKCS11 loader", nil), update.loaderversion];
