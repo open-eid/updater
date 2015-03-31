@@ -107,7 +107,7 @@ int main(int argc, const char * argv[])
         return 1;
 
     @autoreleasepool {
-        if (strcmp(argv[1], "-chrome-npapi")) {
+        if (strcmp(argv[1], "-chrome-npapi") == 0) {
             [Updater enableChromeNPAPI];
             return 0;
         }
