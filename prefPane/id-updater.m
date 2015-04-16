@@ -108,7 +108,7 @@
                         NSLocalizedString(@"PKCS11", nil), update.pkcs11version,
                         NSLocalizedString(@"Tokend", nil), update.tokendversion,
                         NSLocalizedString(@"PKCS11 loader", nil), update.loaderversion];
-    [update request];
+    [update request:YES];
 }
 
 #pragma mark - Auhtorization delegate

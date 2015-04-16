@@ -58,7 +58,7 @@
     return list ? [list objectForKey:@"PackageVersion"] : [NSString string];
 }
 
-- (void)request {
+- (void)request:(BOOL)manual {
     NSDictionary *os = [NSDictionary dictionaryWithContentsOfFile:@"/System/Library/CoreServices/SystemVersion.plist"];
     struct utsname unameData;
     uname(&unameData);
@@ -81,16 +81,20 @@
 
     NSURL *url = [NSURL URLWithString:[NSString stringWithFormat:@"%@/products.xml", self.url]];
     NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:url cachePolicy:NSURLRequestUseProtocolCachePolicy timeoutInterval:10];
-    NSString *agent = [NSString stringWithFormat:@"id-updater/%@", self.baseversion];
+    NSMutableArray *agent = [NSMutableArray arrayWithObject:[NSString stringWithFormat:@"id-updater/%@", self.baseversion]];
     if (self.clientversion) {
-        agent = [NSString stringWithFormat:@"%@ qdigidocclient/%@", agent, self.clientversion];
+        [agent addObject:[NSString stringWithFormat:@"qdigidocclient/%@", self.clientversion]];
     }
     if (self.utilityversion) {
-        agent = [NSString stringWithFormat:@"%@ qesteidutility/%@", agent, self.utilityversion];
+        [agent addObject:[NSString stringWithFormat:@"qesteidutility/%@", self.utilityversion]];
     }
-    agent = [NSString stringWithFormat:@"%@ (Mac OS %@(%lu/%s)) Locale: %@ Devices: %@", agent,
-             [os objectForKey:@"ProductVersion"], sizeof(void *)<<3, unameData.machine, @"UTF-8", [list componentsJoinedByString:@"/"]];
-    [request addValue:agent forHTTPHeaderField:@"User-Agent"];
+    [agent addObject:[NSString stringWithFormat:@"(Mac OS %@(%lu/%s)) Locale: %@ Devices: %@",
+             [os objectForKey:@"ProductVersion"], sizeof(void *)<<3, unameData.machine, @"UTF-8", [list componentsJoinedByString:@"/"]]];
+
+    if (manual) {
+        [agent addObject:@"manual"];
+    }
+    [request addValue:[agent componentsJoinedByString:@" "] forHTTPHeaderField:@"User-Agent"];
     [NSURLConnection sendAsynchronousRequest:request queue:[NSOperationQueue new]
                            completionHandler:^(NSURLResponse *response, NSData *data, NSError *error)
     {

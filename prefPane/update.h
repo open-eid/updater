@@ -27,7 +27,7 @@
 
 @interface Update : NSObject
 - (id)initWithDelegate:(id <UpdateDelegate>)delegate;
-- (void)request;
+- (void)request:(BOOL)manual;
 
 @property(retain) NSString *baseversion;
 @property(retain) NSString *clientversion;

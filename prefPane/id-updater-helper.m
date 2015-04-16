@@ -30,8 +30,8 @@
 - (id)initWithPath:(NSString *)_path {
     if (self = [super initWithDelegate:self]) {
         path = _path;
-        NSLog(@"Installed: %@", self.baseversion);
-        [self request];
+        NSLog(@"Installed %@: %@", path, self.baseversion);
+        [self request:YES];
     }
     return self;
 }
@@ -91,10 +91,12 @@
 }
 
 - (void)message:(NSString *)message {
+    NSLog(@"TMP %@", @[path]);
     [NSTask launchedTaskWithLaunchPath:@"/usr/bin/open" arguments:@[path]];
 }
 
 - (void)updateAvailable:(NSString *)available filename:(NSString *)filename {
+    NSLog(@"TMP %@", @[path]);
     [NSTask launchedTaskWithLaunchPath:@"/usr/bin/open" arguments:@[path]];
 }
 @end
