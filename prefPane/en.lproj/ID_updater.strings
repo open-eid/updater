@@ -35,8 +35,8 @@
 /* Class = "NSTextFieldCell"; title = "Available:"; ObjectID = "ZgI-Qu-BYN"; */
 "ZgI-Qu-BYN.title" = "Available:";
 
-/* Class = "NSTextFieldCell"; title = "Check updates"; ObjectID = "dPb-83-7q8"; */
-"dPb-83-7q8.title" = "Check updates";
+/* Class = "NSTextFieldCell"; title = "Update check interval"; ObjectID = "dPb-83-7q8"; */
+"dPb-83-7q8.title" = "Update check interval";
 
 /* Class = "NSTabViewItem"; label = "Version info"; ObjectID = "hng-hr-Q6P"; */
 "hng-hr-Q6P.label" = "Version info";
