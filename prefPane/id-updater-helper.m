@@ -36,54 +36,6 @@
     return self;
 }
 
-+ (void)enableChromeNPAPI {
-    NSError *error;
-    NSString *users = @"/Users";
-    NSFileManager *manager = [NSFileManager defaultManager];
-    BOOL dir;
-    for (NSString *file in [manager contentsOfDirectoryAtPath:users error:&error]) {
-        NSString *user = [users stringByAppendingPathComponent:file];
-        if (![manager fileExistsAtPath:user isDirectory:&dir] || !dir) {
-            continue;
-        }
-
-        NSString *conf = [user stringByAppendingPathComponent:@"Library/Application Support/Google/Chrome/Local State"];
-        NSData *data = [NSData dataWithContentsOfFile:conf];
-        if (!data) {
-            continue;
-        }
-
-        NSLog(@"Parsing file %@", conf);
-        NSMutableDictionary *json = [NSJSONSerialization JSONObjectWithData:data options:NSJSONReadingMutableContainers error:&error];
-        if (!json) {
-            continue;
-        }
-
-        NSString *version = json[@"user_experience_metrics"][@"stability"][@"stats_version"];
-        NSLog(@"Chrome version %@", version);
-        if ([version compare:@"42.0.0.0" options:NSNumericSearch] < 0) {
-            continue;
-        }
-
-        BOOL enabled = [json[@"browser"][@"enabled_labs_experiments"] containsObject:@"enable-npapi"];
-        NSLog(@"enable-npapi %u", enabled);
-        if (enabled) {
-            continue;
-        }
-
-        [json[@"browser"][@"enabled_labs_experiments"] addObject:@"enable-npapi"];
-        data = [NSJSONSerialization dataWithJSONObject:json options:NSJSONWritingPrettyPrinted error:&error];
-        if (!data) {
-            NSLog(@"Failed to create JSON %@", error);
-            continue;
-        }
-
-        if (![data writeToFile:conf atomically:NO]) {
-            NSLog(@"Failed to save file");
-        }
-    }
-}
-
 #pragma mark - Update Delegate
 
 - (void)error:(NSError *)error {
@@ -109,11 +61,6 @@ int main(int argc, const char * argv[])
         return 1;
 
     @autoreleasepool {
-        if (strcmp(argv[1], "-chrome-npapi") == 0) {
-            [Updater enableChromeNPAPI];
-            return 0;
-        }
-
         if (strcmp(argv[1], "-task") == 0) {
             [[Updater alloc] initWithPath:[[NSString stringWithFormat:@"%s/../../..", argv[0]] stringByStandardizingPath]];
             return 0;

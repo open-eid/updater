@@ -29,28 +29,33 @@ if( APPLE )
 	add_library( ${PROGNAME} MODULE
 		ID_updater.nib
 		prefPane/Base.lproj/ID_updater.xib
+		prefPane/en.lproj/InfoPlist.strings
 		prefPane/en.lproj/Localizable.strings
 		prefPane/en.lproj/ID_updater.strings
+		prefPane/et.lproj/InfoPlist.strings
 		prefPane/et.lproj/Localizable.strings
 		prefPane/et.lproj/ID_updater.strings
+		prefPane/ru.lproj/InfoPlist.strings
 		prefPane/ru.lproj/Localizable.strings
 		prefPane/ru.lproj/ID_updater.strings
-		mac/Resources/Icon.icns
+		prefPane/Icon.icns
 		prefPane/id-updater.m
 		prefPane/update.m
 	)
+	set_source_files_properties( prefPane/Icon.icns
+		PROPERTIES MACOSX_PACKAGE_LOCATION Resources )
 	set_source_files_properties( ID_updater.nib
 		PROPERTIES MACOSX_PACKAGE_LOCATION Resources/Base.lproj )
-	set_source_files_properties( prefPane/en.lproj/ID_updater.strings prefPane/en.lproj/Localizable.strings
+	set_source_files_properties( prefPane/en.lproj/InfoPlist.strings prefPane/en.lproj/ID_updater.strings prefPane/en.lproj/Localizable.strings
 		PROPERTIES MACOSX_PACKAGE_LOCATION Resources/en.lproj )
-	set_source_files_properties( prefPane/et.lproj/ID_updater.strings prefPane/et.lproj/Localizable.strings
+	set_source_files_properties( prefPane/et.lproj/InfoPlist.strings prefPane/et.lproj/ID_updater.strings prefPane/et.lproj/Localizable.strings
 		PROPERTIES MACOSX_PACKAGE_LOCATION Resources/et.lproj )
-	set_source_files_properties( prefPane/ru.lproj/ID_updater.strings prefPane/ru.lproj/Localizable.strings
+	set_source_files_properties( prefPane/ru.lproj/InfoPlist.strings prefPane/ru.lproj/ID_updater.strings prefPane/ru.lproj/Localizable.strings
 		PROPERTIES MACOSX_PACKAGE_LOCATION Resources/ru.lproj )
 	set_target_properties( ${PROGNAME} PROPERTIES
 		BUNDLE YES
 		BUNDLE_EXTENSION prefPane
-		RESOURCES mac/Resources/Icon.icns
+		RESOURCES prefPane/Icon.icns
 		COMPILE_FLAGS "-Wno-deprecated-declarations -Wno-unused-parameter -fobjc-arc"
 		LINKER_LANGUAGE C
 		XCODE_ATTRIBUTE_WRAPPER_EXTENSION prefPane
