@@ -133,8 +133,10 @@
 
 #pragma mark - Update delegate
 
-- (void)error:(NSError *)error {
-    status.stringValue = [error localizedDescription];
+- (void)didFinish:(NSError *)error {
+    if (error) {
+        status.stringValue = [error localizedDescription];
+    }
 }
 
 - (void)message:(NSString *)message {

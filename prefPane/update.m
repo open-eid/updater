@@ -98,13 +98,12 @@
     [NSURLConnection sendAsynchronousRequest:request queue:[NSOperationQueue new]
                            completionHandler:^(NSURLResponse *response, NSData *data, NSError *error)
     {
-        if (error != nil) {
-            [self.delegate error:error];
-        } else if (data != nil) {
+        if (error == nil && data != nil) {
             NSXMLParser *parser = [[NSXMLParser alloc] initWithData:data];
             parser.delegate = self;
             [parser parse];
         }
+        [self.delegate didFinish:error];
     }];
 }
 

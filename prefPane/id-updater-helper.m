@@ -38,17 +38,20 @@
 
 #pragma mark - Update Delegate
 
-- (void)error:(NSError *)error {
-    NSLog(@"Error: %@", error.localizedDescription);
+- (void)didFinish:(NSError *)error {
+    if (error) {
+        NSLog(@"Error: %@", error.localizedDescription);
+    }
+    exit(0);
 }
 
 - (void)message:(NSString *)message {
-    NSLog(@"TMP %@", @[path]);
+    NSLog(@"%@", message);
     [NSTask launchedTaskWithLaunchPath:@"/usr/bin/open" arguments:@[path]];
 }
 
 - (void)updateAvailable:(NSString *)available filename:(NSString *)filename {
-    NSLog(@"TMP %@", @[path]);
+    NSLog(@"Update available %@ %@", available, filename);
     [NSTask launchedTaskWithLaunchPath:@"/usr/bin/open" arguments:@[path]];
 }
 @end
@@ -63,6 +66,7 @@ int main(int argc, const char * argv[])
     @autoreleasepool {
         if (strcmp(argv[1], "-task") == 0) {
             [[Updater alloc] initWithPath:[[NSString stringWithFormat:@"%s/../../..", argv[0]] stringByStandardizingPath]];
+            [NSRunLoop.mainRunLoop run];
             return 0;
         }
 

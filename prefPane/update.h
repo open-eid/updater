@@ -20,7 +20,7 @@
 #import <Foundation/Foundation.h>
 
 @protocol UpdateDelegate <NSObject>
-- (void)error:(NSError*)error;
+- (void)didFinish:(NSError*)error;
 - (void)message:(NSString*)message;
 - (void)updateAvailable:(NSString*)available filename:(NSString*)filename;
 @end
