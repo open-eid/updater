@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!--
+"%WIX%\bin\candle.exe" idupdater.wxs -dMSI_VERSION=3.9.5
+ -dqt_path=C:\Qt\5.3\msvc2013
+ -dlibs_path="C:\OpenSSL-Win32\bin"
+ -dupdater_path=id-updater.exe
+
+"%WIX%\bin\light.exe" -out idupdater.msi idupdater.wixobj -v -ext WixUIExtension
+-->
+
+<?ifndef Platform ?>
+<?define Platform="x86" ?>
+<?endif ?>
+
+<?if $(var.Platform) = x64 ?>
+  <?define PlatformProgramFilesFolder = "ProgramFiles64Folder" ?>
+  <?define Win64 = "yes" ?>
+<?else ?>
+  <?define PlatformProgramFilesFolder = "ProgramFilesFolder" ?>
+  <?define Win64 = "no" ?>
+<?endif ?>
+
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+  <Product Name="Open-EID" UpgradeCode="58A1DBA8-81A2-4D58-980B-4A6174D5B66B"
+      Id="*" Language="1033" Version="$(var.MSI_VERSION)" Codepage="1251" Manufacturer="RIA">
+    <Package Platform="$(var.Platform)" Keywords="Installer" InstallerVersion="405" Compressed="yes" InstallScope="perMachine"/>
+    <MediaTemplate EmbedCab="yes" CompressionLevel="high"/>
+    <Icon Id="idupdater.exe" SourceFile="$(var.updater_path)"/>
+    <Property Id="ARPPRODUCTICON" Value="idupdater.exe"/>
+    <MajorUpgrade AllowSameVersionUpgrades="yes" DowngradeErrorMessage=
+      "A newer version of [ProductName] is already installed. If you are trying to downgrade, please uninstall the newer version first."/>
+    <Condition Message="[ProductName] requires Windows 7 or higher.">
+      <![CDATA[Installed OR (VersionNT >= 601)]]>
+    </Condition>
+    <UIRef Id="WixUI_Minimal" />
+    <Property Id="AUTO_UPDATE" Value="1"/>
+
+    <Directory Id="TARGETDIR" Name="SourceDir">
+      <Directory Id='$(var.PlatformProgramFilesFolder)'>
+        <Directory Id="APPLICATIONFOLDER" Name="Open-EID">
+          <Component Id="Application" Guid="ce49ec96-dc54-4b51-adae-8d5dd82b15d1" Win64="$(var.Win64)">
+<?ifdef var.qt_path ?>
+            <File Source="$(env.VCINSTALLDIR)\redist\$(var.Platform)\Microsoft.VC120.CRT\msvcp120.dll"/>
+            <File Source="$(env.VCINSTALLDIR)\redist\$(var.Platform)\Microsoft.VC120.CRT\msvcr120.dll"/>
+            <File Source="$(var.libs_path)\libeay32.dll"/>
+            <File Source="$(var.libs_path)\ssleay32.dll"/>
+            <File Source="$(var.qt_path)\bin\Qt5Core.dll"/>
+            <File Source="$(var.qt_path)\bin\Qt5Gui.dll"/>
+            <File Source="$(var.qt_path)\bin\Qt5Network.dll"/>
+            <File Source="$(var.qt_path)\bin\Qt5PrintSupport.dll"/>
+            <File Source="$(var.qt_path)\bin\Qt5Widgets.dll"/>
+            <File Source="$(var.qt_path)\bin\Qt5WinExtras.dll"/>
+            <File Source="$(var.qt_path)\bin\libEGL.dll"/>
+            <File Source="$(var.qt_path)\bin\libGLESv2.dll"/>
+            <File Source="$(var.qt_path)\bin\icudt54.dll"/>
+            <File Source="$(var.qt_path)\bin\icuin54.dll"/>
+            <File Source="$(var.qt_path)\bin\icuuc54.dll"/>
+            <File Source="$(var.qt_path)\bin\D3DCompiler_47.dll"/>
+            <File Source="$(var.qt_path)\bin\opengl32sw.dll"/>
+<?endif?>
+            <File Id="id_updater.exe" Source="$(var.updater_path)" KeyPath='yes'/>
+          </Component>
+<?ifdef var.qt_path ?>
+          <Directory Id="platforms" Name="platforms" FileSource="$(var.qt_path)\plugins\platforms">
+            <Component Id="qwindows.dll" Win64="$(var.Win64)">
+              <File Name="qwindows.dll"/>
+            </Component>
+          </Directory>
+          <Directory Id="printsupport" Name="printsupport" FileSource="$(var.qt_path)\plugins\printsupport">
+            <Component Id="windowsprintersupport.dll" Win64="$(var.Win64)">
+              <File Name="windowsprintersupport.dll"/>
+            </Component>
+          </Directory>
+          <Directory Id="imageformats" Name="imageformats" FileSource="$(var.qt_path)\plugins\imageformats">
+            <Component Id="qjpeg.dll" Win64="$(var.Win64)">
+              <File Name="qjpeg.dll"/>
+            </Component>
+          </Directory>
+<?endif?>
+        </Directory>
+      </Directory>
+    </Directory>
+
+    <Feature Id="Install" Title="Open-EID" ConfigurableDirectory="APPLICATIONFOLDER">
+      <ComponentRef Id="Application" />
+<?ifdef var.qt_path ?>
+      <ComponentRef Id="qwindows.dll" />
+      <ComponentRef Id="windowsprintersupport.dll" />
+      <ComponentRef Id="qjpeg.dll" />
+<?endif?>
+    </Feature>
+
+    <CustomAction Id="ScheduleUpdater" FileKey="id_updater.exe" Impersonate="no" Execute="deferred"
+      ExeCommand="-weekly" Return="ignore"/>
+    <CustomAction Id="UnScheduleUpdater" FileKey="id_updater.exe" Impersonate="no" Execute="deferred"
+      ExeCommand="-remove" Return="ignore"/>
+
+    <InstallExecuteSequence>
+      <Custom Action="ScheduleUpdater" Before="InstallFinalize">(NOT Installed) AND NOT (AUTO_UPDATE = 0)</Custom>
+      <Custom Action="UnScheduleUpdater" After="InstallInitialize">REMOVE="ALL"</Custom>
+    </InstallExecuteSequence>
+  </Product>
+</Wix>
