@@ -21,7 +21,6 @@
 
 #include "idupdater.h"
 #include "ScheduledUpdateTask.h"
-#include "ProcessStarter.h"
 
 #include <QDateTime>
 #include <QDebug>
@@ -35,16 +34,19 @@
 #include <QTranslator>
 #include <QtNetwork/QNetworkProxyFactory>
 
-#ifndef TASK_NAME
-#define TASK_NAME "id updater task"
-#endif
-#ifndef UPDATER_URL
-#define UPDATER_URL "http://ftp.id.eesti.ee/pub/id/updater/"
-#endif
+#include <qt_windows.h>
+#include <userenv.h>
+#include <wtsapi32.h>
+
+int main( int argc, char *argv[] )
+{
+	return Application( argc, argv ).run();
+}
+
+
 
 Application::Application( int &argc, char **argv )
 :	QtSingleApplication( argc, argv )
-,	url( UPDATER_URL )
 ,	w(0)
 {
 	log.setFileName( QDir::tempPath() + "/id-updater.log" );
@@ -62,10 +64,13 @@ Application::Application( int &argc, char **argv )
 	lang = QSettings( "Estonian ID Card", QString() ).value( "Main/Language", lang ).toString();
 
 	QTranslator *qt = new QTranslator( this );
+	QTranslator *common = new QTranslator( this );
 	QTranslator *t = new QTranslator( this );
 	qt->load( QString(":/qtbase_%1.qm").arg( lang ) );
+	common->load( QString(":/common_%1.qm").arg( lang ) );
 	t->load( QString(":/idupdater_%1.qm").arg( lang ) );
 	installTranslator( qt );
+	installTranslator( common );
 	installTranslator( t );
 	setLibraryPaths( QStringList() << applicationDirPath() );
 	setWindowIcon( QIcon( ":/appicon.png" ) );
@@ -83,43 +88,83 @@ Application::~Application()
 	qInstallMessageHandler( 0 );
 }
 
-QStringList Application::cleanParams( const QStringList &args ) const
-{
-	QStringList ret = args;
-	ret.removeAll("-daily");
-	ret.removeAll("-weekly");
-	ret.removeAll("-monthly");
-	ret.removeAll("-never");
-	ret.removeAll("-remove");
-	ret.removeAll("-task");
-	ret.removeAll("-autoclose");
-	ret.removeAll("-status");
-	ret.removeAll("-chrome-npapi");
-	return ret;
-}
-
 int Application::confTask( const QStringList &args ) const
 {
-	ScheduledUpdateTask task( "id-updater.exe", TASK_NAME );
+	ScheduledUpdateTask task;
 	if( args.contains("-status") )
 		return task.status();
 	if( args.contains("-daily") )
-		return task.configure( ScheduledUpdateTask::DAILY, cleanParams( args ) );
+		return task.configure(ScheduledUpdateTask::DAILY);
 	if( args.contains("-weekly") )
-		return task.configure( ScheduledUpdateTask::WEEKLY, cleanParams( args ) );
+		return task.configure(ScheduledUpdateTask::WEEKLY);
 	if( args.contains("-monthly") )
-		return task.configure( ScheduledUpdateTask::MONTHLY, cleanParams( args ) );
+		return task.configure(ScheduledUpdateTask::MONTHLY);
 	if( args.contains("-remove") )
 		task.remove();
 	return true;
 }
 
+bool Application::execute(const QStringList &arguments)
+{
+	// http://www.codeproject.com/KB/vista-security/interaction-in-vista.aspx
+	qDebug() << "ProcessStarter begin";
+	QString command = QDir::toNativeSeparators(applicationFilePath()) + " " + arguments.join(" ");
+	qDebug() << "command:" << command;
+
+	PWTS_SESSION_INFOW sessionInfo = 0;
+	DWORD count = 0;
+	WTSEnumerateSessionsW(WTS_CURRENT_SERVER_HANDLE, 0, 1, &sessionInfo, &count);
+
+	DWORD sessionId = 0;
+	for(DWORD i = 0; i < count; ++i)
+	{
+		if(sessionInfo[i].State == WTSActive)
+		{
+			sessionId = sessionInfo[i].SessionId;
+			break;
+		}
+	}
+	WTSFreeMemory(sessionInfo);
+	qDebug() << "Active session ID " << sessionId;
+
+	HANDLE currentToken = 0;
+	BOOL ret = WTSQueryUserToken(sessionId, &currentToken);
+	qDebug() << "WTSQueryUserToken" << ret << GetLastError();
+	if(!ret)
+		return false;
+
+	HANDLE primaryToken = 0;
+	ret = DuplicateTokenEx(currentToken, TOKEN_ASSIGN_PRIMARY | TOKEN_ALL_ACCESS, 0,
+		SecurityImpersonation, TokenPrimary, &primaryToken);
+	CloseHandle(currentToken);
+	qDebug() << "DuplicateTokenEx" << ret << GetLastError();
+	if(!ret)
+		return false;
+
+	qDebug() << "primaryToken handle" << primaryToken;
+	if(!primaryToken)
+		return false;
+
+	void *environment = nullptr;
+	ret = CreateEnvironmentBlock(&environment, primaryToken, true);
+	qDebug() << "CreateEnvironmentBlock" << environment << ret <<  GetLastError();
+
+	qDebug() << "creating as user";
+	STARTUPINFO StartupInfo = { sizeof(StartupInfo) };
+	PROCESS_INFORMATION processInfo;
+	ret = CreateProcessAsUserW(primaryToken, 0, LPWSTR(command.utf16()), 0, 0,
+		false, CREATE_NO_WINDOW | CREATE_UNICODE_ENVIRONMENT,
+		environment, 0, &StartupInfo, &processInfo);
+	CloseHandle(primaryToken);
+
+	qDebug() << "CreateProcessAsUserW" << ret << "err" << GetLastError();
+	qDebug() << "ProcessStarter end";
+	return ret;
+}
+
 void Application::messageReceived( const QString &str )
 {
-	int pos = str.indexOf( "-url" );
-	if( pos != -1 )
-		url = str.mid( pos + 5 );
-	w->checkUpdates( url, str.contains( "-autoupdate" ), str.contains( "-autoclose" ) );
+	w->checkUpdates(str.contains("-autoupdate"), str.contains("-autoclose"));
 }
 
 void Application::msgHandler( QtMsgType type, const QMessageLogContext &, const QString &msg )
@@ -142,14 +187,12 @@ void Application::printHelp()
 		"<tr><td>-autoupdate</td><td>%2</td></tr>"
 		"<tr><td>-autoclose</td><td>%3</td></tr>"
 		"<tr><td>-task</td><td>%4</td></tr>"
-		"<tr><td>-url http://foo.bar</td><td>%5</td></tr>"
 		"<tr><td colspan=\"2\">-daily|-monthly|-weekly|-remove</td></tr>"
 		"<tr><td colspan=\"2\">%6</td></tr></table>")
 		.arg( tr("this help") )
 		.arg( tr("update automatically") )
 		.arg( tr("close automatically when no updates are available") )
 		.arg( tr("execute subprocess to right window session under windows") )
-		.arg( tr("use alternate url") )
 		.arg( tr("configure scheduled task to run at given interval, or remove it") ) );
 }
 
@@ -172,26 +215,22 @@ int Application::run()
 		return !result;
 	}
 
-	if( args.contains("-status") || args.contains("-chrome-npapi") )
+	if(args.contains("-status"))
 		return confTask( args );
 
 	if( args.contains("-task") )
 	{
 		args.removeAll( "-task" );
 		args << "-autoclose";
-		return !ProcessStarter( applicationFilePath(), args ).run();
+		return !execute(args);
 	}
-
-	int urlAt = args.indexOf("-url");
-	if( urlAt != -1 )
-		url = args.value( urlAt + 1, UPDATER_URL );
 
 	if( isRunning() )
 		return !sendMessage( args.join( " " ) );
 	connect( this, &QtSingleApplication::messageReceived, this, &Application::messageReceived );
 
 	w = new idupdater( this );
-	w->checkUpdates( url, args.contains( "-autoupdate" ), args.contains( "-autoclose" ) );
+	w->checkUpdates(args.contains("-autoupdate"), args.contains("-autoclose"));
 
 	return exec();
 }

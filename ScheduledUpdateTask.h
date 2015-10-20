@@ -32,9 +32,9 @@ public:
 		MONTHLY = 3,
 		REMOVED = 4
 	};
-	ScheduledUpdateTask( const QString &command, const QString &name );
+	ScheduledUpdateTask();
 	~ScheduledUpdateTask();
-	bool configure( Interval interval, const QStringList &args );
+	bool configure(Interval interval);
 	int status() const;
 	bool remove();
 

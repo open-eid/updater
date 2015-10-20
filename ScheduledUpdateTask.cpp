@@ -19,12 +19,17 @@
 
 #include "ScheduledUpdateTask.h"
 
+#include <QCoreApplication>
 #include <QDir>
 #include <QTime>
 
 #include <comutil.h>
 #include <Mstask.h>
 #include <Taskschd.h>
+
+#ifndef TASK_NAME
+#define TASK_NAME L"id updater task"
+#endif
 
 template <class T>
 class CPtr
@@ -43,16 +48,13 @@ class ScheduledUpdateTaskPrivate
 public:
 	CPtr<ITaskService> service;
 	CPtr<ITaskFolder> folder;
-	QString command, name;
 };
 
 
 
-ScheduledUpdateTask::ScheduledUpdateTask( const QString &command, const QString &name )
+ScheduledUpdateTask::ScheduledUpdateTask()
 	: d(new ScheduledUpdateTaskPrivate)
 {
-	d->command = QDir::toNativeSeparators( command );
-	d->name = name;
 	CoInitialize( 0 );
 	CoInitializeSecurity( 0, -1, 0, 0, RPC_C_AUTHN_LEVEL_PKT_PRIVACY,
 		RPC_C_IMP_LEVEL_IMPERSONATE, 0, 0, 0 );
@@ -68,7 +70,7 @@ ScheduledUpdateTask::~ScheduledUpdateTask()
 	CoUninitialize();
 }
 
-bool ScheduledUpdateTask::configure( ScheduledUpdateTask::Interval interval, const QStringList &params )
+bool ScheduledUpdateTask::configure(ScheduledUpdateTask::Interval interval)
 {
 	if( !d->service )
 		return false;
@@ -96,29 +98,15 @@ bool ScheduledUpdateTask::configure( ScheduledUpdateTask::Interval interval, con
 	case ScheduledUpdateTask::DAILY:
 	{
 		CPtr<ITrigger> trigger;
-		if( FAILED(triggerCollection->Create( TASK_TRIGGER_DAILY, &trigger )) )
-			return false;
-
 		CPtr<IDailyTrigger> dailyTrigger;
-		if( FAILED(trigger->QueryInterface( IID_PPV_ARGS(&dailyTrigger) )) )
-			return false;
-
-		if( FAILED(dailyTrigger->put_StartBoundary( _bstr_t(t.toString("yyyy-MM-ddTHH:mm:ss").utf16()) )) )
+		if( FAILED(triggerCollection->Create( TASK_TRIGGER_DAILY, &trigger )) ||
+			FAILED(trigger->QueryInterface( IID_PPV_ARGS(&dailyTrigger) )) ||
+			FAILED(dailyTrigger->put_StartBoundary( _bstr_t(t.toString("yyyy-MM-ddTHH:mm:ss").utf16()) )) )
 			return false;
 		break;
 	}
 	case ScheduledUpdateTask::WEEKLY:
 	{
-		CPtr<ITrigger> trigger;
-		if( FAILED(triggerCollection->Create( TASK_TRIGGER_WEEKLY, &trigger )) )
-			return false;
-
-		CPtr<IWeeklyTrigger> weeklyTrigger;
-		if( FAILED(trigger->QueryInterface( IID_PPV_ARGS(&weeklyTrigger) )) )
-			return false;
-
-		if( FAILED(weeklyTrigger->put_StartBoundary( _bstr_t(t.toString("yyyy-MM-ddTHH:mm:ss").utf16()) )) )
-			return false;
 		short day = 0;
 		switch( t.date().dayOfWeek() )
 		{
@@ -131,72 +119,56 @@ bool ScheduledUpdateTask::configure( ScheduledUpdateTask::Interval interval, con
 		case Qt::Sunday: day = TASK_SUNDAY; break;
 		default: day = TASK_MONDAY; break;
 		}
-		if( FAILED(weeklyTrigger->put_DaysOfWeek( day )) )
+		CPtr<ITrigger> trigger;
+		CPtr<IWeeklyTrigger> weeklyTrigger;
+		if( FAILED(triggerCollection->Create( TASK_TRIGGER_WEEKLY, &trigger )) ||
+			FAILED(trigger->QueryInterface( IID_PPV_ARGS(&weeklyTrigger) )) ||
+			FAILED(weeklyTrigger->put_StartBoundary( _bstr_t(t.toString("yyyy-MM-ddTHH:mm:ss").utf16()) )) ||
+			FAILED(weeklyTrigger->put_DaysOfWeek( day )) )
 			return false;
 		break;
 	}
 	case ScheduledUpdateTask::MONTHLY:
 	{
 		CPtr<ITrigger> trigger;
-		if( FAILED(triggerCollection->Create( TASK_TRIGGER_MONTHLY, &trigger )) )
-			return false;
-
 		CPtr<IMonthlyTrigger> monthlyTrigger;
-		if( FAILED(trigger->QueryInterface( IID_PPV_ARGS(&monthlyTrigger) )) )
-			return false;
-
-		if( FAILED(monthlyTrigger->put_StartBoundary( _bstr_t(t.toString("yyyy-MM-ddTHH:mm:ss").utf16()) )) ||
+		if( FAILED(triggerCollection->Create( TASK_TRIGGER_MONTHLY, &trigger )) ||
+			FAILED(trigger->QueryInterface( IID_PPV_ARGS(&monthlyTrigger) )) ||
+			FAILED(monthlyTrigger->put_StartBoundary( _bstr_t(t.toString("yyyy-MM-ddTHH:mm:ss").utf16()) )) ||
 			FAILED(monthlyTrigger->put_DaysOfMonth( t.date().day() )) )
 			return false;
 		break;
 	}
 	}
 
+	QString command = QDir::toNativeSeparators(qApp->applicationFilePath());
 	CPtr<IActionCollection> actionCollection;
-	if( FAILED(task->get_Actions( &actionCollection )) )
-		return false;
-
 	CPtr<IAction> action;
-	if( FAILED(actionCollection->Create( TASK_ACTION_EXEC, &action )) )
-		return false;
-
 	CPtr<IExecAction> execAction;
-	if( FAILED(action->QueryInterface( IID_PPV_ARGS(&execAction) )) )
-		return false;
-
-	if( FAILED(execAction->put_Path( _bstr_t(d->command.utf16()) )) )
-		return false;
-	QStringList args =  QStringList() << "-task" << params;
-	if( FAILED(execAction->put_Arguments( _bstr_t(args.join( " " ).utf16()) )) )
-		return false;
-
 	CPtr<IRegisteredTask> registeredTask;
-	return SUCCEEDED(d->folder->RegisterTaskDefinition(
-		_bstr_t(d->name.utf16()), task, TASK_CREATE_OR_UPDATE,
-		_variant_t(L"SYSTEM"), _variant_t(),
-		TASK_LOGON_SERVICE_ACCOUNT, _variant_t(L""), &registeredTask ));
+	return SUCCEEDED(task->get_Actions( &actionCollection )) &&
+		SUCCEEDED(actionCollection->Create( TASK_ACTION_EXEC, &action )) &&
+		SUCCEEDED(action->QueryInterface( IID_PPV_ARGS(&execAction) )) &&
+		SUCCEEDED(execAction->put_Path( _bstr_t(command.utf16()) )) &&
+		SUCCEEDED(execAction->put_Arguments( _bstr_t(L"-task") )) &&
+		SUCCEEDED(d->folder->RegisterTaskDefinition(
+			_bstr_t(TASK_NAME), task, TASK_CREATE_OR_UPDATE,
+			_variant_t(L"SYSTEM"), _variant_t(),
+			TASK_LOGON_SERVICE_ACCOUNT, _variant_t(L""), &registeredTask ));
 }
 
 int ScheduledUpdateTask::status() const
 {
 	CPtr<IRegisteredTask> task;
-	if( FAILED(d->folder->GetTask( _bstr_t(d->name.utf16()), &task )) )
-		return ScheduledUpdateTask::REMOVED;
-
 	CPtr<ITaskDefinition> definiton;
-	if( FAILED(task->get_Definition(&definiton)) )
-		return ScheduledUpdateTask::REMOVED;
-
 	CPtr<ITriggerCollection> triggerCollection;
-	if( FAILED(definiton->get_Triggers( &triggerCollection )) )
-		return ScheduledUpdateTask::REMOVED;
-
 	CPtr<ITrigger> trigger;
-	if( FAILED(triggerCollection->get_Item(1, &trigger)) )
-		return ScheduledUpdateTask::REMOVED;
-
 	TASK_TRIGGER_TYPE2 type = TASK_TRIGGER_EVENT;
-	if( FAILED(trigger->get_Type(&type)) )
+	if( FAILED(d->folder->GetTask( _bstr_t(TASK_NAME), &task )) ||
+		FAILED(task->get_Definition(&definiton)) ||
+		FAILED(definiton->get_Triggers( &triggerCollection )) ||
+		FAILED(triggerCollection->get_Item(1, &trigger)) ||
+		FAILED(trigger->get_Type(&type)) )
 		return ScheduledUpdateTask::REMOVED;
 
 	switch(type)
@@ -209,5 +181,5 @@ int ScheduledUpdateTask::status() const
 
 bool ScheduledUpdateTask::remove()
 {
-	return d->service && SUCCEEDED(d->folder->DeleteTask( _bstr_t(d->name.utf16()), 0 ));
+	return d->service && SUCCEEDED(d->folder->DeleteTask( _bstr_t(TASK_NAME), 0 ));
 }

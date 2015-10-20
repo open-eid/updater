@@ -35,7 +35,7 @@ public:
 	int run();
 
 private:
-	QStringList cleanParams( const QStringList &args ) const;
+	bool execute(const QStringList &arguments);
 	void messageReceived( const QString &str );
 	static void msgHandler( QtMsgType type, const QMessageLogContext &ctx, const QString &msg );
 	int confTask( const QStringList &args ) const;

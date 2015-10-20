@@ -86,17 +86,29 @@ if( APPLE )
 		COMMAND zip -r updater-dbg_${VERSION}$ENV{VER_SUFFIX}.zip ${PROGNAME}.dSYM
 	)
 else()
+	set_ex( CONFIG_URL "$ENV{CONFIG_URL}" "https://installer.id.ee/media/updater/config.json" CACHE STRING "Set Config URL" )
+	file( DOWNLOAD ${CONFIG_URL} ${CMAKE_CURRENT_BINARY_DIR}/config.json )
+	string( REPLACE ".json" ".rsa" RSA_URL ${CONFIG_URL} )
+	file( DOWNLOAD ${RSA_URL} ${CMAKE_CURRENT_BINARY_DIR}/config.rsa )
+	string( REPLACE ".json" ".pub" PUB_URL ${CONFIG_URL} )
+	file( DOWNLOAD ${PUB_URL} ${CMAKE_CURRENT_BINARY_DIR}/config.pub )
+	configure_file( common/config.qrc config.qrc COPYONLY )
+
 	cmake_policy( SET CMP0020 NEW )
+	find_package( OpenSSL REQUIRED )
 	find_package( Qt5Network REQUIRED )
 	find_package( Qt5Widgets REQUIRED )
 	find_package( Qt5LinguistTools REQUIRED )
 
-	include_directories( ${CMAKE_CURRENT_BINARY_DIR} common/qtsingleapplication/src )
+	include_directories( ${CMAKE_CURRENT_BINARY_DIR} common/qtsingleapplication/src ${OPENSSL_INCLUDE_DIR} )
 	add_subdirectory( common/qtsingleapplication )
 
 	configure_file( translations.qrc translations.qrc COPYONLY )
-	qt5_add_translation( SOURCES idupdater_et.ts idupdater_ru.ts common/translations/qtbase_et.ts common/translations/qtbase_ru.ts )
-	qt5_add_resources( SOURCES idupdater.qrc ${CMAKE_CURRENT_BINARY_DIR}/translations.qrc )
+	qt5_add_translation( SOURCES idupdater_et.ts idupdater_ru.ts
+		common/translations/qtbase_et.ts common/translations/qtbase_ru.ts
+		common/translations/common_et.ts common/translations/common_ru.ts
+	)
+	qt5_add_resources( SOURCES idupdater.qrc ${CMAKE_CURRENT_BINARY_DIR}/translations.qrc ${CMAKE_CURRENT_BINARY_DIR}/config.qrc )
 	qt5_wrap_ui( SOURCES idupdater.ui )
 
 	add_executable( ${PROGNAME} WIN32
@@ -104,19 +116,19 @@ else()
 		idupdater.rc
 		Application.cpp
 		idupdater.cpp
-		main.cpp
-		InstallChecker.cpp
-		ProcessStarter.cpp
 		ScheduledUpdateTask.cpp
+		common/Common.cpp
+		common/Configuration.cpp
 		common/QPCSC.cpp
+		common/Settings.h
 	)
 	set_target_properties( ${PROGNAME} PROPERTIES
 		AUTOMOC TRUE
-		COMPILE_DEFINITIONS UNICODE
+		COMPILE_DEFINITIONS "UNICODE;CONFIG_URL=\"${CONFIG_URL}\";COMMON_STATIC;NO_CACHE"
 		COMPILE_FLAGS "/Zc:wchar_t-" # required for task scheduler BSTR type
 	)
 	target_link_libraries( ${PROGNAME} Qt5::Widgets Qt5::Network qtsingleapplication
-		msi Mstask Userenv wintrust Crypt32 taskschd comsupp ws2_32 Setupapi winscard Wtsapi32
+		msi Mstask Userenv wintrust Crypt32 taskschd comsupp ws2_32 Setupapi winscard Wtsapi32 ${OPENSSL_CRYPTO_LIBRARY}
 	)
 	add_manifest( ${PROGNAME} )
 	install( TARGETS ${PROGNAME} DESTINATION ${CMAKE_INSTALL_PREFIX}/bin )

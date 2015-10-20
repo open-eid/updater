@@ -30,7 +30,7 @@ class idupdaterui: public QWidget, private Ui::idupdaterui
 {
 	Q_OBJECT
 public:
-	explicit idupdaterui( idupdater *parent = 0 );
+	explicit idupdaterui(const QString &version, idupdater *parent = 0);
 
 	void setDownloadEnabled( bool enabled );
 	void setInfo( const QString &version, const QString &available );
@@ -48,7 +48,7 @@ class idupdater : public QNetworkAccessManager
 public:
 	explicit idupdater( QObject *parent = 0 );
 
-	void checkUpdates( const QString &url, bool autoupdate, bool autoclose );
+	void checkUpdates(bool autoupdate, bool autoclose);
 	void startInstall();
 
 	static bool lessThanVersion( const QString &current, const QString &available );
@@ -58,11 +58,13 @@ signals:
 	void status( const QString &msg );
 
 private:
-	QString applicationOs();
+	void finished(bool changed, const QString &error);
+	QString installedVersion(const QString &upgradeCode) const;
 	void reply( QNetworkReply *reply );
+	bool verifyPackage(const QString &filePath) const;
 
 	bool m_autoupdate, m_autoclose;
-	QString m_baseUrl, filename;
 	QNetworkRequest request;
+	QString version;
 	idupdaterui *w;
 };
