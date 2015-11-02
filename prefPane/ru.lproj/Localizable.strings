@@ -9,7 +9,7 @@
 "Once a day" = "Раз в день";
 
 /* Class = "NSTextFieldCell"; title = "Ready"; ObjectID = "93X-h4-Pxn"; */
-"Ready" = "Ready";
+"Ready" = "Готов";
 
 /* Class = "NSMenuItem"; title = "Once a month"; ObjectID = "DGb-lH-Nqo"; */
 "Once a month" = "Раз в месяц";
@@ -35,8 +35,8 @@
 /* Class = "NSTextFieldCell"; title = "Available:"; ObjectID = "ZgI-Qu-BYN"; */
 "Available:" = "Обновлённая версия:";
 
-/* Class = "NSTextFieldCell"; title = "Check updates"; ObjectID = "dPb-83-7q8"; */
-"Check updates" = "Проверить на обновления";
+/* Class = "NSTextFieldCell"; title = "Update check interval"; ObjectID = "dPb-83-7q8"; */
+"Update check interval" = "Проверить на обновления";
 
 /* Class = "NSTabViewItem"; label = "Version info"; ObjectID = "hng-hr-Q6P"; */
 "Version info" = "Версия информация";
@@ -45,13 +45,13 @@
 "Once a week" = "Раз в неделю";
 
 /* No comment provided by engineer. */
-"Browser plugin" = "Browser plugin";
+"Safari/Firefox browser plugin" = "Safari/Firefox browser plugin";
 
 /* No comment provided by engineer. */
 "Chrome browser plugin" = "Chrome browser plugin";
 
 /* No comment provided by engineer. */
-"DigiDoc client" = "DigiDoc client";
+"DigiDoc3 Client" = "DigiDoc3 Client";
 
 /* No comment provided by engineer. */
 "Failed to copy signature" = "Failed to copy signature";

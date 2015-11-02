@@ -83,6 +83,7 @@
         NSLog(@"Estonian %@", [self.bundle pathForResource:[languages objectAtIndex:0] ofType:@"lproj"]);
         bundlelang = [NSBundle bundleWithPath:[self.bundle pathForResource:[languages objectAtIndex:0] ofType:@"lproj"]];
     }
+    status.stringValue = NSLocalizedString(status.stringValue, nil);
     changeScheduleLabel.stringValue = NSLocalizedString(changeScheduleLabel.stringValue, nil);
     changelogLabel.stringValue = NSLocalizedString(changelogLabel.stringValue, nil);
     installedLabel.stringValue = NSLocalizedString(installedLabel.stringValue, nil);
@@ -101,9 +102,9 @@
     [[changelog textStorage] setAttributedString:changelogurl];
 
     info.stringValue = [NSString stringWithFormat:@"%@ (%@)\n%@ (%@)\n%@ (%@)\n%@ (%@)\n%@ (%@)\n%@ (%@)\n%@ (%@)",
-                        NSLocalizedString(@"DigiDoc client", nil), update.clientversion,
+                        NSLocalizedString(@"DigiDoc3 Client", nil), update.clientversion,
                         NSLocalizedString(@"ID-Card Utility", nil), update.utilityversion,
-                        NSLocalizedString(@"Browser plugin", nil), update.pluginversion,
+                        NSLocalizedString(@"Safari/Firefox browser plugin", nil), update.pluginversion,
                         NSLocalizedString(@"Chrome browser plugin", nil), update.chromepluginversion,
                         NSLocalizedString(@"PKCS11", nil), update.pkcs11version,
                         NSLocalizedString(@"Tokend", nil), update.tokendversion,

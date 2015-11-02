@@ -8,7 +8,7 @@
 "Once a day" = "Kord päevas";
 
 /* Class = "NSTextFieldCell"; title = "Ready"; ObjectID = "93X-h4-Pxn"; */
-"Ready" = "Ready";
+"Ready" = "Valmis";
 
 /* Class = "NSMenuItem"; title = "Once a month"; ObjectID = "DGb-lH-Nqo"; */
 "Once a month" = "Kord kuus";
@@ -34,8 +34,8 @@
 /* Class = "NSTextFieldCell"; title = "Available:"; ObjectID = "ZgI-Qu-BYN"; */
 "Available:" = "Paigaldatav tarkvara versioon:";
 
-/* Class = "NSTextFieldCell"; title = "Check updates"; ObjectID = "dPb-83-7q8"; */
-"Check updates" = "Kontrolli uuendusi";
+/* Class = "NSTextFieldCell"; title = "Update check interval"; ObjectID = "dPb-83-7q8"; */
+"Update check interval" = "Kontrolli uuendusi";
 
 /* Class = "NSTabViewItem"; label = "Version info"; ObjectID = "hng-hr-Q6P"; */
 "Version info" = "Versiooni info";
@@ -44,13 +44,13 @@
 "Once a week" = "Kord nädalas";
 
 /* No comment provided by engineer. */
-"Browser plugin" = "Browser plugin";
+"Safari/Firefox browser plugin" = "Safari/Firefox browser plugin";
 
 /* No comment provided by engineer. */
 "Chrome browser plugin" = "Chrome browser plugin";
 
 /* No comment provided by engineer. */
-"DigiDoc client" = "DigiDoc klient";
+"DigiDoc3 Client" = "DigiDoc3 Client";
 
 /* No comment provided by engineer. */
 "Failed to copy signature" = "Failed to copy signature";
