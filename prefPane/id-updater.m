@@ -22,7 +22,6 @@
 #import <PreferencePanes/PreferencePanes.h>
 #import <SecurityInterface/SFAuthorizationView.h>
 
-#include <openssl/x509v3.h>
 #include <xar/xar.h>
 
 #define PATH "/Library/LaunchAgents/ee.ria.id-updater.plist"
@@ -190,7 +189,7 @@
     [timer invalidate];
     timer = nil;
     NSArray *args = @[@"attach", @"-verify", @"-mountpoint", @"/Volumes/estonianidcard",
-                      [NSString stringWithFormat:@"%@/%@", NSTemporaryDirectory(), filename]];
+                      [NSString stringWithFormat:@"%@/%@", NSTemporaryDirectory(), [filename lastPathComponent]]];
     NSTask *task = [NSTask launchedTaskWithLaunchPath:@"/usr/bin/hdiutil" arguments:args];
     [task waitUntilExit];
     if (task.terminationStatus != 0) {
@@ -209,7 +208,7 @@
         return;
     }
 
-    X509 *cert = nil;
+    NSData *cert = nil;
     xar_signature_t sig = xar_signature_first(xar);
     int32_t count = xar_signature_get_x509certificate_count(sig);
     for (int32_t i = 0; i < count; ++i)	{
@@ -218,31 +217,9 @@
         if (xar_signature_get_x509certificate_data(sig, i, &data, &size))
             continue;
 
-        X509 *c = d2i_X509(nil, &data, size);
-        if (!c)
-            continue;
-
-        unsigned char *cn = nil;
-        for (int i = 0; i < X509_NAME_entry_count(c->cert_info->subject); ++i) {
-            X509_NAME_ENTRY *e = X509_NAME_get_entry(c->cert_info->subject, i);
-            const char *obj = OBJ_nid2sn(OBJ_obj2nid(X509_NAME_ENTRY_get_object(e)));
-            if (strcmp(obj, "CN") != 0)
-                continue;
-            size = ASN1_STRING_to_UTF8(&cn, X509_NAME_ENTRY_get_data(e));
-            break;
-        }
-
-        if (!cn)
-            continue;
-
-        if (strcmp((const char*)cn, "Estonian Informatics Centre") == 0 ||
-            strcmp((const char*)cn, "Developer ID Installer: Riigi Infosüsteemi Amet") == 0) {
-            OPENSSL_free(cn);
-            cert = c;
-            break;
-        }
-        OPENSSL_free(cn);
-        X509_free(c);
+        NSData *der = [NSData dataWithBytes:data length:size];
+        if ([update.centralConfig[@"CERT-BUNDLE"] containsObject:der.base64Encoding])
+            cert = der;
     }
 
     if (!cert) {
@@ -254,20 +231,44 @@
     uint8_t *data = 0, *signature = 0;
     uint32_t dataSize = 0, signatureSize = 0;
     off_t offset = 0;
-    if (xar_signature_copy_signed_data(sig, &data, &dataSize, &signature, &signatureSize, &offset)) {
+    uint8_t err = xar_signature_copy_signed_data(sig, &data, &dataSize, &signature, &signatureSize, &offset);
+    xar_close(xar);
+    if (err) {
         status.stringValue = NSLocalizedString(@"Failed to copy signature", nil);
-        xar_close(xar);
         return;
     }
 
-    RSA *pub = EVP_PKEY_get1_RSA(X509_get_pubkey(cert));
-    int result = RSA_verify(NID_sha1, data, dataSize, signature, signatureSize, pub);
-    RSA_free(pub);
-    xar_close(xar);
-    free(data);
-    free(signature);
+    SecCertificateRef certref = SecCertificateCreateWithData(0, (__bridge CFDataRef)cert);
+    if (!certref) {
+        status.stringValue = NSLocalizedString(@"Failed to parse certificate", nil);
+        return;
+    }
 
-    if (result == 1)
+    SecKeyRef publickey = 0;
+    OSStatus oserr = SecCertificateCopyPublicKey(certref, &publickey);
+    CFRelease(certref);
+    if (oserr) {
+        status.stringValue = NSLocalizedString(@"Failed to copy public key", nil);
+        return;
+    }
+
+    CFDataRef signatureData = CFDataCreateWithBytesNoCopy(0, signature, signatureSize, kCFAllocatorDefault);
+    CFDataRef verifyData = CFDataCreateWithBytesNoCopy(0, data, dataSize, kCFAllocatorDefault);
+    CFErrorRef error = 0;
+    SecTransformRef verifier = SecVerifyTransformCreate(publickey, signatureData, &error);
+    if (error) { CFShow(error); return; }
+    SecTransformSetAttribute(verifier, kSecTransformInputAttributeName, verifyData, &error);
+    if (error) { CFShow(error); return; }
+    SecTransformSetAttribute(verifier, kSecInputIsAttributeName, kSecInputIsDigest, &error);
+    if (error) { CFShow(error); return; }
+    CFTypeRef result = SecTransformExecute(verifier, &error);
+    if (error) { CFShow(error); return; }
+
+    CFRelease(publickey);
+    CFRelease(signatureData);
+    CFRelease(verifyData);
+
+    if (result == kCFBooleanTrue)
         [NSTask launchedTaskWithLaunchPath:@"/usr/bin/open" arguments:@[path]];
     else
         status.stringValue = NSLocalizedString(@"Failed to verify signature", nil);
@@ -298,10 +299,10 @@
     progress.indeterminate = NO;
     progress.doubleValue = 0;
     [progress startAnimation:self];
-    NSString *tmp = [NSString stringWithFormat:@"%@/%@", NSTemporaryDirectory(), filename];
+    NSString *tmp = [NSString stringWithFormat:@"%@/%@", NSTemporaryDirectory(), [filename lastPathComponent]];
     [NSFileManager.defaultManager createFileAtPath:tmp contents:nil attributes:nil];
     file = [NSFileHandle fileHandleForWritingAtPath:tmp];
-    NSURL *url = [NSURL URLWithString:[NSString stringWithFormat:@"%@/%@", update.url, filename]];
+    NSURL *url = [NSURL URLWithString:filename];
     [NSURLConnection connectionWithRequest:[NSURLRequest requestWithURL:url] delegate:self];
     lastRecvd = 0;
     timer = [NSTimer scheduledTimerWithTimeInterval:1.0 target:self selector:@selector(timer:) userInfo:nil repeats:YES];

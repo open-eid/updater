@@ -7,27 +7,34 @@ set(CMAKE_FIND_ROOT_PATH ${CMAKE_OSX_SYSROOT})
 include( VersionInfo )
 set_app_name( PROGNAME ID-updater )
 
-set( UPDATER_URL "http://ftp.id.eesti.ee/pub/id/updater/" CACHE STRING "URL to download manifest.xml" )
-add_definitions( -DUPDATER_URL="${UPDATER_URL}" )
+set_ex( CONFIG_URL "$ENV{CONFIG_URL}" "https://installer.id.ee/media/updater/config.json" CACHE STRING "Set Config URL" )
+add_definitions( -DCONFIG_URL="${CONFIG_URL}" )
+string( REPLACE ".json" ".pub" PUB_URL ${CONFIG_URL} )
+file( DOWNLOAD ${PUB_URL} ${CMAKE_CURRENT_BINARY_DIR}/config.pub )
 
 if( APPLE )
+    add_custom_command( OUTPUT config.h
+        COMMAND xxd -i config.pub config.h
+        COMMENT "Generating config.h"
+    )
+    include_directories( ${CMAKE_CURRENT_BINARY_DIR} )
 	set_source_files_properties( prefPane/id-updater-helper.m prefPane/id-updater.m prefPane/update.m PROPERTIES LANGUAGE C )
-	add_executable( id-updater-helper prefPane/id-updater-helper.m prefPane/update.m )
+	add_executable( id-updater-helper prefPane/id-updater-helper.m prefPane/update.m config.h )
 	set_target_properties( id-updater-helper PROPERTIES
 		COMPILE_FLAGS "-Wno-deprecated-declarations -Wno-unused-parameter -fobjc-arc"
 		LINKER_LANGUAGE C
 	)
-	target_link_libraries( id-updater-helper "-framework Foundation -framework PCSC" )
+	target_link_libraries( id-updater-helper "-framework Foundation -framework PCSC -framework Security" )
 
 	add_custom_command( OUTPUT ID_updater.nib
 		COMMAND ibtool --errors --warnings --notices --output-format human-readable-text
 			--compile ID_updater.nib ${CMAKE_CURRENT_SOURCE_DIR}/prefPane/Base.lproj/ID_updater.xib
 	)
 
-	find_package( OpenSSL REQUIRED )
 	find_library( XAR xar )
 	add_library( ${PROGNAME} MODULE
 		ID_updater.nib
+        config.h
 		prefPane/Base.lproj/ID_updater.xib
 		prefPane/en.lproj/InfoPlist.strings
 		prefPane/en.lproj/Localizable.strings
@@ -61,8 +68,8 @@ if( APPLE )
 		XCODE_ATTRIBUTE_WRAPPER_EXTENSION prefPane
 		MACOSX_BUNDLE_INFO_PLIST ${CMAKE_CURRENT_SOURCE_DIR}/prefPane/Info.plist.cmake
 	)
-	target_link_libraries( ${PROGNAME} ${XAR} ${OPENSSL_CRYPTO_LIBRARY}
-		"-framework Security -framework Cocoa -framework PreferencePanes -framework PCSC"
+	target_link_libraries( ${PROGNAME} ${XAR}
+		"-framework Security -framework Cocoa -framework PreferencePanes -framework PCSC -framework Security"
 	)
 	add_custom_command( TARGET ${PROGNAME} POST_BUILD
 		COMMAND cp $<TARGET_FILE:id-updater-helper> $<TARGET_FILE_DIR:${PROGNAME}>/../Resources )
@@ -86,12 +93,9 @@ if( APPLE )
 		COMMAND zip -r updater-dbg_${VERSION}$ENV{VER_SUFFIX}.zip ${PROGNAME}.dSYM
 	)
 else()
-	set_ex( CONFIG_URL "$ENV{CONFIG_URL}" "https://installer.id.ee/media/updater/config.json" CACHE STRING "Set Config URL" )
 	file( DOWNLOAD ${CONFIG_URL} ${CMAKE_CURRENT_BINARY_DIR}/config.json )
 	string( REPLACE ".json" ".rsa" RSA_URL ${CONFIG_URL} )
 	file( DOWNLOAD ${RSA_URL} ${CMAKE_CURRENT_BINARY_DIR}/config.rsa )
-	string( REPLACE ".json" ".pub" PUB_URL ${CONFIG_URL} )
-	file( DOWNLOAD ${PUB_URL} ${CMAKE_CURRENT_BINARY_DIR}/config.pub )
 	configure_file( common/config.qrc config.qrc COPYONLY )
 
 	cmake_policy( SET CMP0020 NEW )

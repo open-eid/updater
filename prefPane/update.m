@@ -21,16 +21,20 @@
 
 #import <PCSC/winscard.h>
 
+#include <Security/Security.h>
+
 #include <sys/utsname.h>
 
-#ifndef UPDATER_URL
-#define UPDATER_URL "http://ftp.id.eesti.ee/pub/id/mac/"
-#endif
+#include "config.h"
+
 #define UPDATER_ID @"ee.ria.id-updater"
 
-@interface Update () <NSXMLParserDelegate> {
-    NSMutableString *message;
+@interface Update() <NSURLConnectionDataDelegate> {
+    NSMutableURLRequest *request;
+    NSString *signature;
+    NSMutableData *receivedData;
 }
+
 @end
 
 @implementation Update
@@ -38,24 +42,16 @@
 - (id)initWithDelegate:(id <UpdateDelegate>)delegate {
     if (self = [super init]) {
         self.delegate = delegate;
-        self.baseversion = [self versionInfo:@"ee.ria.estonianidcard"];
+        self.baseversion = [self versionInfo:@"ee.ria.open-eid"];
         self.clientversion = [self versionInfo:@"ee.ria.qdigidocclient"];
         self.utilityversion = [self versionInfo:@"ee.ria.qesteidutil"];
-        self.pluginversion = [self versionInfo:@"ee.ria.esteidfirefoxplugin"];
+        self.pluginversion = [self versionInfo:@"ee.ria.firefox-token-signing"];
         self.chromepluginversion = [self versionInfo:@"ee.ria.chrome-token-signing"];
         self.pkcs11version = [self versionInfo:@"ee.ria.esteid-pkcs11"];
         self.tokendversion = [self versionInfo:@"ee.ria.esteid-tokend"];
-        self.loaderversion = [self versionInfo:@"ee.ria.esteidpkcs11loader"];
-        NSDictionary *prefs = [[NSUserDefaults standardUserDefaults] persistentDomainForName:UPDATER_ID];
-        self.url = [prefs objectForKey:@"Url"] != nil ? [prefs objectForKey:@"Url"] : @UPDATER_URL;
-        NSLog(@"Url: %@", self.url);
+        self.loaderversion = [self versionInfo:@"ee.ria.firefox-pkcs11-loader"];
     }
     return self;
-}
-
-- (NSString*)versionInfo:(NSString *)pkg {
-    NSDictionary *list = [NSDictionary dictionaryWithContentsOfFile:[NSString stringWithFormat:@"/var/db/receipts/%@.plist", pkg]];
-    return list ? [list objectForKey:@"PackageVersion"] : [NSString string];
 }
 
 - (void)request:(BOOL)manual {
@@ -79,8 +75,10 @@
     free(readers);
     SCardReleaseContext(ctx);
 
-    NSURL *url = [NSURL URLWithString:[NSString stringWithFormat:@"%@/products.xml", self.url]];
-    NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:url cachePolicy:NSURLRequestUseProtocolCachePolicy timeoutInterval:10];
+    NSString *url = @CONFIG_URL;
+    url = [url.stringByDeletingLastPathComponent stringByAppendingString:@"/config.rsa"];
+    request = [NSMutableURLRequest requestWithURL:[NSURL URLWithString:url]
+        cachePolicy:NSURLRequestReloadIgnoringLocalCacheData timeoutInterval:10];
     NSMutableArray *agent = [NSMutableArray arrayWithObject:[NSString stringWithFormat:@"id-updater/%@", self.baseversion]];
     if (self.clientversion) {
         [agent addObject:[NSString stringWithFormat:@"qdigidocclient/%@", self.clientversion]];
@@ -95,42 +93,135 @@
         [agent addObject:@"manual"];
     }
     [request addValue:[agent componentsJoinedByString:@" "] forHTTPHeaderField:@"User-Agent"];
-    [NSURLConnection sendAsynchronousRequest:request queue:[NSOperationQueue new]
-                           completionHandler:^(NSURLResponse *response, NSData *data, NSError *error)
-    {
-        if (error == nil && data != nil) {
-            NSXMLParser *parser = [[NSXMLParser alloc] initWithData:data];
-            parser.delegate = self;
-            [parser parse];
+    self->receivedData = [NSMutableData data];
+    [NSURLConnection connectionWithRequest:request delegate:self];
+}
+
+- (BOOL)verify
+{
+#if 0
+    NSString *test1 = @
+    "-----BEGIN RSA PUBLIC KEY-----\n"
+    "MIIBCgKCAQEAzRQ9uWWPQ3mcboFG/NpwlVCupelL34g6JEzw5FmfwU87azeSg80u\n"
+    "HAeQ340DijIB/OMk6eF3i65nl4moKUv8MJzrcBMYLKshQDR2U3cmxHDjdM+2ta+5\n"
+    "71p1WfU0jWNDujHZFNZOu25fkKiHmtLLx0PzastQtkKZ23bXRRFD0pvJKBceWxG/\n"
+    "JBPaxLEClxivYFEuAYt2QYtVenKYtitXhmflXqda4QJRwtfxQaeZymHGaxn12Ilc\n"
+    "Bt6ZSAIE4DDXOL2Mwg/qR3x6UWg989OMfTGau7jiv+vaO92eC452VJIu/iNGXtrA\n"
+    "iKnuGiERYeTupQIcV89wBIcQjqZIYH6fxQIDAQAB\r\n"
+    "-----END RSA PUBLIC KEY-----\n";
+    SecExternalFormat externalFormat = kSecFormatPEMSequence;
+    //SecExternalFormat externalFormat = kSecFormatOpenSSL;
+    //SecExternalItemType itemType = kSecItemTypeCertificate;
+    SecExternalItemType itemType = kSecItemTypePublicKey;
+    //SecExternalItemType itemType = kSecItemTypeAggregate;
+    SecItemImportExportKeyParameters keyParams = {
+        .version = SEC_KEY_IMPORT_EXPORT_PARAMS_VERSION,
+        .flags = kSecKeyImportOnlyOne | kSecItemPemArmour,
+        .passphrase = NULL,
+        .alertTitle = NULL,
+        .alertPrompt = NULL,
+        .accessRef = NULL,
+        .keyUsage = NULL,//(__bridge CFArrayRef)@[(id)kSecAttrCanVerify],
+        .keyAttributes = NULL, /* See below for rant */
+    };
+    CFDataRef pem = (__bridge CFDataRef)([test1 dataUsingEncoding:NSASCIIStringEncoding]);//CFDataCreate(0, config_pub, config_pub_len);
+    CFShow(pem);
+    CFArrayRef temparray = NULL;
+    OSStatus oserr = SecItemImport(pem, NULL, &externalFormat, &itemType, 0, NULL, NULL, &temparray);
+    CFRelease(pem);
+    if (oserr) {
+        fprintf(stderr, "SecItemImport failed (oserr=%d)\n", oserr);
+        CFShow(temparray);
+        return false;
+    }
+    
+    SecKeyRef publickey = (SecKeyRef)CFArrayGetValueAtIndex(temparray, 0);
+#endif
+
+    NSString *test = [NSString stringWithUTF8String:(char*)config_pub];
+    test = [test stringByReplacingOccurrencesOfString:@"-----BEGIN RSA PUBLIC KEY-----" withString:@""];
+    test = [test stringByReplacingOccurrencesOfString:@"-----END RSA PUBLIC KEY-----" withString:@""];
+    test = [NSString stringWithFormat:@"%@%@", @"MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8A", test];
+    NSData *keyData = [[NSData alloc] initWithBase64Encoding:test];
+    CFMutableDictionaryRef parameters = CFDictionaryCreateMutable(kCFAllocatorDefault, 0, NULL, NULL);
+    CFDictionarySetValue(parameters, kSecAttrKeyType, kSecAttrKeyTypeRSA);
+    CFDictionarySetValue(parameters, kSecAttrKeyClass, kSecAttrKeyClassPublic);
+    CFErrorRef error = 0;
+    SecKeyRef key = SecKeyCreateFromData(parameters, (__bridge CFDataRef)keyData, &error);
+    if (error) { CFShow(error); return false; }
+    SecTransformRef verifier = SecVerifyTransformCreate(key, (__bridge CFDataRef)[[NSData alloc] initWithBase64Encoding:signature], &error);
+    if (error) { CFShow(error); return false; }
+    SecTransformSetAttribute(verifier, kSecTransformInputAttributeName, (__bridge CFDataRef)self->receivedData, &error);
+    if (error) { CFShow(error); return false; }
+    SecTransformSetAttribute(verifier, kSecDigestTypeAttribute, kSecDigestSHA2, &error);
+    if (error) { CFShow(error); return false; }
+    SecTransformSetAttribute(verifier, kSecDigestLengthAttribute, (__bridge CFNumberRef)@256, &error);
+    if (error) { CFShow(error); return false; }
+    CFTypeRef result = SecTransformExecute(verifier, &error);
+    if (error) { CFShow(error); return false; }
+    return result == kCFBooleanTrue;
+}
+
+- (NSString*)versionInfo:(NSString *)pkg {
+    NSDictionary *list = [NSDictionary dictionaryWithContentsOfFile:[NSString stringWithFormat:@"/var/db/receipts/%@.plist", pkg]];
+    return list ? [list objectForKey:@"PackageVersion"] : [NSString string];
+}
+
+#pragma mark - NSURLConnectionDataDelegate
+
+- (void)connectionDidFinishLoading:(NSURLConnection *)connection
+{
+    NSString *file = request.URL.absoluteString.lastPathComponent;
+    if ([file isEqualToString:@"config.json"]) {
+        if (![self verify]) {
+            [self.delegate didFinish:[NSError errorWithDomain:@"ee.ria.ID-updater" code:InvalidSignature userInfo:nil]];
+            return;
+        }
+        NSError *error = nil;
+        NSDictionary *json = [NSJSONSerialization JSONObjectWithData:self->receivedData options:0 error:&error];
+        if (!json) {
+            [self.delegate didFinish:error];
+            return;
+        }
+
+        NSDateFormatter *df = [[NSDateFormatter alloc] init];
+        df.dateFormat = @"yyyyMMddHHmmss'Z'";
+        df.timeZone = [NSTimeZone timeZoneForSecondsFromGMT:0];
+        if ([NSDate.date compare:[df dateFromString:json[@"META-INF"][@"DATE"]]] == NSOrderedAscending) {
+            [self.delegate didFinish:[NSError errorWithDomain:@"ee.ria.ID-updater" code:DateLaterThanCurrent userInfo:nil]];
+            return;
+        }
+
+        self.centralConfig = json;
+        NSString *message = json[@"OSX-MESSAGE"];
+        NSString *version = json[@"OSX-LATEST"];
+        if (message) {
+            NSLog(@"Message: %@", message);
+            [self.delegate message:message];
+        }
+        else if (version) {
+            NSLog(@"Remote version: %@", version);
+            if ([version compare:self.baseversion options:NSNumericSearch] > 0) {
+                [self.delegate updateAvailable:version filename:json[@"OSX-DOWNLOAD"]];
+            }
         }
         [self.delegate didFinish:error];
-    }];
-}
-
-#pragma mark - XML parser delegate
-
-- (void)parser:(NSXMLParser *)parser didStartElement:(NSString *)elementName namespaceURI:(NSString *)namespaceURI qualifiedName:(NSString *)qualifiedName attributes:(NSDictionary *)attributeDict {
-    if ([elementName isEqualToString:@"product"]) {
-        NSLog(@"Remote version: %@", [attributeDict objectForKey:@"ProductVersion"]);
-        if ([(NSString*)[attributeDict objectForKey:@"ProductVersion"] compare:self.baseversion options:NSNumericSearch] > 0) {
-            [self.delegate updateAvailable:[attributeDict objectForKey:@"ProductVersion"] filename:[attributeDict objectForKey:@"filename"]];
-        }
-    } else if ([elementName isEqualToString:@"message"]) {
-        message = [NSMutableString new];
+    } else if ([file isEqualToString:@"config.rsa"]) {
+        signature = [[NSString alloc] initWithData:self->receivedData encoding:NSASCIIStringEncoding];
+        request.URL = [NSURL URLWithString:@CONFIG_URL];
+        self->receivedData = [NSMutableData data];
+        [NSURLConnection connectionWithRequest:request delegate:self];
     }
 }
 
-- (void)parser:(NSXMLParser *)parser foundCharacters:(NSString *)string {
-    if (message) {
-        [message appendString:string];
-    }
+- (void)connection:(NSURLConnection *)connection didFailWithError:(NSError *)error
+{
+    [self.delegate didFinish:error];
 }
 
-- (void)parser:(NSXMLParser *)parser didEndElement:(NSString *)elementName namespaceURI:(NSString *)namespaceURI qualifiedName:(NSString *)qName {
-    if ([elementName isEqualToString:@"message"]) {
-        NSLog(@"Message: %@", message);
-        [self.delegate message:message];
-    }
+- (void)connection:(NSURLConnection *)connection didReceiveData:(nonnull NSData *)data
+{
+    [self->receivedData appendData:data];
 }
 
 @end

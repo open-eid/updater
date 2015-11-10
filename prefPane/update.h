@@ -26,6 +26,12 @@
 @end
 
 @interface Update : NSObject
+
+enum {
+    InvalidSignature = 1000,
+    DateLaterThanCurrent = 1001,
+};
+
 - (id)initWithDelegate:(id <UpdateDelegate>)delegate;
 - (void)request:(BOOL)manual;
 
@@ -37,6 +43,6 @@
 @property(retain) NSString *pkcs11version;
 @property(retain) NSString *tokendversion;
 @property(retain) NSString *loaderversion;
-@property(retain) NSString *url;
+@property(retain) NSDictionary *centralConfig;
 @property(assign) id <UpdateDelegate> delegate;
 @end
