@@ -19,7 +19,7 @@
 
 #import "update.h"
 
-#define PATH "/Library/LaunchAgents/ee.ria.id-updater.plist"
+#define UPDATER_ID @"ee.ria.id-updater"
 
 @interface Updater : Update <UpdateDelegate> {
     NSString *path;
@@ -47,12 +47,12 @@
 
 - (void)message:(NSString *)message {
     NSLog(@"%@", message);
-    [NSTask launchedTaskWithLaunchPath:@"/usr/bin/open" arguments:@[path]];
+    [[NSTask launchedTaskWithLaunchPath:@"/usr/bin/open" arguments:@[path]] waitUntilExit];
 }
 
 - (void)updateAvailable:(NSString *)available filename:(NSString *)filename {
     NSLog(@"Update available %@ %@", available, filename);
-    [NSTask launchedTaskWithLaunchPath:@"/usr/bin/open" arguments:@[path]];
+    [[NSTask launchedTaskWithLaunchPath:@"/usr/bin/open" arguments:@[path]] waitUntilExit];
 }
 @end
 
@@ -70,10 +70,12 @@ int main(int argc, const char * argv[])
             return 0;
         }
 
+        NSString *PATH = [@"~/Library/LaunchAgents/ee.ria.id-updater.plist" stringByStandardizingPath];
+        [[NSFileManager defaultManager] createDirectoryAtPath:[@"~/Library/LaunchAgents" stringByStandardizingPath] attributes:nil];
         if (strcmp(argv[1], "-remove") == 0) {
-            system("/bin/launchctl unload -w " PATH);
+            [[NSTask launchedTaskWithLaunchPath:@"/bin/launchctl" arguments:@[@"unload", @"-w", PATH]] waitUntilExit];
             NSError *error;
-            [[NSFileManager defaultManager] removeItemAtPath:@PATH error:&error];
+            [[NSFileManager defaultManager] removeItemAtPath:PATH error:&error];
             return 0;
         }
 
@@ -86,15 +88,15 @@ int main(int argc, const char * argv[])
         NSNumber *day = [NSNumber numberWithInteger:[components day]];
         NSDictionary *settings = nil;
         if (strcmp(argv[1], "-daily") == 0) {
-            settings = @{@"Label": @"id updater task",
+            settings = @{@"Label": UPDATER_ID,
                          @"ProgramArguments": @[[NSString stringWithUTF8String:argv[0]], @"-task"],
                          @"StartCalendarInterval": @{@"Hour": hour, @"Minute": minute}};
         } else if (strcmp(argv[1], "-weekly") == 0) {
-            settings = @{@"Label": @"id updater task",
+            settings = @{@"Label": UPDATER_ID,
                          @"ProgramArguments": @[[NSString stringWithUTF8String:argv[0]], @"-task"],
                          @"StartCalendarInterval": @{@"Hour": hour, @"Minute": minute, @"Weekday": weekday}};
         } else if (strcmp(argv[1], "-monthly") == 0) {
-            settings = @{@"Label": @"id updater task",
+            settings = @{@"Label": UPDATER_ID,
                          @"ProgramArguments": @[[NSString stringWithUTF8String:argv[0]], @"-task"],
                          @"StartCalendarInterval": @{@"Hour": hour, @"Minute": minute, @"Day": day}};
         } else {
@@ -102,8 +104,8 @@ int main(int argc, const char * argv[])
         }
         NSString *errorstr;
         NSData *data = [NSPropertyListSerialization dataFromPropertyList:settings format:NSPropertyListXMLFormat_v1_0 errorDescription:&errorstr];
-        [data writeToFile:@PATH atomically:YES];
-        system("/bin/launchctl load -w " PATH);
+        [data writeToFile:PATH atomically:YES];
+        [[NSTask launchedTaskWithLaunchPath:@"/bin/launchctl" arguments:@[@"load", @"-w", PATH]] waitUntilExit];
     }
     return 0;
 }

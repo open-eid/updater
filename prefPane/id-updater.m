@@ -20,17 +20,14 @@
 #import "update.h"
 
 #import <PreferencePanes/PreferencePanes.h>
-#import <SecurityInterface/SFAuthorizationView.h>
 
 #include <xar/xar.h>
 
-#define PATH "/Library/LaunchAgents/ee.ria.id-updater.plist"
 #undef NSLocalizedString
 #define NSLocalizedString(key, comment) \
 [bundlelang localizedStringForKey:(key) value:@"" table:nil]
 
 @interface ID_updater : NSPreferencePane <UpdateDelegate, NSURLConnectionDataDelegate, NSUserNotificationCenterDelegate> {
-    IBOutlet SFAuthorizationView *authView;
     IBOutlet NSPopUpButton *changeSchedule;
     IBOutlet NSTextField *changeScheduleLabel;
     IBOutlet NSTextField *status;
@@ -58,13 +55,7 @@
 @implementation ID_updater
 
 - (void)mainViewDidLoad {
-    AuthorizationItem items = {kAuthorizationRightExecute, 0, NULL, 0};
-    AuthorizationRights rights = {1, &items};
-    authView.authorizationRights = &rights;
-    authView.delegate = self;
-    changeSchedule.enabled = self.isUnlocked;
-
-    NSDictionary *schedule = [NSDictionary dictionaryWithContentsOfFile:@PATH];
+    NSDictionary *schedule = [NSDictionary dictionaryWithContentsOfFile:[@"~/Library/LaunchAgents/ee.ria.id-updater.plist" stringByStandardizingPath]];
     if (!schedule) {
         [changeSchedule selectItemAtIndex:3];
     } else if ([(NSDictionary*)[schedule objectForKey:@"StartCalendarInterval"] objectForKey:@"Weekday"]) {
@@ -109,16 +100,6 @@
                         NSLocalizedString(@"Tokend", nil), update.tokendversion,
                         NSLocalizedString(@"PKCS11 loader", nil), update.loaderversion];
     [update request:YES];
-}
-
-#pragma mark - Auhtorization delegate
-
-- (void)authorizationViewDidAuthorize:(SFAuthorizationView *)view {
-    changeSchedule.enabled = self.isUnlocked;
-}
-
-- (void)authorizationViewDidDeauthorize:(SFAuthorizationView *)view {
-    changeSchedule.enabled = self.isUnlocked;
 }
 
 #pragma mark - UserNotificationCenter Delegate
@@ -276,21 +257,16 @@
 
 #pragma mark - base implementation
 
-- (BOOL)isUnlocked {
-    return authView.authorizationState == SFAuthorizationViewUnlockedState;
-}
-
 - (IBAction)schedule:(id)sender {
-    const char *args[2] = { nil, nil };
+    NSString *arg;
     switch (changeSchedule.indexOfSelectedItem) {
-        case 0: args[0] = "-daily"; break;
-        case 1: args[0] = "-weekly"; break;
-        case 2: args[0] = "-monthly"; break;
-        case 3: args[0] = "-remove"; break;
+        case 0: arg = @"-daily"; break;
+        case 1: arg = @"-weekly"; break;
+        case 2: arg = @"-monthly"; break;
+        case 3: arg = @"-remove"; break;
         default: break;
     }
-    NSString *path = [self.bundle pathForResource:@"id-updater-helper" ofType:nil];
-    AuthorizationExecuteWithPrivileges(authView.authorization.authorizationRef, path.UTF8String, kAuthorizationFlagDefaults, (char *const *)args, nil);
+    [[NSTask launchedTaskWithLaunchPath:[self.bundle pathForResource:@"id-updater-helper" ofType:nil] arguments:@[arg]] waitUntilExit];
 }
 
 - (IBAction)installUpdate:(id)sender {
