@@ -44,19 +44,22 @@
 "Once a week" = "Kord nädalas";
 
 /* No comment provided by engineer. */
-"Safari/Firefox browser plugin" = "Safari/Firefox browser plugin";
-
-/* No comment provided by engineer. */
 "Chrome browser plugin" = "Chrome browser plugin";
 
 /* No comment provided by engineer. */
 "DigiDoc3 Client" = "DigiDoc3 Client";
 
 /* No comment provided by engineer. */
+"Failed to copy public key" = "Failed to copy public key";
+
+/* No comment provided by engineer. */
 "Failed to copy signature" = "Failed to copy signature";
 
 /* No comment provided by engineer. */
 "Failed to open xar archive: %@" = "Failed to open xar archive: %@";
+
+/* No comment provided by engineer. */
+"Failed to parse certificate" = "Failed to parse certificate";
 
 /* No comment provided by engineer. */
 "Failed to verify signature" = "Failed to verify signature";
@@ -75,6 +78,12 @@
 
 /* No comment provided by engineer. */
 "PKCS11 loader" = "PKCS11 loader";
+
+/* No comment provided by engineer. */
+"Safari/Firefox browser plugin" = "Safari/Firefox browser plugin";
+
+/* No comment provided by engineer. */
+"The configuration file located on the server cannot be validated." = "Serveris olev konfiguratsioonifail ei valideeru.";
 
 /* No comment provided by engineer. */
 "Tokend" = "Tokend";

@@ -138,11 +138,11 @@
     SecKeyRef publickey = (SecKeyRef)CFArrayGetValueAtIndex(temparray, 0);
 #endif
 
-    NSString *test = [NSString stringWithUTF8String:(char*)config_pub];
-    test = [test stringByReplacingOccurrencesOfString:@"-----BEGIN RSA PUBLIC KEY-----" withString:@""];
-    test = [test stringByReplacingOccurrencesOfString:@"-----END RSA PUBLIC KEY-----" withString:@""];
-    test = [NSString stringWithFormat:@"%@%@", @"MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8A", test];
-    NSData *keyData = [[NSData alloc] initWithBase64Encoding:test];
+    NSString *pem = [NSString stringWithUTF8String:(char*)config_pub];
+    pem = [pem stringByReplacingOccurrencesOfString:@"-----BEGIN RSA PUBLIC KEY-----" withString:@""];
+    pem = [pem stringByReplacingOccurrencesOfString:@"-----END RSA PUBLIC KEY-----" withString:@""];
+    pem = [NSString stringWithFormat:@"%@%@", @"MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8A", pem];
+    NSData *keyData = [[NSData alloc] initWithBase64Encoding:pem];
     CFMutableDictionaryRef parameters = CFDictionaryCreateMutable(kCFAllocatorDefault, 0, NULL, NULL);
     CFDictionarySetValue(parameters, kSecAttrKeyType, kSecAttrKeyTypeRSA);
     CFDictionarySetValue(parameters, kSecAttrKeyClass, kSecAttrKeyClassPublic);
@@ -168,6 +168,16 @@
 }
 
 #pragma mark - NSURLConnectionDataDelegate
+
+- (void)connection:(NSURLConnection *)connection didReceiveResponse:(NSURLResponse *)response
+{
+    NSHTTPURLResponse *http = (NSHTTPURLResponse*)response;
+    if (http.statusCode != 200) {
+        [self.delegate didFinish:[NSError errorWithDomain:@"ee.ria.ID-updater" code:FileNotFound userInfo:nil]];
+        [connection cancel];
+        return;
+    }
+}
 
 - (void)connectionDidFinishLoading:(NSURLConnection *)connection
 {

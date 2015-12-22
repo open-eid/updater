@@ -116,7 +116,19 @@
 
 - (void)didFinish:(NSError *)error {
     if (error) {
-        status.stringValue = [error localizedDescription];
+        switch (error.code) {
+            case InvalidSignature:
+                status.stringValue = NSLocalizedString(@"The configuration file located on the server cannot be validated.", nil);
+                break;
+                
+            case FileNotFound:
+                status.stringValue = NSLocalizedString(@"File not found", nil);
+                break;
+
+            default:
+                status.stringValue = [error localizedDescription];
+                break;
+        }
     }
 }
 

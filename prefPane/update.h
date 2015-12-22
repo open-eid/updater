@@ -30,6 +30,7 @@
 enum {
     InvalidSignature = 1000,
     DateLaterThanCurrent = 1001,
+    FileNotFound = 1002,
 };
 
 - (id)initWithDelegate:(id <UpdateDelegate>)delegate;
