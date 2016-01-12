@@ -7,7 +7,7 @@ set(CMAKE_FIND_ROOT_PATH ${CMAKE_OSX_SYSROOT})
 include( VersionInfo )
 set_app_name( PROGNAME ID-updater )
 
-set_ex( CONFIG_URL "$ENV{CONFIG_URL}" "https://installer.id.ee/media/updater/config.json" CACHE STRING "Set Config URL" )
+set_ex( CONFIG_URL "$ENV{CONFIG_URL}" "https://id.eesti.ee/config.json" CACHE STRING "Set Config URL" )
 add_definitions( -DCONFIG_URL="${CONFIG_URL}" )
 string( REPLACE ".json" ".pub" PUB_URL ${CONFIG_URL} )
 file( DOWNLOAD ${PUB_URL} ${CMAKE_CURRENT_BINARY_DIR}/config.pub )
