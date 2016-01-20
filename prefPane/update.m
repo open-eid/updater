@@ -155,7 +155,7 @@
     if (error) { CFShow(error); return false; }
     SecTransformSetAttribute(verifier, kSecDigestTypeAttribute, kSecDigestSHA2, &error);
     if (error) { CFShow(error); return false; }
-    SecTransformSetAttribute(verifier, kSecDigestLengthAttribute, (__bridge CFNumberRef)@256, &error);
+    SecTransformSetAttribute(verifier, kSecDigestLengthAttribute, (__bridge CFNumberRef)@512, &error);
     if (error) { CFShow(error); return false; }
     CFTypeRef result = SecTransformExecute(verifier, &error);
     if (error) { CFShow(error); return false; }
