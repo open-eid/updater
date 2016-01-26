@@ -13,11 +13,11 @@ string( REPLACE ".json" ".pub" PUB_URL ${CONFIG_URL} )
 file( DOWNLOAD ${PUB_URL} ${CMAKE_CURRENT_BINARY_DIR}/config.pub )
 
 if( APPLE )
-    add_custom_command( OUTPUT config.h
-        COMMAND xxd -i config.pub config.h
-        COMMENT "Generating config.h"
-    )
-    include_directories( ${CMAKE_CURRENT_BINARY_DIR} )
+	add_custom_command( OUTPUT config.h
+		COMMAND xxd -i config.pub config.h
+		COMMENT "Generating config.h"
+	)
+	include_directories( ${CMAKE_CURRENT_BINARY_DIR} )
 	set_source_files_properties( prefPane/id-updater-helper.m prefPane/id-updater.m prefPane/update.m PROPERTIES LANGUAGE C )
 	add_executable( id-updater-helper prefPane/id-updater-helper.m prefPane/update.m config.h )
 	set_target_properties( id-updater-helper PROPERTIES
@@ -100,9 +100,9 @@ else()
 
 	cmake_policy( SET CMP0020 NEW )
 	find_package( OpenSSL REQUIRED )
-	find_package( Qt5Network REQUIRED )
-	find_package( Qt5Widgets REQUIRED )
-	find_package( Qt5LinguistTools REQUIRED )
+	find_package( Qt5Network REQUIRED HINTS ${QTSDK} )
+	find_package( Qt5Widgets REQUIRED HINTS ${QTSDK} )
+	find_package( Qt5LinguistTools REQUIRED HINTS ${QTSDK} )
 
 	include_directories( ${CMAKE_CURRENT_BINARY_DIR} common/qtsingleapplication/src ${OPENSSL_INCLUDE_DIR} )
 	add_subdirectory( common/qtsingleapplication )

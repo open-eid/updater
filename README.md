@@ -5,6 +5,7 @@
 
 ## Building
 [![Build Status](https://travis-ci.org/open-eid/updater.svg?branch=master)](https://travis-ci.org/open-eid/updater)
+[![Build Status](https://ci.appveyor.com/api/projects/status/github/open-eid/updater?branch=master&svg=true)](https://ci.appveyor.com/project/open-eid/updater)
         
 ### OSX
 
