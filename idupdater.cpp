@@ -107,9 +107,8 @@ idupdater::idupdater( QObject *parent )
 	CPINFOEX CPInfoEx = { 0 };
 	if( GetCPInfoExW( GetConsoleCP(), 0, &CPInfoEx ) != 0 )
 		locale += " / " + QString( (QChar*)CPInfoEx.CodePageName );
-	QPCSC pcsc;
 	QString userAgent = QString( "%1/%2 (%3) Locale: %4 Devices: %5")
-		.arg(qApp->applicationName(), version, Common::applicationOs(), locale, pcsc.drivers().join("/"));
+		.arg(qApp->applicationName(), version, Common::applicationOs(), locale, QPCSC::instance().drivers().join("/"));
 	qDebug() << "User-Agent:" << userAgent;
 	request.setRawHeader( "User-Agent", userAgent.toUtf8() );
 	connect( this, &QNetworkAccessManager::finished, this, &idupdater::reply );
