@@ -76,15 +76,15 @@ if( APPLE )
 	install( DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/${PROGNAME}.prefPane DESTINATION /Library/PreferencePanes )
 
 	add_custom_target( codesign DEPENDS id-updater-helper
-		COMMAND codesign -f -s \"$$SIGNCERT\" $<TARGET_FILE_DIR:${PROGNAME}>/../Resources/id-updater-helper
-		COMMAND codesign -f -s \"$$SIGNCERT\" $<TARGET_FILE:${PROGNAME}>
+		COMMAND codesign -f -s \"$$SIGNER\" $<TARGET_FILE_DIR:${PROGNAME}>/../Resources/id-updater-helper
+		COMMAND codesign -f -s \"$$SIGNER\" $<TARGET_FILE:${PROGNAME}>
 	)
 	add_custom_target( pkgbuild DEPENDS codesign
 		COMMAND make install DESTDIR=install \;
 			chmod 755 install/Library/PreferencePanes/ID-updater.prefPane/Contents/Resources/id-updater-helper \;
 			pkgbuild
 			--root install
-			--sign \"$$INSTCERT\"
+			--sign \"$$SIGNER\"
 			updater_${VERSION}$ENV{VER_SUFFIX}.pkg
 	)
 	add_custom_target( zipdebug DEPENDS ${PROGNAME}
