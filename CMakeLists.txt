@@ -7,7 +7,8 @@ set(CMAKE_FIND_ROOT_PATH ${CMAKE_OSX_SYSROOT})
 include( VersionInfo )
 set_app_name( PROGNAME ID-updater )
 
-set_ex( CONFIG_URL "$ENV{CONFIG_URL}" "https://id.eesti.ee/config.json" CACHE STRING "Set Config URL" )
+set_env( CONFIG_URL "https://id.eesti.ee/config.json" CACHE STRING "Set Config URL" )
+set_env( SIGNCERT "" CACHE STRING "Common name of certificate to used sign binaries, empty skip signing" )
 add_definitions( -DCONFIG_URL="${CONFIG_URL}" )
 string( REPLACE ".json" ".pub" PUB_URL ${CONFIG_URL} )
 file( DOWNLOAD ${PUB_URL} ${CMAKE_CURRENT_BINARY_DIR}/config.pub )
@@ -34,7 +35,7 @@ if( APPLE )
 	find_library( XAR xar )
 	add_library( ${PROGNAME} MODULE
 		ID_updater.nib
-        config.h
+		config.h
 		prefPane/Base.lproj/ID_updater.xib
 		prefPane/en.lproj/InfoPlist.strings
 		prefPane/en.lproj/Localizable.strings
@@ -76,15 +77,16 @@ if( APPLE )
 	install( DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/${PROGNAME}.prefPane DESTINATION /Library/PreferencePanes )
 
 	add_custom_target( codesign DEPENDS id-updater-helper
-		COMMAND codesign -f -s \"$$SIGNER\" $<TARGET_FILE_DIR:${PROGNAME}>/../Resources/id-updater-helper
-		COMMAND codesign -f -s \"$$SIGNER\" $<TARGET_FILE:${PROGNAME}>
+		COMMAND codesign -f -s "Developer ID Application: ${SIGNCERT}"
+			$<TARGET_FILE_DIR:${PROGNAME}>/../Resources/id-updater-helper
+			$<TARGET_FILE:${PROGNAME}>
 	)
 	add_custom_target( pkgbuild DEPENDS codesign
 		COMMAND make install DESTDIR=install \;
 			chmod 755 install/Library/PreferencePanes/ID-updater.prefPane/Contents/Resources/id-updater-helper \;
 			pkgbuild
 			--root install
-			--sign \"$$SIGNER\"
+			--sign "Developer ID Installer: ${SIGNCERT}"
 			updater_${VERSION}$ENV{VER_SUFFIX}.pkg
 	)
 	add_custom_target( zipdebug DEPENDS ${PROGNAME}
