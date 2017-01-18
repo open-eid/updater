@@ -41,6 +41,10 @@
             <File Id="id_updater.exe" Source="$(var.updater_path)" KeyPath='yes'/>
             <RegistryValue Root="HKMU" Key="Software\[Manufacturer]\Open-EID"
                 Name="Installed" Value="[APPLICATIONFOLDER]" Type="string"/>
+<?if $(var.Platform) = x64 ?>
+            <RegistryValue Root="HKMU" Key="Software\Wow6432Node\[Manufacturer]\Open-EID"
+                Name="Installed" Value="[APPLICATIONFOLDER]" Type="string"/>
+<?endif ?>
 <?ifdef var.qt_path ?>
             <File Source="$(env.VCINSTALLDIR)\redist\$(var.Platform)\Microsoft.VC120.CRT\msvcp120.dll"/>
             <File Source="$(env.VCINSTALLDIR)\redist\$(var.Platform)\Microsoft.VC120.CRT\msvcr120.dll"/>
