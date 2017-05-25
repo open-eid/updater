@@ -135,7 +135,7 @@ bool ScheduledUpdateTask::configure(ScheduledUpdateTask::Interval interval)
 		if( FAILED(triggerCollection->Create( TASK_TRIGGER_MONTHLY, &trigger )) ||
 			FAILED(trigger->QueryInterface( IID_PPV_ARGS(&monthlyTrigger) )) ||
 			FAILED(monthlyTrigger->put_StartBoundary( _bstr_t(t.toString("yyyy-MM-ddTHH:mm:ss").utf16()) )) ||
-			FAILED(monthlyTrigger->put_DaysOfMonth( t.date().day() )) )
+			FAILED(monthlyTrigger->put_DaysOfMonth( 1 << t.date().day() - 1 )) )
 			return false;
 		break;
 	}
