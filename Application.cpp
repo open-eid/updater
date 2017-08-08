@@ -77,7 +77,7 @@ Application::Application( int &argc, char **argv )
 	setApplicationName( APP );
 	setApplicationVersion( QString( "%1.%2.%3.%4" )
 		.arg( MAJOR_VER ).arg( MINOR_VER ).arg( RELEASE_VER ).arg( BUILD_VER ) );
-	setOrganizationDomain( DOMAINURL );
+	setOrganizationDomain( "ria.ee" );
 	setOrganizationName( ORG );
 	QNetworkProxyFactory::setUseSystemConfiguration(true);
 }
