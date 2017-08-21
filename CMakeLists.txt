@@ -105,11 +105,8 @@ else()
 	file( DOWNLOAD ${RSA_URL} ${CMAKE_CURRENT_BINARY_DIR}/config.rsa )
 	configure_file( common/config.qrc config.qrc COPYONLY )
 
-	cmake_policy( SET CMP0020 NEW )
 	find_package( OpenSSL REQUIRED )
-	find_package( Qt5Network REQUIRED HINTS ${QTSDK} )
-	find_package( Qt5Widgets REQUIRED HINTS ${QTSDK} )
-	find_package( Qt5LinguistTools REQUIRED HINTS ${QTSDK} )
+	find_package( Qt5 COMPONENTS Core Widgets Network LinguistTools REQUIRED )
 
 	include_directories( ${CMAKE_CURRENT_BINARY_DIR} common/qtsingleapplication/src ${OPENSSL_INCLUDE_DIR} )
 	add_subdirectory( common/qtsingleapplication )
@@ -155,6 +152,7 @@ else()
 	add_custom_target(installer DEPENDS ${PROGNAME}
 		COMMAND "$ENV{WIX}bin\\candle.exe" -nologo -arch ${PLATFORM} -dPlatform=${PLATFORM}
 			-dMSI_VERSION=${VERSION} ${CANDLE_EXTRA} -dqt_path=${_qt5Core_install_prefix}
+			-dqtconf=${CMAKE_SOURCE_DIR}/qt.conf
 			-dupdater_path=$<TARGET_FILE:${PROGNAME}> ${CMAKE_SOURCE_DIR}/idupdater.wxs
 			${CMAKE_SOURCE_DIR}/cmake/modules/WelcomeDlg2.wxs ${CMAKE_SOURCE_DIR}/cmake/modules/WixUI_Minimal2.wxs
 		COMMAND "$ENV{WIX}bin\\light.exe" -nologo -o "${MSI_FILE}.msi" -ext WixUIExtension
