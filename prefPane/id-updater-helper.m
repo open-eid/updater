@@ -65,13 +65,13 @@ int main(int argc, const char * argv[])
 
     @autoreleasepool {
         if (strcmp(argv[1], "-task") == 0) {
-            [[Updater alloc] initWithPath:[[NSString stringWithFormat:@"%s/../../..", argv[0]] stringByStandardizingPath]];
+            Updater *updater __attribute__((unused)) = [[Updater alloc] initWithPath:[[NSString stringWithFormat:@"%s/../../..", argv[0]] stringByStandardizingPath]];
             [NSRunLoop.mainRunLoop run];
             return 0;
         }
 
         NSString *PATH = [@"~/Library/LaunchAgents/ee.ria.id-updater.plist" stringByStandardizingPath];
-        [[NSFileManager defaultManager] createDirectoryAtPath:[@"~/Library/LaunchAgents" stringByStandardizingPath] attributes:nil];
+        [NSFileManager.defaultManager createDirectoryAtPath:[@"~/Library/LaunchAgents" stringByStandardizingPath] withIntermediateDirectories:YES attributes:nil error:nil];
         if (strcmp(argv[1], "-remove") == 0) {
             [[NSTask launchedTaskWithLaunchPath:@"/bin/launchctl" arguments:@[@"unload", @"-w", PATH]] waitUntilExit];
             NSError *error;
