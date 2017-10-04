@@ -91,13 +91,12 @@
     [changelogurl addAttribute:NSLinkAttributeName value:[changelogurl string] range:NSMakeRange(0, [changelogurl length])];
     [[changelog textStorage] setAttributedString:changelogurl];
 
-    info.stringValue = [NSString stringWithFormat:@"%@ (%@)\n%@ (%@)\n%@ (%@)\n%@ (%@)\n%@ (%@)\n%@ (%@)\n%@ (%@)",
+    info.stringValue = [NSString stringWithFormat:@"%@ (%@)\n%@ (%@)\n%@ (%@)\n%@ (%@)\n%@ (%@)\n%@ (%@)",
                         NSLocalizedString(@"DigiDoc3 Client", nil), update.clientversion,
                         NSLocalizedString(@"ID-Card Utility", nil), update.utilityversion,
                         NSLocalizedString(@"Safari/Firefox browser plugin", nil), update.pluginversion,
                         NSLocalizedString(@"Chrome browser plugin", nil), update.chromepluginversion,
-                        NSLocalizedString(@"PKCS11", nil), update.pkcs11version,
-                        NSLocalizedString(@"Tokend", nil), update.tokendversion,
+                        NSLocalizedString(@"OpenSC", nil), update.pkcs11version,
                         NSLocalizedString(@"PKCS11 loader", nil), update.loaderversion];
     [update request:YES];
 }
