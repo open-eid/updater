@@ -42,7 +42,6 @@ enum {
 @property(retain) NSString *pluginversion;
 @property(retain) NSString *chromepluginversion;
 @property(retain) NSString *pkcs11version;
-@property(retain) NSString *tokendversion;
 @property(retain) NSString *loaderversion;
 @property(retain) NSDictionary *centralConfig;
 @property(assign) id <UpdateDelegate> delegate;

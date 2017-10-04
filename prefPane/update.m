@@ -47,8 +47,7 @@
         self.utilityversion = [self versionInfo:@"ee.ria.qesteidutil"];
         self.pluginversion = [self versionInfo:@"ee.ria.firefox-token-signing"];
         self.chromepluginversion = [self versionInfo:@"ee.ria.chrome-token-signing"];
-        self.pkcs11version = [self versionInfo:@"ee.ria.esteid-pkcs11"];
-        self.tokendversion = [self versionInfo:@"ee.ria.esteid-tokend"];
+        self.pkcs11version = [self versionInfo:@"org.opensc-project.mac"];
         self.loaderversion = [self versionInfo:@"ee.ria.firefox-pkcs11-loader"];
     }
     return self;
