@@ -1,9 +1,9 @@
 cmake_minimum_required(VERSION 3.0)
 if(POLICY CMP0043)
-        cmake_policy(SET CMP0043 NEW)
+	cmake_policy(SET CMP0043 NEW)
 endif()
 if(POLICY CMP0063)
-        cmake_policy(SET CMP0063 NEW)
+	cmake_policy(SET CMP0063 NEW)
 endif()
 project(id-updater VERSION 3.12.2)
 
@@ -87,12 +87,9 @@ if( APPLE )
 			$<TARGET_FILE:${PROGNAME}>
 	)
 	add_custom_target( pkgbuild DEPENDS codesign
-		COMMAND make install DESTDIR=install \;
-			chmod 755 install/Library/PreferencePanes/ID-updater.prefPane/Contents/Resources/id-updater-helper \;
-			pkgbuild
-			--root install
-			--sign "Developer ID Installer: ${SIGNCERT}"
-			updater_${VERSION}$ENV{VER_SUFFIX}.pkg
+		COMMAND make install DESTDIR=install
+		COMMAND chmod 755 install/Library/PreferencePanes/ID-updater.prefPane/Contents/Resources/id-updater-helper
+		COMMAND pkgbuild --root install --sign "Developer ID Installer: ${SIGNCERT}" updater_${VERSION}$ENV{VER_SUFFIX}.pkg
 	)
 	add_custom_target( zipdebug DEPENDS ${PROGNAME}
 		COMMAND dsymutil -o ${PROGNAME}.dSYM $<TARGET_FILE:${PROGNAME}>

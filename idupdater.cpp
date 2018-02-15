@@ -154,7 +154,7 @@ void idupdater::checkUpdates(bool autoupdate, bool autoclose)
 		request.setRawHeader("User-Agent", request.rawHeader( "User-Agent" ) + " manual");
 	}
 	emit status(tr("Checking for update.."));
-	Configuration::instance().update(true);
+	Configuration::instance().update();
 }
 
 void idupdater::finished(bool /*changed*/, const QString &err)
