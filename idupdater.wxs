@@ -62,6 +62,7 @@
             <File Source="$(var.qt_path)\bin\Qt5Gui.dll"/>
             <File Source="$(var.qt_path)\bin\Qt5Network.dll"/>
             <File Source="$(var.qt_path)\bin\Qt5PrintSupport.dll"/>
+            <File Source="$(var.qt_path)\bin\Qt5Svg.dll"/>
             <File Source="$(var.qt_path)\bin\Qt5Widgets.dll"/>
             <File Source="$(var.qt_path)\bin\Qt5WinExtras.dll"/>
             <File Source="$(var.qt_path)\bin\libEGL.dll"/>
