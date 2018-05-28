@@ -20,11 +20,11 @@ BEGIN
 	BEGIN
 		BLOCK "040904B0"
 		BEGIN
-			VALUE "CompanyName", ORG
+			VALUE "CompanyName", "RIA"
 			VALUE "FileDescription", "ID Updater Application"
 			VALUE "FileVersion", VER_STR(MAJOR_VER.MINOR_VER.RELEASE_VER.BUILD_VER)
 			VALUE "InternalName", APP
-			VALUE "LegalCopyright", "Copyright (C) 2009-2015 Estonian Information System Authority"
+			VALUE "LegalCopyright", "Copyright (C) 2009-2018 Estonian Information System Authority"
 			VALUE "OriginalFilename", APP ".exe"
 			VALUE "ProductName", APP
 			VALUE "ProductVersion", VER_STR(MAJOR_VER.MINOR_VER.RELEASE_VER.BUILD_VER)

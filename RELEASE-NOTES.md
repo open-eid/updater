@@ -1,3 +1,16 @@
+Id-updater version [3.12.3](https://github.com/open-eid/updater/releases/tag/v3.12.3) release notes
+--------------------------------------
+- Add Qt SVG component to the installed libraries (#15)
+
+[Full Changelog](https://github.com/open-eid/updater/compare/v3.12.2...v3.12.3)
+
+Id-updater version [3.12.2](https://github.com/open-eid/updater/releases/tag/v3.12.2) release notes
+--------------------------------------
+- Show OpenSC versions
+- Minor fixes and improvements
+
+[Full Changelog](https://github.com/open-eid/updater/compare/v3.12.1...v3.12.2)
+
 Id-updater version [3.12.1](https://github.com/open-eid/updater/releases/tag/v3.12.1) release notes
 --------------------------------------
 - Fix day of month selection

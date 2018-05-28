@@ -67,12 +67,9 @@
     SCardListReaders(ctx, 0, 0, &size);
     char *readers = (char*)malloc(size * sizeof(char));
     SCardListReaders(ctx, 0, readers, &size);
-    int len = 0;
-    char *p = readers;
     NSMutableArray *list = [NSMutableArray array];
-    while ((len = strlen(p))) {
+    for (char *p = readers; *p; p += strlen(p) + 1) {
         [list addObject:[NSString stringWithCString:p encoding:NSUTF8StringEncoding]];
-        p = p + len + 1;
     }
     free(readers);
     SCardReleaseContext(ctx);
