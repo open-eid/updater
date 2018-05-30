@@ -87,6 +87,9 @@
             <Component Id="qjpeg.dll">
               <File Name="qjpeg.dll"/>
             </Component>
+	    <Component Id="qsvg.dll">
+              <File Name="qsvg.dll"/>
+            </Component>
           </Directory>
 <?endif?>
         </Directory>
@@ -99,6 +102,7 @@
       <ComponentRef Id="qwindows.dll" />
       <ComponentRef Id="windowsprintersupport.dll" />
       <ComponentRef Id="qjpeg.dll" />
+      <ComponentRef Id="qsvg.dll" />
 <?endif?>
     </Feature>
 
