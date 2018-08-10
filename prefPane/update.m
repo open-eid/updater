@@ -45,6 +45,7 @@
         self.baseversion = [self versionInfo:@"ee.ria.open-eid"];
         self.updaterversion = [self versionInfo:@"ee.ria.ID-updater"];
         self.clientversion = [self versionInfo:@"ee.ria.qdigidocclient"];
+        self.digidoc4 = [self versionInfo:@"ee.ria.qdigidoc4"];
         self.utilityversion = [self versionInfo:@"ee.ria.qesteidutil"];
         self.pluginversion = [self versionInfo:@"ee.ria.firefox-token-signing"];
         self.chromepluginversion = [self versionInfo:@"ee.ria.chrome-token-signing"];

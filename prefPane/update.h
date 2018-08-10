@@ -38,6 +38,7 @@ enum {
 
 @property(retain) NSString *baseversion;
 @property(retain) NSString *clientversion;
+@property(retain) NSString *digidoc4;
 @property(retain) NSString *utilityversion;
 @property(retain) NSString *updaterversion;
 @property(retain) NSString *pluginversion;
