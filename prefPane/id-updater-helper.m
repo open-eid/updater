@@ -80,7 +80,7 @@ int main(int argc, const char * argv[])
         }
 
         NSDateComponents *components = [[NSCalendar currentCalendar]
-                                        components:NSHourCalendarUnit|NSMinuteCalendarUnit|NSWeekdayCalendarUnit|NSDayCalendarUnit
+                                        components:NSCalendarUnitHour|NSCalendarUnitMinute|NSCalendarUnitWeekday|NSCalendarUnitDay
                                         fromDate:[NSDate date]];
         NSNumber *hour = [NSNumber numberWithInteger:[components hour]];
         NSNumber *minute = [NSNumber numberWithInteger:[components minute]];
