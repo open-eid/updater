@@ -102,8 +102,8 @@ int main(int argc, const char * argv[])
         } else {
             return 0;
         }
-        NSString *errorstr;
-        NSData *data = [NSPropertyListSerialization dataFromPropertyList:settings format:NSPropertyListXMLFormat_v1_0 errorDescription:&errorstr];
+        NSError *error;
+        NSData *data = [NSPropertyListSerialization dataWithPropertyList:settings format:NSPropertyListXMLFormat_v1_0 options:0 error:&error];
         [data writeToFile:PATH atomically:YES];
         [[NSTask launchedTaskWithLaunchPath:@"/bin/launchctl" arguments:@[@"load", @"-w", PATH]] waitUntilExit];
     }
