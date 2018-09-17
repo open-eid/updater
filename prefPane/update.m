@@ -43,6 +43,7 @@
         self.digidoc4 = [self versionInfo:@"ee.ria.qdigidoc4"];
         self.utilityversion = [self versionInfo:@"ee.ria.qesteidutil"];
         self.pluginversion = [self versionInfo:@"ee.ria.firefox-token-signing"];
+        self.safaripluginversion = [self versionInfo:@"ee.ria.safari-token-signing"];
         self.chromepluginversion = [self versionInfo:@"ee.ria.chrome-token-signing"];
         self.loaderversion = [self versionInfo:@"ee.ria.firefox-pkcs11-loader"];
         self.pkcs11version = [self versionInfo:@"org.opensc-project.mac"];
