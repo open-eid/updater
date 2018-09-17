@@ -5,7 +5,7 @@ endif()
 if(POLICY CMP0063)
 	cmake_policy(SET CMP0063 NEW)
 endif()
-project(id-updater VERSION 3.12.3)
+project(id-updater VERSION 3.12.4)
 
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake/modules")
 
@@ -27,7 +27,7 @@ if( APPLE )
 	set_source_files_properties( prefPane/id-updater-helper.m prefPane/id-updater.m prefPane/update.m PROPERTIES LANGUAGE C )
 	add_executable( id-updater-helper prefPane/id-updater-helper.m prefPane/update.m config.h )
 	set_target_properties( id-updater-helper PROPERTIES
-		COMPILE_FLAGS "-Wno-deprecated-declarations -Wno-unused-parameter -fobjc-arc"
+		COMPILE_FLAGS "-Wno-unused-parameter -fobjc-arc"
 		LINKER_LANGUAGE C
 	)
 	target_link_libraries( id-updater-helper "-framework Foundation -framework PCSC -framework Security" )
@@ -69,7 +69,7 @@ if( APPLE )
 		BUNDLE YES
 		BUNDLE_EXTENSION prefPane
 		RESOURCES prefPane/Icon.icns
-		COMPILE_FLAGS "-Wno-deprecated-declarations -Wno-unused-parameter -fobjc-arc"
+		COMPILE_FLAGS "-Wno-unused-parameter -fobjc-arc"
 		LINKER_LANGUAGE C
 		XCODE_ATTRIBUTE_WRAPPER_EXTENSION prefPane
 		MACOSX_BUNDLE_INFO_PLIST ${CMAKE_CURRENT_SOURCE_DIR}/prefPane/Info.plist.cmake
