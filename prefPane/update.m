@@ -52,7 +52,18 @@
     return self;
 }
 
-- (void)request:(BOOL)manual {
+- (void)request {
+    NSURL *url = [NSURL URLWithString:@CONFIG_URL];
+    url = [url.URLByDeletingLastPathComponent URLByAppendingPathComponent:@"config.rsa"];
+    request = [NSMutableURLRequest requestWithURL:url
+        cachePolicy:NSURLRequestReloadIgnoringLocalCacheData timeoutInterval:10];
+    [request addValue:[self userAgent] forHTTPHeaderField:@"User-Agent"];
+    [[NSURLSession.sharedSession dataTaskWithRequest:request completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
+        [self receivedData:data withResponse:response];
+    }] resume];
+}
+
+- (NSString*)userAgent {
     NSDictionary *os = [NSDictionary dictionaryWithContentsOfFile:@"/System/Library/CoreServices/SystemVersion.plist"];
     struct utsname unameData;
     uname(&unameData);
@@ -70,10 +81,6 @@
     free(readers);
     SCardReleaseContext(ctx);
 
-    NSURL *url = [NSURL URLWithString:@CONFIG_URL];
-    url = [url.URLByDeletingLastPathComponent URLByAppendingPathComponent:@"config.rsa"];
-    request = [NSMutableURLRequest requestWithURL:url
-        cachePolicy:NSURLRequestReloadIgnoringLocalCacheData timeoutInterval:10];
     NSMutableArray *agent = [NSMutableArray arrayWithObject:[NSString stringWithFormat:@"id-updater/%@", self.baseversion]];
     if (self.clientversion) {
         [agent addObject:[NSString stringWithFormat:@"qdigidocclient/%@", self.clientversion]];
@@ -81,16 +88,12 @@
     if (self.utilityversion) {
         [agent addObject:[NSString stringWithFormat:@"qesteidutility/%@", self.utilityversion]];
     }
-    [agent addObject:[NSString stringWithFormat:@"(Mac OS %@(%lu/%s)) Locale: %@ Devices: %@",
-             [os objectForKey:@"ProductVersion"], sizeof(void *)<<3, unameData.machine, @"UTF-8", [list componentsJoinedByString:@"/"]]];
-
-    if (manual) {
-        [agent addObject:@"manual"];
+    if (self.digidoc4) {
+        [agent addObject:[NSString stringWithFormat:@"qdigidoc4/%@", self.digidoc4]];
     }
-    [request addValue:[agent componentsJoinedByString:@" "] forHTTPHeaderField:@"User-Agent"];
-    [[NSURLSession.sharedSession dataTaskWithRequest:request completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
-        [self receivedData:data withResponse:response];
-    }] resume];
+    [agent addObject:[NSString stringWithFormat:@"(Mac OS %@(%lu/%s)) Locale: %@ Devices: %@",
+        [os objectForKey:@"ProductVersion"], sizeof(void *)<<3, unameData.machine, @"UTF-8", [list componentsJoinedByString:@"/"]]];
+    return [agent componentsJoinedByString:@" "];
 }
 
 - (BOOL)verify:(NSData *)data

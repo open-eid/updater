@@ -34,7 +34,8 @@ enum {
 };
 
 - (id)initWithDelegate:(id <UpdateDelegate>)delegate;
-- (void)request:(BOOL)manual;
+- (void)request;
+- (NSString *)userAgent;
 
 @property(retain) NSString *baseversion;
 @property(retain) NSString *clientversion;

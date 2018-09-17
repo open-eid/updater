@@ -31,7 +31,7 @@
     if (self = [super initWithDelegate:self]) {
         path = _path;
         NSLog(@"Installed %@: %@", path, self.baseversion);
-        [self request:YES];
+        [self request];
     }
     return self;
 }
