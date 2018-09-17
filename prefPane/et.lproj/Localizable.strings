@@ -44,7 +44,7 @@
 "Once a week" = "Kord nädalas";
 
 /* No comment provided by engineer. */
-"Chrome browser plugin" = "Chrome browser plugin";
+"Chrome/Firefox browser plugin" = "Chrome/Firefox browser plugin";
 
 /* No comment provided by engineer. */
 "DigiDoc3 Client" = "DigiDoc3 Client";
@@ -83,7 +83,10 @@
 "PKCS11 loader" = "PKCS11 loader";
 
 /* No comment provided by engineer. */
-"Safari/Firefox browser plugin" = "Safari/Firefox browser plugin";
+"Safari (Extensions) browser plugin" = "Safari (Extensions) browser plugin";
+
+/* No comment provided by engineer. */
+"Safari (NPAPI) browser plugin" = "Safari (NPAPI) browser plugin";
 
 /* No comment provided by engineer. */
 "The configuration file located on the server cannot be validated." = "Serveris olev konfiguratsioonifail ei valideeru.";

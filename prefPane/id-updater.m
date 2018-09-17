@@ -90,14 +90,15 @@
     [changelogurl addAttribute:NSLinkAttributeName value:[changelogurl string] range:NSMakeRange(0, [changelogurl length])];
     [[changelog textStorage] setAttributedString:changelogurl];
 
-    info.stringValue = [NSString stringWithFormat:@"%@ (%@)\n%@ (%@)\n%@ (%@)\n%@ (%@)\n%@ (%@)\n%@ (%@)\n%@ (%@)\n%@ (%@)\n%@ (%@)\n%@ (%@)\n%@ (%@)",
+    info.stringValue = [NSString stringWithFormat:@"%@ (%@)\n%@ (%@)\n%@ (%@)\n%@ (%@)\n%@ (%@)\n%@ (%@)\n%@ (%@)\n%@ (%@)\n%@ (%@)\n%@ (%@)\n%@ (%@)\n%@ (%@)",
                         NSLocalizedString(@"DigiDoc3 Client", nil), update.clientversion,
                         NSLocalizedString(@"DigiDoc4", nil), update.digidoc4,
                         NSLocalizedString(@"ID-Card Utility", nil), update.utilityversion,
                         NSLocalizedString(@"Open-EID", nil), update.baseversion,
                         NSLocalizedString(@"ID-Updater", nil), update.updaterversion,
-                        NSLocalizedString(@"Safari/Firefox browser plugin", nil), update.pluginversion,
-                        NSLocalizedString(@"Chrome browser plugin", nil), update.chromepluginversion,
+                        NSLocalizedString(@"Safari (Extensions) browser plugin", nil), update.safaripluginversion,
+                        NSLocalizedString(@"Safari (NPAPI) browser plugin", nil), update.pluginversion,
+                        NSLocalizedString(@"Chrome/Firefox browser plugin", nil), update.chromepluginversion,
                         NSLocalizedString(@"PKCS11 loader", nil), update.loaderversion,
                         NSLocalizedString(@"OpenSC", nil), update.pkcs11version,
                         NSLocalizedString(@"EstEID Tokend", nil), update.tokendversion,

@@ -42,6 +42,7 @@ enum {
 @property(retain) NSString *utilityversion;
 @property(retain) NSString *updaterversion;
 @property(retain) NSString *pluginversion;
+@property(retain) NSString *safaripluginversion;
 @property(retain) NSString *chromepluginversion;
 @property(retain) NSString *loaderversion;
 @property(retain) NSString *pkcs11version;
