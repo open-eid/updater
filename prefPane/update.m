@@ -29,15 +29,10 @@
 
 #define UPDATER_ID @"ee.ria.id-updater"
 
-@interface Update() <NSURLConnectionDataDelegate> {
+@implementation Update {
     NSMutableURLRequest *request;
     NSString *signature;
-    NSMutableData *receivedData;
 }
-
-@end
-
-@implementation Update
 
 - (id)initWithDelegate:(id <UpdateDelegate>)delegate {
     if (self = [super init]) {
@@ -75,9 +70,9 @@
     free(readers);
     SCardReleaseContext(ctx);
 
-    NSString *url = @CONFIG_URL;
-    url = [url.stringByDeletingLastPathComponent stringByAppendingString:@"/config.rsa"];
-    request = [NSMutableURLRequest requestWithURL:[NSURL URLWithString:url]
+    NSURL *url = [NSURL URLWithString:@CONFIG_URL];
+    url = [url.URLByDeletingLastPathComponent URLByAppendingPathComponent:@"config.rsa"];
+    request = [NSMutableURLRequest requestWithURL:url
         cachePolicy:NSURLRequestReloadIgnoringLocalCacheData timeoutInterval:10];
     NSMutableArray *agent = [NSMutableArray arrayWithObject:[NSString stringWithFormat:@"id-updater/%@", self.baseversion]];
     if (self.clientversion) {
@@ -93,11 +88,12 @@
         [agent addObject:@"manual"];
     }
     [request addValue:[agent componentsJoinedByString:@" "] forHTTPHeaderField:@"User-Agent"];
-    self->receivedData = [NSMutableData data];
-    [NSURLConnection connectionWithRequest:request delegate:self];
+    [[NSURLSession.sharedSession dataTaskWithRequest:request completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
+        [self receivedData:data withResponse:response];
+    }] resume];
 }
 
-- (BOOL)verify
+- (BOOL)verify:(NSData *)data
 {
 #if 0
     NSString *test1 = @
@@ -151,7 +147,7 @@
     if (error) { CFShow(error); return false; }
     SecTransformRef verifier = SecVerifyTransformCreate(key, (__bridge CFDataRef)[[NSData alloc] initWithBase64EncodedString:signature options:NSDataBase64DecodingIgnoreUnknownCharacters], &error);
     if (error) { CFShow(error); return false; }
-    SecTransformSetAttribute(verifier, kSecTransformInputAttributeName, (__bridge CFDataRef)self->receivedData, &error);
+    SecTransformSetAttribute(verifier, kSecTransformInputAttributeName, (__bridge CFDataRef)data, &error);
     if (error) { CFShow(error); return false; }
     SecTransformSetAttribute(verifier, kSecDigestTypeAttribute, kSecDigestSHA2, &error);
     if (error) { CFShow(error); return false; }
@@ -167,28 +163,22 @@
     return list ? [list objectForKey:@"PackageVersion"] : [NSString string];
 }
 
-#pragma mark - NSURLConnectionDataDelegate
-
-- (void)connection:(NSURLConnection *)connection didReceiveResponse:(NSURLResponse *)response
+- (void)receivedData:(NSData *)data withResponse:(NSURLResponse *)response
 {
     NSHTTPURLResponse *http = (NSHTTPURLResponse*)response;
     if (http.statusCode != 200) {
         [self.delegate didFinish:[NSError errorWithDomain:@"ee.ria.ID-updater" code:FileNotFound userInfo:nil]];
-        [connection cancel];
         return;
     }
-}
 
-- (void)connectionDidFinishLoading:(NSURLConnection *)connection
-{
     NSString *file = request.URL.absoluteString.lastPathComponent;
     if ([file isEqualToString:@"config.json"]) {
-        if (![self verify]) {
+        if (![self verify:data]) {
             [self.delegate didFinish:[NSError errorWithDomain:@"ee.ria.ID-updater" code:InvalidSignature userInfo:nil]];
             return;
         }
         NSError *error = nil;
-        NSDictionary *json = [NSJSONSerialization JSONObjectWithData:self->receivedData options:0 error:&error];
+        NSDictionary *json = [NSJSONSerialization JSONObjectWithData:data options:0 error:&error];
         if (!json) {
             [self.delegate didFinish:error];
             return;
@@ -217,21 +207,12 @@
         }
         [self.delegate didFinish:error];
     } else if ([file isEqualToString:@"config.rsa"]) {
-        signature = [[NSString alloc] initWithData:self->receivedData encoding:NSASCIIStringEncoding];
+        signature = [[NSString alloc] initWithData:data encoding:NSASCIIStringEncoding];
         request.URL = [NSURL URLWithString:@CONFIG_URL];
-        self->receivedData = [NSMutableData data];
-        [NSURLConnection connectionWithRequest:request delegate:self];
+        [[NSURLSession.sharedSession dataTaskWithRequest:request completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
+            [self receivedData:data withResponse:response];
+        }] resume];
     }
-}
-
-- (void)connection:(NSURLConnection *)connection didFailWithError:(NSError *)error
-{
-    [self.delegate didFinish:error];
-}
-
-- (void)connection:(NSURLConnection *)connection didReceiveData:(nonnull NSData *)data
-{
-    [self->receivedData appendData:data];
 }
 
 @end
