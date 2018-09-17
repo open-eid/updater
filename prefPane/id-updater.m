@@ -215,7 +215,7 @@
             continue;
 
         NSData *der = [NSData dataWithBytes:data length:size];
-        if ([update.centralConfig[@"CERT-BUNDLE"] containsObject:der.base64Encoding])
+        if ([update.centralConfig[@"CERT-BUNDLE"] containsObject:[der base64EncodedStringWithOptions:0]])
             cert = der;
     }
 
