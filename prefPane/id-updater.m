@@ -27,7 +27,7 @@
 #define NSLocalizedString(key, comment) \
 [bundlelang localizedStringForKey:(key) value:@"" table:nil]
 
-@interface ID_updater : NSPreferencePane <UpdateDelegate, NSURLConnectionDataDelegate, NSUserNotificationCenterDelegate> {
+@interface ID_updater : NSPreferencePane <UpdateDelegate, NSURLSessionDownloadDelegate, NSUserNotificationCenterDelegate> {
     IBOutlet NSPopUpButton *changeSchedule;
     IBOutlet NSTextField *changeScheduleLabel;
     IBOutlet NSTextField *status;
@@ -44,7 +44,6 @@
     IBOutlet NSTabViewItem *updates;
     IBOutlet NSTabViewItem *versionInfo;
     NSString *filename;
-    NSFileHandle *file;
     NSTimer *timer;
     double lastRecvd;
     Update *update;
@@ -171,22 +170,22 @@
 
 #pragma mark - Connection delegate
 
-- (void)connection:(NSURLConnection *)connection didReceiveResponse:(NSURLResponse *)response {
-    progress.maxValue = response.expectedContentLength;
+- (void)URLSession:(NSURLSession *)session downloadTask:(NSURLSessionDownloadTask *)downloadTask didWriteData:(int64_t)bytesWritten totalBytesWritten:(int64_t)totalBytesWritten totalBytesExpectedToWrite:(int64_t)totalBytesExpectedToWrite {
+    dispatch_sync(dispatch_get_main_queue(), ^{
+        progress.maxValue = totalBytesExpectedToWrite;
+        progress.doubleValue = totalBytesWritten;
+    });
 }
 
-- (void)connection:(NSURLConnection *)connection didReceiveData:(NSData *)data {
-    [progress incrementBy:data.length];
-    [file writeData:data];
-}
-
-- (void)connectionDidFinishLoading:(NSURLConnection *)connection {
+- (void)URLSession:(NSURLSession *)session downloadTask:(NSURLSessionDownloadTask *)downloadTask didFinishDownloadingToURL:(NSURL *)location {
     [progress stopAnimation:self];
-    [file closeFile];
     [timer invalidate];
     timer = nil;
-    NSArray *args = @[@"attach", @"-verify", @"-mountpoint", @"/Volumes/estonianidcard",
-                      [NSString stringWithFormat:@"%@/%@", NSTemporaryDirectory(), [filename lastPathComponent]]];
+    NSString *tmp = [NSString stringWithFormat:@"%@/%@", NSTemporaryDirectory(), [filename lastPathComponent]];
+    [NSFileManager.defaultManager removeItemAtPath:tmp error:nil];
+    [NSFileManager.defaultManager moveItemAtPath:location.path toPath:tmp error:nil];
+
+    NSArray *args = @[@"attach", @"-verify", @"-mountpoint", @"/Volumes/estonianidcard", tmp];
     NSTask *task = [NSTask launchedTaskWithLaunchPath:@"/usr/bin/hdiutil" arguments:args];
     [task waitUntilExit];
     if (task.terminationStatus != 0) {
@@ -291,11 +290,8 @@
     progress.indeterminate = NO;
     progress.doubleValue = 0;
     [progress startAnimation:self];
-    NSString *tmp = [NSString stringWithFormat:@"%@/%@", NSTemporaryDirectory(), [filename lastPathComponent]];
-    [NSFileManager.defaultManager createFileAtPath:tmp contents:nil attributes:nil];
-    file = [NSFileHandle fileHandleForWritingAtPath:tmp];
-    NSURL *url = [NSURL URLWithString:filename];
-    [NSURLConnection connectionWithRequest:[NSURLRequest requestWithURL:url] delegate:self];
+    NSURLSession *defaultSession = [NSURLSession sessionWithConfiguration:NSURLSessionConfiguration.defaultSessionConfiguration delegate:self delegateQueue:nil];
+    [[defaultSession downloadTaskWithURL:[NSURL URLWithString:filename]] resume];
     lastRecvd = 0;
     timer = [NSTimer scheduledTimerWithTimeInterval:1.0 target:self selector:@selector(timer:) userInfo:nil repeats:YES];
 }
