@@ -142,14 +142,14 @@
     pem = [pem stringByReplacingOccurrencesOfString:@"-----BEGIN RSA PUBLIC KEY-----" withString:@""];
     pem = [pem stringByReplacingOccurrencesOfString:@"-----END RSA PUBLIC KEY-----" withString:@""];
     pem = [NSString stringWithFormat:@"%@%@", @"MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8A", pem];
-    NSData *keyData = [[NSData alloc] initWithBase64Encoding:pem];
+    NSData *keyData = [[NSData alloc] initWithBase64EncodedString:pem options:NSDataBase64DecodingIgnoreUnknownCharacters];
     CFMutableDictionaryRef parameters = CFDictionaryCreateMutable(kCFAllocatorDefault, 0, NULL, NULL);
     CFDictionarySetValue(parameters, kSecAttrKeyType, kSecAttrKeyTypeRSA);
     CFDictionarySetValue(parameters, kSecAttrKeyClass, kSecAttrKeyClassPublic);
     CFErrorRef error = 0;
     SecKeyRef key = SecKeyCreateFromData(parameters, (__bridge CFDataRef)keyData, &error);
     if (error) { CFShow(error); return false; }
-    SecTransformRef verifier = SecVerifyTransformCreate(key, (__bridge CFDataRef)[[NSData alloc] initWithBase64Encoding:signature], &error);
+    SecTransformRef verifier = SecVerifyTransformCreate(key, (__bridge CFDataRef)[[NSData alloc] initWithBase64EncodedString:signature options:NSDataBase64DecodingIgnoreUnknownCharacters], &error);
     if (error) { CFShow(error); return false; }
     SecTransformSetAttribute(verifier, kSecTransformInputAttributeName, (__bridge CFDataRef)self->receivedData, &error);
     if (error) { CFShow(error); return false; }
