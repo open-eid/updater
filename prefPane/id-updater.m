@@ -102,7 +102,7 @@
                         NSLocalizedString(@"OpenSC", nil), update.pkcs11version,
                         NSLocalizedString(@"EstEID Tokend", nil), update.tokendversion,
                         NSLocalizedString(@"EstEID CTK Tokend", nil), update.ctktokendversion];
-    [update request:YES];
+    [update request];
 }
 
 #pragma mark - UserNotificationCenter Delegate
@@ -291,7 +291,9 @@
     progress.doubleValue = 0;
     [progress startAnimation:self];
     NSURLSession *defaultSession = [NSURLSession sessionWithConfiguration:NSURLSessionConfiguration.defaultSessionConfiguration delegate:self delegateQueue:nil];
-    [[defaultSession downloadTaskWithURL:[NSURL URLWithString:filename]] resume];
+    NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:[NSURL URLWithString:filename]];
+    [request addValue:[update userAgent] forHTTPHeaderField:@"User-Agent"];
+    [[defaultSession downloadTaskWithRequest:request] resume];
     lastRecvd = 0;
     timer = [NSTimer scheduledTimerWithTimeInterval:1.0 target:self selector:@selector(timer:) userInfo:nil repeats:YES];
 }
