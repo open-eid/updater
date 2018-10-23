@@ -173,8 +173,8 @@
 
 - (void)URLSession:(NSURLSession *)session downloadTask:(NSURLSessionDownloadTask *)downloadTask didWriteData:(int64_t)bytesWritten totalBytesWritten:(int64_t)totalBytesWritten totalBytesExpectedToWrite:(int64_t)totalBytesExpectedToWrite {
     dispatch_sync(dispatch_get_main_queue(), ^{
-        progress.maxValue = totalBytesExpectedToWrite;
-        progress.doubleValue = totalBytesWritten;
+        self->progress.maxValue = totalBytesExpectedToWrite;
+        self->progress.doubleValue = totalBytesWritten;
     });
 }
 
@@ -207,14 +207,13 @@
 
     NSData *cert = nil;
     xar_signature_t sig = xar_signature_first(xar);
-    int32_t count = xar_signature_get_x509certificate_count(sig);
-    for (int32_t i = 0; i < count; ++i)	{
+    for (int32_t i = 0, count = xar_signature_get_x509certificate_count(sig); i < count; ++i)	{
         uint32_t size = 0;
-        const uint8_t *data = 0;
+        const uint8_t *data = nil;
         if (xar_signature_get_x509certificate_data(sig, i, &data, &size))
             continue;
 
-        NSData *der = [NSData dataWithBytes:data length:size];
+        NSData *der = [NSData dataWithBytesNoCopy:(uint8_t*)data length:size freeWhenDone:NO];
         if ([update.centralConfig[@"CERT-BUNDLE"] containsObject:[der base64EncodedStringWithOptions:0]])
             cert = der;
     }
@@ -225,7 +224,7 @@
         return;
     }
 
-    uint8_t *data = 0, *signature = 0;
+    uint8_t *data = nil, *signature = nil;
     uint32_t dataSize = 0, signatureSize = 0;
     off_t offset = 0;
     uint8_t err = xar_signature_copy_signed_data(sig, &data, &dataSize, &signature, &signatureSize, &offset);
@@ -241,7 +240,7 @@
         return;
     }
 
-    SecKeyRef publickey = 0;
+    SecKeyRef publickey = nil;
     OSStatus oserr = SecCertificateCopyPublicKey(certref, &publickey);
     CFRelease(certref);
     if (oserr) {
@@ -249,26 +248,16 @@
         return;
     }
 
-    CFDataRef signatureData = CFDataCreateWithBytesNoCopy(0, signature, signatureSize, kCFAllocatorDefault);
-    CFDataRef verifyData = CFDataCreateWithBytesNoCopy(0, data, dataSize, kCFAllocatorDefault);
-    CFErrorRef error = 0;
-    SecTransformRef verifier = SecVerifyTransformCreate(publickey, signatureData, &error);
-    if (error) { CFShow(error); return; }
-    SecTransformSetAttribute(verifier, kSecTransformInputAttributeName, verifyData, &error);
-    if (error) { CFShow(error); return; }
-    SecTransformSetAttribute(verifier, kSecInputIsAttributeName, kSecInputIsDigest, &error);
-    if (error) { CFShow(error); return; }
-    CFTypeRef result = SecTransformExecute(verifier, &error);
-    if (error) { CFShow(error); return; }
-
+    NSError *error = nil;
+    bool isValid = [update verifySignature:[NSData dataWithBytesNoCopy:signature length:signatureSize] data:[NSData dataWithBytesNoCopy:data length:dataSize] key:publickey digest:nil error:&error];
     CFRelease(publickey);
-    CFRelease(signatureData);
-    CFRelease(verifyData);
-
-    if (result == kCFBooleanTrue)
+    if (isValid)
         [NSTask launchedTaskWithLaunchPath:@"/usr/bin/open" arguments:@[path]];
     else
+    {
+        NSLog(@"Verify error: %@", error);
         status.stringValue = NSLocalizedString(@"Failed to verify signature", nil);
+    }
 }
 
 #pragma mark - base implementation
