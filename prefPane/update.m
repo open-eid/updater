@@ -97,69 +97,43 @@
     return [agent componentsJoinedByString:@" "];
 }
 
-- (BOOL)verify:(NSData *)data
+- (BOOL)verify:(NSData *)data error:(NSError **)error
 {
-#if 0
-    NSString *test1 = @
-    "-----BEGIN RSA PUBLIC KEY-----\n"
-    "MIIBCgKCAQEAzRQ9uWWPQ3mcboFG/NpwlVCupelL34g6JEzw5FmfwU87azeSg80u\n"
-    "HAeQ340DijIB/OMk6eF3i65nl4moKUv8MJzrcBMYLKshQDR2U3cmxHDjdM+2ta+5\n"
-    "71p1WfU0jWNDujHZFNZOu25fkKiHmtLLx0PzastQtkKZ23bXRRFD0pvJKBceWxG/\n"
-    "JBPaxLEClxivYFEuAYt2QYtVenKYtitXhmflXqda4QJRwtfxQaeZymHGaxn12Ilc\n"
-    "Bt6ZSAIE4DDXOL2Mwg/qR3x6UWg989OMfTGau7jiv+vaO92eC452VJIu/iNGXtrA\n"
-    "iKnuGiERYeTupQIcV89wBIcQjqZIYH6fxQIDAQAB\r\n"
-    "-----END RSA PUBLIC KEY-----\n";
-    SecExternalFormat externalFormat = kSecFormatPEMSequence;
-    //SecExternalFormat externalFormat = kSecFormatOpenSSL;
-    //SecExternalItemType itemType = kSecItemTypeCertificate;
-    SecExternalItemType itemType = kSecItemTypePublicKey;
-    //SecExternalItemType itemType = kSecItemTypeAggregate;
-    SecItemImportExportKeyParameters keyParams = {
-        .version = SEC_KEY_IMPORT_EXPORT_PARAMS_VERSION,
-        .flags = kSecKeyImportOnlyOne | kSecItemPemArmour,
-        .passphrase = NULL,
-        .alertTitle = NULL,
-        .alertPrompt = NULL,
-        .accessRef = NULL,
-        .keyUsage = NULL,//(__bridge CFArrayRef)@[(id)kSecAttrCanVerify],
-        .keyAttributes = NULL, /* See below for rant */
-    };
-    CFDataRef pem = (__bridge CFDataRef)([test1 dataUsingEncoding:NSASCIIStringEncoding]);//CFDataCreate(0, config_pub, config_pub_len);
-    CFShow(pem);
-    CFArrayRef temparray = NULL;
-    OSStatus oserr = SecItemImport(pem, NULL, &externalFormat, &itemType, 0, NULL, NULL, &temparray);
-    CFRelease(pem);
-    if (oserr) {
-        fprintf(stderr, "SecItemImport failed (oserr=%d)\n", oserr);
-        CFShow(temparray);
-        return false;
-    }
-    
-    SecKeyRef publickey = (SecKeyRef)CFArrayGetValueAtIndex(temparray, 0);
-#endif
-
     NSString *pem = [NSString stringWithUTF8String:(char*)config_pub];
     pem = [pem stringByReplacingOccurrencesOfString:@"-----BEGIN RSA PUBLIC KEY-----" withString:@""];
     pem = [pem stringByReplacingOccurrencesOfString:@"-----END RSA PUBLIC KEY-----" withString:@""];
     pem = [NSString stringWithFormat:@"%@%@", @"MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8A", pem];
     NSData *keyData = [[NSData alloc] initWithBase64EncodedString:pem options:NSDataBase64DecodingIgnoreUnknownCharacters];
-    CFMutableDictionaryRef parameters = CFDictionaryCreateMutable(kCFAllocatorDefault, 0, NULL, NULL);
-    CFDictionarySetValue(parameters, kSecAttrKeyType, kSecAttrKeyTypeRSA);
-    CFDictionarySetValue(parameters, kSecAttrKeyClass, kSecAttrKeyClassPublic);
-    CFErrorRef error = 0;
-    SecKeyRef key = SecKeyCreateFromData(parameters, (__bridge CFDataRef)keyData, &error);
-    if (error) { CFShow(error); return false; }
-    SecTransformRef verifier = SecVerifyTransformCreate(key, (__bridge CFDataRef)[[NSData alloc] initWithBase64EncodedString:signature options:NSDataBase64DecodingIgnoreUnknownCharacters], &error);
-    if (error) { CFShow(error); return false; }
-    SecTransformSetAttribute(verifier, kSecTransformInputAttributeName, (__bridge CFDataRef)data, &error);
-    if (error) { CFShow(error); return false; }
-    SecTransformSetAttribute(verifier, kSecDigestTypeAttribute, kSecDigestSHA2, &error);
-    if (error) { CFShow(error); return false; }
-    SecTransformSetAttribute(verifier, kSecDigestLengthAttribute, (__bridge CFNumberRef)@512, &error);
-    if (error) { CFShow(error); return false; }
-    CFTypeRef result = SecTransformExecute(verifier, &error);
-    if (error) { CFShow(error); return false; }
-    return result == kCFBooleanTrue;
+    NSDictionary *parameters = @{
+        (__bridge id)kSecAttrKeyType: (__bridge id)kSecAttrKeyTypeRSA,
+        (__bridge id)kSecAttrKeyClass: (__bridge id)kSecAttrKeyClassPublic
+    };
+    CFErrorRef err = 0;
+    id key = CFBridgingRelease(SecKeyCreateFromData((__bridge CFDictionaryRef)parameters, (__bridge CFDataRef)keyData, &err));
+    if (err) { if(error) *error = CFBridgingRelease(err); return false; }
+    return [self verifySignature:[[NSData alloc] initWithBase64EncodedString:signature options:NSDataBase64DecodingIgnoreUnknownCharacters] data:data key:(__bridge SecKeyRef)key digest:(__bridge CFNumberRef)@512 error:error];
+}
+
+- (BOOL)verifySignature:(NSData *)signatureData data:(NSData *)data key:(SecKeyRef)key digest:(CFNumberRef)digest error:(NSError **)error {
+    CFErrorRef err = nil;
+    id verifier = CFBridgingRelease(SecVerifyTransformCreate(key, (__bridge CFDataRef)signatureData, &err));
+    if (err) { if(error) *error = CFBridgingRelease(err); return false; }
+    SecTransformSetAttribute((__bridge SecTransformRef)verifier, kSecTransformInputAttributeName, (__bridge CFDataRef)data, &err);
+    if (err) { if(error) *error = CFBridgingRelease(err); return false; }
+    if (digest != nil) {
+        SecTransformSetAttribute((__bridge SecTransformRef)verifier, kSecDigestTypeAttribute, kSecDigestSHA2, &err);
+        if (err) { if(error) *error = CFBridgingRelease(err); return false; }
+        SecTransformSetAttribute((__bridge SecTransformRef)verifier, kSecDigestLengthAttribute, digest, &err);
+        if (err) { if(error) *error = CFBridgingRelease(err); return false; }
+    } else {
+        SecTransformSetAttribute((__bridge SecTransformRef)verifier, kSecInputIsAttributeName, kSecInputIsDigest, &err);
+        if (err) { if(error) *error = CFBridgingRelease(err); return false; }
+    }
+    CFTypeRef result = SecTransformExecute((__bridge SecTransformRef)verifier, &err);
+    bool isValid = result == kCFBooleanTrue;
+    CFRelease(result);
+    if (err) { if(error) *error = CFBridgingRelease(err); return false; }
+    return isValid;
 }
 
 - (NSString*)versionInfo:(NSString *)pkg {
@@ -176,8 +150,10 @@
     }
 
     NSString *file = request.URL.absoluteString.lastPathComponent;
+    NSError *error;
     if ([file isEqualToString:@"config.json"]) {
-        if (![self verify:data]) {
+        if (![self verify:data error:&error]) {
+            NSLog(@"Verify error: %@", error);
             [self.delegate didFinish:[NSError errorWithDomain:@"ee.ria.ID-updater" code:InvalidSignature userInfo:nil]];
             return;
         }
