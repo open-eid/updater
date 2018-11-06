@@ -90,19 +90,24 @@
     [changelogurl addAttribute:NSLinkAttributeName value:[changelogurl string] range:NSMakeRange(0, [changelogurl length])];
     [[changelog textStorage] setAttributedString:changelogurl];
 
-    info.stringValue = [NSString stringWithFormat:@"%@ (%@)\n%@ (%@)\n%@ (%@)\n%@ (%@)\n%@ (%@)\n%@ (%@)\n%@ (%@)\n%@ (%@)\n%@ (%@)\n%@ (%@)\n%@ (%@)\n%@ (%@)",
-                        NSLocalizedString(@"DigiDoc3 Client", nil), update.clientversion,
-                        NSLocalizedString(@"DigiDoc4", nil), update.digidoc4,
-                        NSLocalizedString(@"ID-Card Utility", nil), update.utilityversion,
-                        NSLocalizedString(@"Open-EID", nil), update.baseversion,
-                        NSLocalizedString(@"ID-Updater", nil), update.updaterversion,
-                        NSLocalizedString(@"Safari (Extensions) browser plugin", nil), update.safaripluginversion,
-                        NSLocalizedString(@"Safari (NPAPI) browser plugin", nil), update.pluginversion,
-                        NSLocalizedString(@"Chrome/Firefox browser plugin", nil), update.chromepluginversion,
-                        NSLocalizedString(@"PKCS11 loader", nil), update.loaderversion,
-                        NSLocalizedString(@"OpenSC", nil), update.pkcs11version,
-                        NSLocalizedString(@"EstEID Tokend", nil), update.tokendversion,
-                        NSLocalizedString(@"EstEID CTK Tokend", nil), update.ctktokendversion];
+    NSArray *versions = @[
+        [NSString stringWithFormat:@"%@ (%@)", NSLocalizedString(@"DigiDoc3 Client", nil), update.clientversion],
+        [NSString stringWithFormat:@"%@ (%@)", NSLocalizedString(@"DigiDoc4", nil), update.digidoc4],
+        [NSString stringWithFormat:@"%@ (%@)", NSLocalizedString(@"ID-Card Utility", nil), update.utilityversion],
+        [NSString stringWithFormat:@"%@ (%@)", NSLocalizedString(@"Open-EID", nil), update.baseversion],
+        [NSString stringWithFormat:@"%@ (%@)", NSLocalizedString(@"ID-Updater", nil), [update versionInfo:@"ee.ria.ID-updater"]],
+        [NSString stringWithFormat:@"%@ (%@)", NSLocalizedString(@"Safari (Extensions) browser plugin", nil), [update versionInfo:@"ee.ria.safari-token-signing"]],
+        [NSString stringWithFormat:@"%@ (%@)", NSLocalizedString(@"Safari (NPAPI) browser plugin", nil), [update versionInfo:@"ee.ria.firefox-token-signing"]],
+        [NSString stringWithFormat:@"%@ (%@)", NSLocalizedString(@"Chrome/Firefox browser plugin", nil), [update versionInfo:@"ee.ria.chrome-token-signing"]],
+        [NSString stringWithFormat:@"%@ (%@)", NSLocalizedString(@"PKCS11 loader", nil), [update versionInfo:@"ee.ria.firefox-pkcs11-loader"]],
+        [NSString stringWithFormat:@"%@ (%@)", NSLocalizedString(@"IDEMIA PKCS11 loader", nil), [update versionInfo:@"com.idemia.awp.xpi"]],
+        [NSString stringWithFormat:@"%@ (%@)", NSLocalizedString(@"OpenSC", nil), [update versionInfo:@"org.opensc-project.mac"]],
+        [NSString stringWithFormat:@"%@ (%@)", NSLocalizedString(@"IDEMIA PKCS11", nil), [update versionInfo:@"com.idemia.awp.pkcs11"]],
+        [NSString stringWithFormat:@"%@ (%@)", NSLocalizedString(@"EstEID Tokend", nil), [update versionInfo:@"ee.ria.esteid-tokend"]],
+        [NSString stringWithFormat:@"%@ (%@)", NSLocalizedString(@"EstEID CTK Tokend", nil), [update versionInfo:@"ee.ria.esteid-ctk-tokend"]],
+        [NSString stringWithFormat:@"%@ (%@)", NSLocalizedString(@"IDEMIA Tokend", nil), [update versionInfo:@"com.idemia.awp.tokend"]],
+    ];
+    info.stringValue = [versions componentsJoinedByString:@"\n"];
     [update request];
 }
 
