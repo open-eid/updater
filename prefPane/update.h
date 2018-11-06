@@ -37,19 +37,12 @@ enum {
 - (void)request;
 - (NSString *)userAgent;
 - (BOOL)verifySignature:(NSData *)signature data:(NSData *)data key:(SecKeyRef)key digest:(CFNumberRef)digest error:(NSError **)error;
+- (NSString*)versionInfo:(NSString *)pkg;
 
 @property(retain) NSString *baseversion;
 @property(retain) NSString *clientversion;
 @property(retain) NSString *digidoc4;
 @property(retain) NSString *utilityversion;
-@property(retain) NSString *updaterversion;
-@property(retain) NSString *pluginversion;
-@property(retain) NSString *safaripluginversion;
-@property(retain) NSString *chromepluginversion;
-@property(retain) NSString *loaderversion;
-@property(retain) NSString *pkcs11version;
-@property(retain) NSString *tokendversion;
-@property(retain) NSString *ctktokendversion;
 @property(retain) NSDictionary *centralConfig;
 @property(assign) id <UpdateDelegate> delegate;
 @end
