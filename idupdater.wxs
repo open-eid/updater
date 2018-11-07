@@ -84,10 +84,9 @@
             </Component>
           </Directory>
           <Directory Id="imageformats" Name="imageformats" FileSource="$(var.qt_path)\plugins\imageformats">
-            <Component Id="qjpeg.dll">
+            <Component Id="imageformats.dll" Guid="4ae32624-e869-4e4c-8a1c-624c31133ce3">
+              <File Name="qgif.dll"/>
               <File Name="qjpeg.dll"/>
-            </Component>
-	    <Component Id="qsvg.dll">
               <File Name="qsvg.dll"/>
             </Component>
           </Directory>
@@ -101,8 +100,7 @@
 <?ifdef var.qt_path ?>
       <ComponentRef Id="qwindows.dll" />
       <ComponentRef Id="windowsprintersupport.dll" />
-      <ComponentRef Id="qjpeg.dll" />
-      <ComponentRef Id="qsvg.dll" />
+      <ComponentRef Id="imageformats.dll" />
 <?endif?>
     </Feature>
 
