@@ -1,3 +1,18 @@
+Id-updater version [3.12.5](https://github.com/open-eid/updater/releases/tag/v3.12.5) release notes
+--------------------------------------
+- Add IDEMIA drivers to diagnostics
+- Include Qt GIF plugin
+- Fix memory leaks
+
+[Full Changelog](https://github.com/open-eid/updater/compare/v3.12.4...v3.12.5)
+
+Id-updater version [3.12.4](https://github.com/open-eid/updater/releases/tag/v3.12.4) release notes
+--------------------------------------
+- Fix memory leaks and warnings
+- Add DigiDoc4 and Safari Extension to diagnostics
+
+[Full Changelog](https://github.com/open-eid/updater/compare/v3.12.3...v3.12.4)
+
 Id-updater version [3.12.3](https://github.com/open-eid/updater/releases/tag/v3.12.3) release notes
 --------------------------------------
 - Add Qt SVG component to the installed libraries (#15)
