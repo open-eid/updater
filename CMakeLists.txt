@@ -82,7 +82,7 @@ if( APPLE )
 	install( DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/${PROGNAME}.prefPane DESTINATION /Library/PreferencePanes )
 
 	add_custom_target( codesign DEPENDS id-updater-helper
-		COMMAND codesign -f -s "Developer ID Application: ${SIGNCERT}"
+		COMMAND codesign -f --options=runtime -s "Developer ID Application: ${SIGNCERT}"
 			$<TARGET_FILE_DIR:${PROGNAME}>/../Resources/id-updater-helper
 			$<TARGET_FILE:${PROGNAME}>
 	)
