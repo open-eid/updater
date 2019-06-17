@@ -210,7 +210,7 @@
         return;
     }
 
-    NSData *cert = nil;
+    id certref = nil;
     xar_signature_t sig = xar_signature_first(xar);
     for (int32_t i = 0, count = xar_signature_get_x509certificate_count(sig); i < count; ++i)	{
         uint32_t size = 0;
@@ -220,10 +220,10 @@
 
         NSData *der = [NSData dataWithBytesNoCopy:(uint8_t*)data length:size freeWhenDone:NO];
         if ([update.centralConfig[@"CERT-BUNDLE"] containsObject:[der base64EncodedStringWithOptions:0]])
-            cert = der;
+            certref = CFAutorelease(SecCertificateCreateWithData(0, (__bridge CFDataRef)der));
     }
 
-    if (!cert) {
+    if (!certref) {
         status.stringValue = NSLocalizedString(@"No matching certificate", nil);
         xar_close(xar);
         return;
@@ -239,15 +239,8 @@
         return;
     }
 
-    SecCertificateRef certref = SecCertificateCreateWithData(0, (__bridge CFDataRef)cert);
-    if (!certref) {
-        status.stringValue = NSLocalizedString(@"Failed to parse certificate", nil);
-        return;
-    }
-
     SecKeyRef publickey = nil;
-    OSStatus oserr = SecCertificateCopyPublicKey(certref, &publickey);
-    CFRelease(certref);
+    OSStatus oserr = SecCertificateCopyPublicKey((__bridge SecCertificateRef)certref, &publickey);
     if (oserr) {
         status.stringValue = NSLocalizedString(@"Failed to copy public key", nil);
         return;
