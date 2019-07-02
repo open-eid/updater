@@ -1,3 +1,11 @@
+Id-updater version [3.12.6](https://github.com/open-eid/updater/releases/tag/v3.12.6) release notes
+--------------------------------------
+- Fix macOS update
+- macOS Notarization changes
+- Update icons
+
+[Full Changelog](https://github.com/open-eid/updater/compare/v3.12.5...v3.12.6)
+
 Id-updater version [3.12.5](https://github.com/open-eid/updater/releases/tag/v3.12.5) release notes
 --------------------------------------
 - Add IDEMIA drivers to diagnostics

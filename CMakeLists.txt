@@ -5,7 +5,7 @@ endif()
 if(POLICY CMP0063)
 	cmake_policy(SET CMP0063 NEW)
 endif()
-project(id-updater VERSION 3.12.5)
+project(id-updater VERSION 3.12.6)
 
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake/modules")
 
