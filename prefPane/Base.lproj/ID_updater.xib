@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="14460.31" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES">
+<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="14490.70" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES">
     <dependencies>
         <deployment version="101100" identifier="macosx"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="14460.31"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="14490.70"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
     <objects>
@@ -83,11 +83,11 @@
                         <tabViewItems>
                             <tabViewItem label="Updates" identifier="1" id="XOS-WI-hKa">
                                 <view key="view" id="7nd-J5-tXg">
-                                    <rect key="frame" x="10" y="33" width="622" height="241"/>
+                                    <rect key="frame" x="10" y="33" width="622" height="420"/>
                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                     <subviews>
                                         <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="h0C-rH-CbD">
-                                            <rect key="frame" x="18" y="221" width="586" height="17"/>
+                                            <rect key="frame" x="18" y="400" width="586" height="17"/>
                                             <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="center" title="Ready" id="93X-h4-Pxn">
                                                 <font key="font" metaFont="system"/>
                                                 <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
@@ -95,7 +95,7 @@
                                             </textFieldCell>
                                         </textField>
                                         <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="cIN-xF-SsG">
-                                            <rect key="frame" x="18" y="146" width="74" height="17"/>
+                                            <rect key="frame" x="18" y="325" width="74" height="17"/>
                                             <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="Changelog:" id="MH3-Hn-7hU">
                                                 <font key="font" metaFont="system"/>
                                                 <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
@@ -103,7 +103,7 @@
                                             </textFieldCell>
                                         </textField>
                                         <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="xYW-DE-70F">
-                                            <rect key="frame" x="18" y="196" width="59" height="17"/>
+                                            <rect key="frame" x="18" y="375" width="59" height="17"/>
                                             <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="Installed:" id="Xr7-Ls-jOQ">
                                                 <font key="font" metaFont="system"/>
                                                 <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
@@ -111,7 +111,7 @@
                                             </textFieldCell>
                                         </textField>
                                         <textField verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="Ysf-ap-HSG">
-                                            <rect key="frame" x="81" y="196" width="523" height="17"/>
+                                            <rect key="frame" x="81" y="375" width="523" height="17"/>
                                             <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" id="DkC-aC-eqG">
                                                 <font key="font" metaFont="system"/>
                                                 <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
@@ -119,7 +119,7 @@
                                             </textFieldCell>
                                         </textField>
                                         <textField hidden="YES" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="ygF-ww-mqa">
-                                            <rect key="frame" x="18" y="171" width="62" height="17"/>
+                                            <rect key="frame" x="18" y="350" width="62" height="17"/>
                                             <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="Available:" id="ZgI-Qu-BYN">
                                                 <font key="font" metaFont="system"/>
                                                 <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
@@ -127,7 +127,7 @@
                                             </textFieldCell>
                                         </textField>
                                         <textField hidden="YES" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="yyE-eD-jFh">
-                                            <rect key="frame" x="84" y="171" width="520" height="17"/>
+                                            <rect key="frame" x="84" y="350" width="520" height="17"/>
                                             <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" id="DXq-fo-fFe">
                                                 <font key="font" metaFont="system"/>
                                                 <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
@@ -135,10 +135,10 @@
                                             </textFieldCell>
                                         </textField>
                                         <progressIndicator hidden="YES" wantsLayer="YES" maxValue="100" indeterminate="YES" style="bar" translatesAutoresizingMaskIntoConstraints="NO" id="j8W-hO-WEh">
-                                            <rect key="frame" x="20" y="117" width="430" height="20"/>
+                                            <rect key="frame" x="20" y="296" width="430" height="20"/>
                                         </progressIndicator>
                                         <textField hidden="YES" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="bF9-le-rWP">
-                                            <rect key="frame" x="456" y="118" width="148" height="17"/>
+                                            <rect key="frame" x="456" y="297" width="148" height="17"/>
                                             <constraints>
                                                 <constraint firstAttribute="width" constant="144" id="Zsv-IY-jrn"/>
                                             </constraints>
@@ -149,7 +149,7 @@
                                             </textFieldCell>
                                         </textField>
                                         <scrollView borderType="none" horizontalLineScroll="10" horizontalPageScroll="10" verticalLineScroll="10" verticalPageScroll="10" hasHorizontalScroller="NO" hasVerticalScroller="NO" usesPredominantAxisScrolling="NO" translatesAutoresizingMaskIntoConstraints="NO" id="Va6-SZ-gRp">
-                                            <rect key="frame" x="98" y="143" width="504" height="20"/>
+                                            <rect key="frame" x="98" y="322" width="504" height="20"/>
                                             <clipView key="contentView" drawsBackground="NO" copiesOnScroll="NO" id="q03-rC-Nh7">
                                                 <rect key="frame" x="0.0" y="0.0" width="504" height="20"/>
                                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
@@ -222,7 +222,7 @@
                                     <subviews>
                                         <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="Thw-Hq-7vO">
                                             <rect key="frame" x="18" y="400" width="586" height="17"/>
-                                            <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" id="ooQ-Tk-XJp">
+                                            <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" selectable="YES" sendsActionOnEndEditing="YES" id="ooQ-Tk-XJp">
                                                 <font key="font" metaFont="system"/>
                                                 <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
                                                 <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
