@@ -90,24 +90,29 @@
     [changelogurl addAttribute:NSLinkAttributeName value:[changelogurl string] range:NSMakeRange(0, [changelogurl length])];
     [[changelog textStorage] setAttributedString:changelogurl];
 
-    NSArray *versions = @[
-        [NSString stringWithFormat:@"%@ (%@)", NSLocalizedString(@"DigiDoc3 Client", nil), update.clientversion],
-        [NSString stringWithFormat:@"%@ (%@)", NSLocalizedString(@"DigiDoc4", nil), update.digidoc4],
-        [NSString stringWithFormat:@"%@ (%@)", NSLocalizedString(@"ID-Card Utility", nil), update.utilityversion],
-        [NSString stringWithFormat:@"%@ (%@)", NSLocalizedString(@"Open-EID", nil), update.baseversion],
-        [NSString stringWithFormat:@"%@ (%@)", NSLocalizedString(@"ID-Updater", nil), [update versionInfo:@"ee.ria.ID-updater"]],
-        [NSString stringWithFormat:@"%@ (%@)", NSLocalizedString(@"Safari (Extensions) browser plugin", nil), [update versionInfo:@"ee.ria.safari-token-signing"]],
-        [NSString stringWithFormat:@"%@ (%@)", NSLocalizedString(@"Safari (NPAPI) browser plugin", nil), [update versionInfo:@"ee.ria.firefox-token-signing"]],
-        [NSString stringWithFormat:@"%@ (%@)", NSLocalizedString(@"Chrome/Firefox browser plugin", nil), [update versionInfo:@"ee.ria.chrome-token-signing"]],
-        [NSString stringWithFormat:@"%@ (%@)", NSLocalizedString(@"PKCS11 loader", nil), [update versionInfo:@"ee.ria.firefox-pkcs11-loader"]],
-        [NSString stringWithFormat:@"%@ (%@)", NSLocalizedString(@"IDEMIA PKCS11 loader", nil), [update versionInfo:@"com.idemia.awp.xpi"]],
-        [NSString stringWithFormat:@"%@ (%@)", NSLocalizedString(@"OpenSC", nil), [update versionInfo:@"org.opensc-project.mac"]],
-        [NSString stringWithFormat:@"%@ (%@)", NSLocalizedString(@"IDEMIA PKCS11", nil), [update versionInfo:@"com.idemia.awp.pkcs11"]],
-        [NSString stringWithFormat:@"%@ (%@)", NSLocalizedString(@"EstEID Tokend", nil), [update versionInfo:@"ee.ria.esteid-tokend"]],
-        [NSString stringWithFormat:@"%@ (%@)", NSLocalizedString(@"EstEID CTK Tokend", nil), [update versionInfo:@"ee.ria.esteid-ctk-tokend"]],
-        [NSString stringWithFormat:@"%@ (%@)", NSLocalizedString(@"IDEMIA Tokend", nil), [update versionInfo:@"com.idemia.awp.tokend"]],
-    ];
-    info.stringValue = [versions componentsJoinedByString:@"\n"];
+    NSDictionary *versions = @{
+        NSLocalizedString(@"DigiDoc3 Client", nil): update.clientversion,
+        NSLocalizedString(@"DigiDoc4", nil): update.digidoc4,
+        NSLocalizedString(@"ID-Card Utility", nil): update.utilityversion,
+        NSLocalizedString(@"Open-EID", nil): update.baseversion,
+        NSLocalizedString(@"ID-Updater", nil): [update versionInfo:@"ee.ria.ID-updater"],
+        NSLocalizedString(@"Safari (Extensions) browser plugin", nil): [update versionInfo:@"ee.ria.safari-token-signing"],
+        NSLocalizedString(@"Safari (NPAPI) browser plugin", nil): [update versionInfo:@"ee.ria.firefox-token-signing"],
+        NSLocalizedString(@"Chrome/Firefox browser plugin", nil): [update versionInfo:@"ee.ria.chrome-token-signing"],
+        NSLocalizedString(@"PKCS11 loader", nil): [update versionInfo:@"ee.ria.firefox-pkcs11-loader"],
+        NSLocalizedString(@"IDEMIA PKCS11 loader", nil): [update versionInfo:@"com.idemia.awp.xpi"],
+        NSLocalizedString(@"OpenSC", nil): [update versionInfo:@"org.opensc-project.mac"],
+        NSLocalizedString(@"IDEMIA PKCS11", nil): [update versionInfo:@"com.idemia.awp.pkcs11"],
+        NSLocalizedString(@"EstEID Tokend", nil): [update versionInfo:@"ee.ria.esteid-tokend"],
+        NSLocalizedString(@"EstEID CTK Tokend", nil): [update versionInfo:@"ee.ria.esteid-ctk-tokend"],
+        NSLocalizedString(@"IDEMIA Tokend", nil): [update versionInfo:@"com.idemia.awp.tokend"],
+    };
+    NSMutableArray *list = [[NSMutableArray alloc] init];
+    [versions enumerateKeysAndObjectsUsingBlock:^(id key, id object, BOOL *stop) {
+        if (object != nil && [(NSString*)object length] != 0)
+            [list addObject:[NSString stringWithFormat:@"%@ (%@)", key, object]];
+    }];
+    info.stringValue = [list componentsJoinedByString:@"\n"];
     [update request];
 }
 
@@ -191,7 +196,8 @@
     [NSFileManager.defaultManager removeItemAtPath:tmp error:nil];
     [NSFileManager.defaultManager moveItemAtPath:location.path toPath:tmp error:nil];
 
-    NSArray *args = @[@"attach", @"-verify", @"-mountpoint", @"/Volumes/estonianidcard", tmp];
+    NSString *volumePath = @"/Volumes/Open-EID";
+    NSArray *args = @[@"attach", @"-verify", @"-mountpoint", volumePath, tmp];
     NSTask *task = [NSTask launchedTaskWithLaunchPath:@"/usr/bin/hdiutil" arguments:args];
     [task waitUntilExit];
     if (task.terminationStatus != 0) {
@@ -199,9 +205,9 @@
         return;
     }
 
-    NSArray *paths = [NSFileManager.defaultManager subpathsAtPath:@"/Volumes/estonianidcard"];
+    NSArray *paths = [NSFileManager.defaultManager subpathsAtPath:volumePath];
     NSPredicate *predicate = [NSPredicate predicateWithFormat:@"SELF contains[cd] %@", @".pkg"];
-    NSString *path = [NSString stringWithFormat:@"%@/%@", @"/Volumes/estonianidcard",
+    NSString *path = [NSString stringWithFormat:@"%@/%@", volumePath,
                       [paths filteredArrayUsingPredicate:predicate].lastObject];
 
     xar_t xar = xar_open(path.UTF8String, 0);
