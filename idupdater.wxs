@@ -15,16 +15,21 @@
 
 <?if $(var.Platform) = x64 ?>
   <?define PlatformProgramFilesFolder = "ProgramFiles64Folder" ?>
+  <?define OpenSSLSuffix = "-x64" ?>
 <?else ?>
   <?define PlatformProgramFilesFolder = "ProgramFilesFolder" ?>
+  <?define OpenSSLSuffix = "" ?>
 <?endif ?>
 
-<?if $(env.VisualStudioVersion) = "14.0" ?>
-  <?define VCVER = "140" ?>
-  <?define VCRT = "vcruntime" ?>
+<?if $(env.VisualStudioVersion) = "15.0" ?>
+  <?define VCRT = "$(env.VCTOOLSREDISTDIR)\$(var.Platform)\Microsoft.VC141.CRT\vcruntime140.dll"?>
+  <?define VCP = "$(env.VCTOOLSREDISTDIR)\$(var.Platform)\Microsoft.VC141.CRT\msvcp140.dll"?>
+<?elseif $(env.VisualStudioVersion) = "14.0" ?>
+  <?define VCRT = "$(env.VCINSTALLDIR)\redist\$(var.Platform)\Microsoft.VC140.CRT\vcruntime140.dll" ?>
+  <?define VCP = "$(env.VCINSTALLDIR)\redist\$(var.Platform)\Microsoft.VC140.CRT\msvcp140.dll"?>
 <?else?>
-  <?define VCVER = "120" ?>
-  <?define VCRT = "msvcr" ?>
+  <?define VCRT = "$(env.VCINSTALLDIR)\redist\$(var.Platform)\Microsoft.VC120.CRT\msvcr120.dll" ?>
+  <?define VCP = "$(env.VCINSTALLDIR)\redist\$(var.Platform)\Microsoft.VC120.CRT\msvcp120.dll"?>
 <?endif?>
 
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
@@ -54,10 +59,10 @@
                 Name="Installed" Value="[APPLICATIONFOLDER]" Type="string"/>
 <?endif ?>
 <?ifdef var.qt_path ?>
-            <File Source="$(env.VCINSTALLDIR)\redist\$(var.Platform)\Microsoft.VC$(var.VCVER).CRT\msvcp$(var.VCVER).dll"/>
-            <File Source="$(env.VCINSTALLDIR)\redist\$(var.Platform)\Microsoft.VC$(var.VCVER).CRT\$(var.VCRT)$(var.VCVER).dll"/>
-            <File Source="$(var.libs_path)\libeay32.dll"/>
-            <File Source="$(var.libs_path)\ssleay32.dll"/>
+            <File Source="$(var.VCP)"/>
+            <File Source="$(var.VCRT)"/>
+            <File Source="$(var.libs_path)\libcrypto-1_1$(var.OpenSSLSuffix).dll"/>
+            <File Source="$(var.libs_path)\libssl-1_1$(var.OpenSSLSuffix).dll"/>
             <File Source="$(var.qt_path)\bin\Qt5Core.dll"/>
             <File Source="$(var.qt_path)\bin\Qt5Gui.dll"/>
             <File Source="$(var.qt_path)\bin\Qt5Network.dll"/>
