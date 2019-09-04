@@ -140,16 +140,19 @@ else()
 
 	if(CMAKE_SIZEOF_VOID_P EQUAL 8)
 		set(PLATFORM x64)
-		list(APPEND CANDLE_EXTRA "-dlibs_path=C:/Openssl-Win64/bin")
+		set(SSL_PATH "C:/OpenSSL-Win64/bin")
 	else()
 		set(PLATFORM x86)
-		list(APPEND CANDLE_EXTRA "-dlibs_path=C:/Openssl-Win32/bin")
+		set(SSL_PATH "C:/OpenSSL-Win32/bin")
+	endif()
+	if(OPENSSL_ROOT_DIR)
+		set(SSL_PATH "${OPENSSL_ROOT_DIR}/bin")
 	endif()
 	set(MSI_FILE "ID-Updater-${VERSION}$ENV{VER_SUFFIX}.${PLATFORM}")
 	add_custom_target(installer DEPENDS ${PROGNAME}
 		COMMAND "$ENV{WIX}bin\\candle.exe" -nologo -arch ${PLATFORM} -dPlatform=${PLATFORM}
 			-dMSI_VERSION=${VERSION} ${CANDLE_EXTRA} -dqt_path=${_qt5Core_install_prefix}
-			-dqtconf=${CMAKE_SOURCE_DIR}/qt.conf
+			-dqtconf=${CMAKE_SOURCE_DIR}/qt.conf -dlibs_path="${SSL_PATH}"
 			-dupdater_path=$<TARGET_FILE:${PROGNAME}> ${CMAKE_SOURCE_DIR}/idupdater.wxs
 			${CMAKE_SOURCE_DIR}/cmake/modules/WelcomeDlg2.wxs ${CMAKE_SOURCE_DIR}/cmake/modules/WixUI_Minimal2.wxs
 		COMMAND "$ENV{WIX}bin\\light.exe" -nologo -o "${MSI_FILE}.msi" -ext WixUIExtension
