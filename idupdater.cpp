@@ -359,7 +359,7 @@ bool idupdater::verifyPackage(const QString &filePath) const
 	if(!certContext)
 		return false;
 
-	QSslCertificate cert(QByteArray(
+	QSslCertificate cert(QByteArray::fromRawData(
 		(const char*)certContext->pbCertEncoded, certContext->cbCertEncoded ), QSsl::Der);
 	CertFreeCertificateContext(certContext);
 

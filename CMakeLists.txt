@@ -1,11 +1,11 @@
-cmake_minimum_required(VERSION 3.0)
-if(POLICY CMP0043)
-	cmake_policy(SET CMP0043 NEW)
+cmake_minimum_required(VERSION 3.5)
+if(POLICY CMP0071)
+	cmake_policy(SET CMP0071 NEW)
 endif()
-if(POLICY CMP0063)
-	cmake_policy(SET CMP0063 NEW)
+if(POLICY CMP0074)
+	cmake_policy(SET CMP0074 NEW)
 endif()
-project(id-updater VERSION 3.12.6)
+project(id-updater VERSION 3.12.7)
 
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake/modules")
 
@@ -105,7 +105,7 @@ else()
 	find_package( OpenSSL REQUIRED )
 	find_package( Qt5 COMPONENTS Core Widgets Network LinguistTools REQUIRED )
 
-	include_directories( ${CMAKE_CURRENT_BINARY_DIR} common/qtsingleapplication/src ${OPENSSL_INCLUDE_DIR} )
+	include_directories( ${CMAKE_CURRENT_BINARY_DIR} common/qtsingleapplication/src )
 	add_subdirectory( common/qtsingleapplication )
 
 	configure_file( translations.qrc translations.qrc COPYONLY )
@@ -132,8 +132,8 @@ else()
 		COMPILE_DEFINITIONS "UNICODE;CONFIG_URL=\"${CONFIG_URL}\";COMMON_STATIC;NO_CACHE"
 		COMPILE_FLAGS "/Zc:wchar_t-" # required for task scheduler BSTR type
 	)
-	target_link_libraries( ${PROGNAME} Qt5::Widgets Qt5::Network qtsingleapplication
-		msi Mstask Userenv wintrust Crypt32 taskschd comsupp ws2_32 Setupapi winscard Wtsapi32 ${OPENSSL_CRYPTO_LIBRARY}
+	target_link_libraries( ${PROGNAME} Qt5::Widgets Qt5::Network qtsingleapplication OpenSSL::Crypto
+		msi Mstask Userenv wintrust Crypt32 taskschd comsupp ws2_32 Setupapi winscard Wtsapi32
 	)
 	add_manifest( ${PROGNAME} )
 	install( TARGETS ${PROGNAME} DESTINATION ${CMAKE_INSTALL_PREFIX}/bin )
