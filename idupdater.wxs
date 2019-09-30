@@ -21,17 +21,6 @@
   <?define OpenSSLSuffix = "" ?>
 <?endif ?>
 
-<?if $(env.VisualStudioVersion) = "15.0" ?>
-  <?define VCRT = "$(env.VCTOOLSREDISTDIR)\$(var.Platform)\Microsoft.VC141.CRT\vcruntime140.dll"?>
-  <?define VCP = "$(env.VCTOOLSREDISTDIR)\$(var.Platform)\Microsoft.VC141.CRT\msvcp140.dll"?>
-<?elseif $(env.VisualStudioVersion) = "14.0" ?>
-  <?define VCRT = "$(env.VCINSTALLDIR)\redist\$(var.Platform)\Microsoft.VC140.CRT\vcruntime140.dll" ?>
-  <?define VCP = "$(env.VCINSTALLDIR)\redist\$(var.Platform)\Microsoft.VC140.CRT\msvcp140.dll"?>
-<?else?>
-  <?define VCRT = "$(env.VCINSTALLDIR)\redist\$(var.Platform)\Microsoft.VC120.CRT\msvcr120.dll" ?>
-  <?define VCP = "$(env.VCINSTALLDIR)\redist\$(var.Platform)\Microsoft.VC120.CRT\msvcp120.dll"?>
-<?endif?>
-
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
   <Product Name="Open-EID Updater" UpgradeCode="d3aa8bd7-e1e6-46d0-97a6-c9b87d2b830b"
       Id="*" Language="1033" Version="$(var.MSI_VERSION)" Codepage="1251" Manufacturer="RIA">
@@ -59,8 +48,6 @@
                 Name="Installed" Value="[APPLICATIONFOLDER]" Type="string"/>
 <?endif ?>
 <?ifdef var.qt_path ?>
-            <File Source="$(var.VCP)"/>
-            <File Source="$(var.VCRT)"/>
             <File Source="$(var.libs_path)\libcrypto-1_1$(var.OpenSSLSuffix).dll"/>
             <File Source="$(var.libs_path)\libssl-1_1$(var.OpenSSLSuffix).dll"/>
             <File Source="$(var.qt_path)\bin\Qt5Core.dll"/>
@@ -88,6 +75,11 @@
               <File Name="windowsprintersupport.dll"/>
             </Component>
           </Directory>
+          <Directory Id="styles" Name="styles" FileSource="$(var.qt_path)\plugins\styles">
+            <Component Id="qwindowsvistastyle.dll">
+              <File Name="qwindowsvistastyle.dll"/>
+            </Component>
+          </Directory>
           <Directory Id="imageformats" Name="imageformats" FileSource="$(var.qt_path)\plugins\imageformats">
             <Component Id="imageformats.dll" Guid="4ae32624-e869-4e4c-8a1c-624c31133ce3">
               <File Name="qgif.dll"/>
@@ -104,6 +96,7 @@
       <ComponentRef Id="Application" />
 <?ifdef var.qt_path ?>
       <ComponentRef Id="qwindows.dll" />
+      <ComponentRef Id="qwindowsvistastyle.dll" />
       <ComponentRef Id="windowsprintersupport.dll" />
       <ComponentRef Id="imageformats.dll" />
 <?endif?>
