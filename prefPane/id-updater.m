@@ -43,6 +43,7 @@
     IBOutlet NSTextField *info;
     IBOutlet NSTabViewItem *updates;
     IBOutlet NSTabViewItem *versionInfo;
+    IBOutlet NSTextField *serverMessage;
     NSString *filename;
     NSTimer *timer;
     double lastRecvd;
@@ -88,7 +89,7 @@
     NSMutableAttributedString *changelogurl = [[NSMutableAttributedString alloc]
                                                initWithString:NSLocalizedString(@"http://www.id.ee/eng/changelog", nil)];
     [changelogurl addAttribute:NSLinkAttributeName value:[changelogurl string] range:NSMakeRange(0, [changelogurl length])];
-    [[changelog textStorage] setAttributedString:changelogurl];
+    [changelog.textStorage setAttributedString:changelogurl];
 
     NSDictionary *versions = @{
         NSLocalizedString(@"DigiDoc3 Client", nil): update.clientversion,
@@ -150,7 +151,7 @@
 }
 
 - (void)message:(NSString *)message {
-    status.stringValue = message;
+    serverMessage.stringValue = message;
     NSUserNotificationCenter *center = [NSUserNotificationCenter defaultUserNotificationCenter];
     if (center) {
         NSUserNotification *notification = [NSUserNotification new];
