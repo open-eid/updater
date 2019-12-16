@@ -1,3 +1,10 @@
+Id-updater version [3.12.8](https://github.com/open-eid/updater/releases/tag/v3.12.8) release notes
+--------------------------------------
+- macOS update changes
+- Windows update OpenSSL to 1.1.1d and Qt 5.12.5
+
+[Full Changelog](https://github.com/open-eid/updater/compare/v3.12.7...v3.12.8)
+
 Id-updater version [3.12.7](https://github.com/open-eid/updater/releases/tag/v3.12.7) release notes
 --------------------------------------
 - macOS update changes
