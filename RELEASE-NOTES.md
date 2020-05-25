@@ -1,3 +1,9 @@
+Id-updater version [3.12.9](https://github.com/open-eid/updater/releases/tag/v3.12.9) release notes
+--------------------------------------
+- Enable dark mode when building old sdk (#42)
+
+[Full Changelog](https://github.com/open-eid/updater/compare/v3.12.8...v3.12.9)
+
 Id-updater version [3.12.8](https://github.com/open-eid/updater/releases/tag/v3.12.8) release notes
 --------------------------------------
 - macOS update changes
