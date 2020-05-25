@@ -5,7 +5,7 @@ endif()
 if(POLICY CMP0074)
 	cmake_policy(SET CMP0074 NEW)
 endif()
-project(id-updater VERSION 3.12.8)
+project(id-updater VERSION 3.12.9)
 
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake/modules")
 
@@ -125,7 +125,6 @@ else()
 		common/Common.cpp
 		common/Configuration.cpp
 		common/QPCSC.cpp
-		common/Settings.h
 	)
 	set_target_properties( ${PROGNAME} PROPERTIES
 		AUTOMOC TRUE
