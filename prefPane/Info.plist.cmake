@@ -34,7 +34,5 @@
 	<string>ID_updater</string>
 	<key>NSRequiresAquaSystemAppearance</key>
 	<false/>
-	<key>NSPrefPaneSupportsAutoLayout</key>
-	<true/>
 </dict>
 </plist>
