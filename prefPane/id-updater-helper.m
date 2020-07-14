@@ -65,13 +65,13 @@ int main(int argc, const char * argv[])
 
     @autoreleasepool {
         if (strcmp(argv[1], "-task") == 0) {
-            Updater *updater __attribute__((unused)) = [[Updater alloc] initWithPath:[[NSString stringWithFormat:@"%s/../../..", argv[0]] stringByStandardizingPath]];
+            Updater *updater __attribute__((unused)) = [[Updater alloc] initWithPath:[NSString stringWithFormat:@"%s/../../..", argv[0]].stringByStandardizingPath];
             [NSRunLoop.mainRunLoop run];
             return 0;
         }
 
-        NSString *PATH = [@"~/Library/LaunchAgents/ee.ria.id-updater.plist" stringByStandardizingPath];
-        [NSFileManager.defaultManager createDirectoryAtPath:[@"~/Library/LaunchAgents" stringByStandardizingPath] withIntermediateDirectories:YES attributes:nil error:nil];
+        NSString *PATH = (@"~/Library/LaunchAgents/ee.ria.id-updater.plist").stringByStandardizingPath;
+        [NSFileManager.defaultManager createDirectoryAtPath:(@"~/Library/LaunchAgents").stringByStandardizingPath withIntermediateDirectories:YES attributes:nil error:nil];
         if (strcmp(argv[1], "-remove") == 0) {
             [[NSTask launchedTaskWithLaunchPath:@"/bin/launchctl" arguments:@[@"unload", @"-w", PATH]] waitUntilExit];
             NSError *error;
@@ -82,22 +82,22 @@ int main(int argc, const char * argv[])
         NSDateComponents *components = [[NSCalendar currentCalendar]
                                         components:NSCalendarUnitHour|NSCalendarUnitMinute|NSCalendarUnitWeekday|NSCalendarUnitDay
                                         fromDate:[NSDate date]];
-        NSNumber *hour = [NSNumber numberWithInteger:[components hour]];
-        NSNumber *minute = [NSNumber numberWithInteger:[components minute]];
-        NSNumber *weekday = [NSNumber numberWithInteger:[components weekday]];
-        NSNumber *day = [NSNumber numberWithInteger:[components day]];
+        NSNumber *hour = @(components.hour);
+        NSNumber *minute = @(components.minute);
+        NSNumber *weekday = @(components.weekday);
+        NSNumber *day = @(components.day);
         NSDictionary *settings = nil;
         if (strcmp(argv[1], "-daily") == 0) {
             settings = @{@"Label": UPDATER_ID,
-                         @"ProgramArguments": @[[NSString stringWithUTF8String:argv[0]], @"-task"],
+                         @"ProgramArguments": @[@(argv[0]), @"-task"],
                          @"StartCalendarInterval": @{@"Hour": hour, @"Minute": minute}};
         } else if (strcmp(argv[1], "-weekly") == 0) {
             settings = @{@"Label": UPDATER_ID,
-                         @"ProgramArguments": @[[NSString stringWithUTF8String:argv[0]], @"-task"],
+                         @"ProgramArguments": @[@(argv[0]), @"-task"],
                          @"StartCalendarInterval": @{@"Hour": hour, @"Minute": minute, @"Weekday": weekday}};
         } else if (strcmp(argv[1], "-monthly") == 0) {
             settings = @{@"Label": UPDATER_ID,
-                         @"ProgramArguments": @[[NSString stringWithUTF8String:argv[0]], @"-task"],
+                         @"ProgramArguments": @[@(argv[0]), @"-task"],
                          @"StartCalendarInterval": @{@"Hour": hour, @"Minute": minute, @"Day": day}};
         } else {
             return 0;
