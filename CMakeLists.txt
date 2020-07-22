@@ -122,7 +122,9 @@ else()
 	set_target_properties( ${PROGNAME} PROPERTIES
 		AUTOMOC TRUE
 		COMPILE_DEFINITIONS "UNICODE;CONFIG_URL=\"${CONFIG_URL}\";COMMON_STATIC;NO_CACHE"
-		COMPILE_FLAGS "/Zc:wchar_t-" # required for task scheduler BSTR type
+		COMPILE_OPTIONS "/Zc:wchar_t-;/guard:cf" # required for task scheduler BSTR type
+		LINK_OPTIONS "/guard:cf"
+		INTERPROCEDURAL_OPTIMIZATION YES
 	)
 	target_link_libraries( ${PROGNAME} Qt5::Widgets Qt5::Network qtsingleapplication OpenSSL::Crypto
 		msi Mstask Userenv wintrust Crypt32 taskschd comsupp ws2_32 Setupapi winscard Wtsapi32
@@ -153,10 +155,14 @@ else()
 			-dWixUIBannerBmp=${CMAKE_SOURCE_DIR}/cmake/modules/banner.bmp
 	)
 	if(SIGNCERT)
+		if(CROSSSIGNCERT)
+			target_link_options(${PROGNAME} PRIVATE "/INTEGRITYCHECK")
+		endif()
 		list(APPEND SIGNCMD signtool.exe sign /a /v /s MY /n "${SIGNCERT}" /fd SHA256
 			/du http://installer.id.ee /tr http://sha256timestamp.ws.symantec.com/sha256/timestamp /td SHA256)
 		add_custom_command(TARGET ${PROGNAME} POST_BUILD
-			COMMAND ${SIGNCMD} $<TARGET_FILE:${PROGNAME}>
+			COMMAND ${SIGNCMD} "$<$<BOOL:${CROSSSIGNCERT}>:/ph;/ac;${CROSSSIGNCERT}>" $<TARGET_FILE:${PROGNAME}>
+			COMMAND_EXPAND_LISTS
 		)
 		add_custom_command(TARGET installer POST_BUILD
 			COMMAND ${SIGNCMD} "${MSI_FILE}.msi"
