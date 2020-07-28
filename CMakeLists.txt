@@ -1,11 +1,8 @@
-cmake_minimum_required(VERSION 3.5)
-if(POLICY CMP0071)
-	cmake_policy(SET CMP0071 NEW)
-endif()
+cmake_minimum_required(VERSION 3.16)
 if(POLICY CMP0074)
 	cmake_policy(SET CMP0074 NEW)
 endif()
-project(id-updater VERSION 3.12.9)
+project(id-updater VERSION 3.13.0 LANGUAGES CXX)
 
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake/modules")
 
@@ -19,18 +16,15 @@ string( REPLACE ".json" ".pub" PUB_URL ${CONFIG_URL} )
 file( DOWNLOAD ${PUB_URL} ${CMAKE_CURRENT_BINARY_DIR}/config.pub )
 
 if( APPLE )
+	enable_language(OBJC)
 	add_custom_command( OUTPUT config.h
 		COMMAND xxd -i config.pub config.h
 		COMMENT "Generating config.h"
 	)
 	include_directories( ${CMAKE_CURRENT_BINARY_DIR} )
-	set_source_files_properties( prefPane/id-updater-helper.m prefPane/id-updater.m prefPane/update.m PROPERTIES LANGUAGE C )
 	add_executable( id-updater-helper prefPane/id-updater-helper.m prefPane/update.m config.h )
-	set_target_properties( id-updater-helper PROPERTIES
-		COMPILE_FLAGS "-Wno-unused-parameter -fobjc-arc"
-		LINKER_LANGUAGE C
-	)
-	target_link_libraries( id-updater-helper "-framework Foundation -framework PCSC -framework Security" )
+	target_compile_options(id-updater-helper PRIVATE "-Wno-unused-parameter" "-fobjc-arc")
+	target_link_libraries(id-updater-helper "-framework Foundation -framework CryptoTokenKit -framework Security")
 
 	add_custom_command( OUTPUT ID_updater.nib
 		COMMAND ibtool --errors --warnings --notices --output-format human-readable-text
@@ -70,12 +64,11 @@ if( APPLE )
 		BUNDLE_EXTENSION prefPane
 		RESOURCES prefPane/Icon.icns
 		COMPILE_FLAGS "-Wno-unused-parameter -fobjc-arc"
-		LINKER_LANGUAGE C
 		XCODE_ATTRIBUTE_WRAPPER_EXTENSION prefPane
 		MACOSX_BUNDLE_INFO_PLIST ${CMAKE_CURRENT_SOURCE_DIR}/prefPane/Info.plist.cmake
 	)
-	target_link_libraries( ${PROGNAME} ${XAR}
-		"-framework Security -framework Cocoa -framework PreferencePanes -framework PCSC -framework Security"
+	target_link_libraries(${PROGNAME} ${XAR}
+		"-framework Cocoa -framework PreferencePanes -framework CryptoTokenKit -framework Security"
 	)
 	add_custom_command( TARGET ${PROGNAME} POST_BUILD
 		COMMAND cp $<TARGET_FILE:id-updater-helper> $<TARGET_FILE_DIR:${PROGNAME}>/../Resources )

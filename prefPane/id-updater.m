@@ -55,12 +55,12 @@
 @implementation ID_updater
 
 - (void)mainViewDidLoad {
-    NSDictionary *schedule = [NSDictionary dictionaryWithContentsOfFile:[@"~/Library/LaunchAgents/ee.ria.id-updater.plist" stringByStandardizingPath]];
+    NSDictionary *schedule = [NSDictionary dictionaryWithContentsOfFile:(@"~/Library/LaunchAgents/ee.ria.id-updater.plist").stringByStandardizingPath];
     if (!schedule) {
         [changeSchedule selectItemAtIndex:3];
-    } else if ([(NSDictionary*)[schedule objectForKey:@"StartCalendarInterval"] objectForKey:@"Weekday"]) {
+    } else if (((NSDictionary*)schedule[@"StartCalendarInterval"])[@"Weekday"]) {
         [changeSchedule selectItemAtIndex:1];
-    } else if ([(NSDictionary*)[schedule objectForKey:@"StartCalendarInterval"] objectForKey:@"Day"]) {
+    } else if (((NSDictionary*)schedule[@"StartCalendarInterval"])[@"Day"]) {
         [changeSchedule selectItemAtIndex:2];
     }
 
@@ -69,9 +69,9 @@
     bundlelang = self.bundle;
     NSArray *languages = [[NSUserDefaults standardUserDefaults] objectForKey:@"AppleLanguages"];
     NSLog(@"Languages %@", languages);
-    if([@"et" isEqualToString:[languages objectAtIndex:0]]) {
-        NSLog(@"Estonian %@", [self.bundle pathForResource:[languages objectAtIndex:0] ofType:@"lproj"]);
-        bundlelang = [NSBundle bundleWithPath:[self.bundle pathForResource:[languages objectAtIndex:0] ofType:@"lproj"]];
+    if([@"et" isEqualToString:languages[0]]) {
+        NSLog(@"Estonian %@", [self.bundle pathForResource:languages[0] ofType:@"lproj"]);
+        bundlelang = [NSBundle bundleWithPath:[self.bundle pathForResource:languages[0] ofType:@"lproj"]];
     }
     status.stringValue = NSLocalizedString(status.stringValue, nil);
     changeScheduleLabel.stringValue = NSLocalizedString(changeScheduleLabel.stringValue, nil);
@@ -88,7 +88,7 @@
 
     NSMutableAttributedString *changelogurl = [[NSMutableAttributedString alloc]
                                                initWithString:NSLocalizedString(@"http://www.id.ee/eng/changelog", nil)];
-    [changelogurl addAttribute:NSLinkAttributeName value:[changelogurl string] range:NSMakeRange(0, [changelogurl length])];
+    [changelogurl addAttribute:NSLinkAttributeName value:changelogurl.string range:NSMakeRange(0, changelogurl.length)];
     [changelog.textStorage setAttributedString:changelogurl];
 
     NSDictionary *versions = @{
@@ -113,7 +113,7 @@
     };
     NSMutableArray *list = [[NSMutableArray alloc] init];
     [versions enumerateKeysAndObjectsUsingBlock:^(id key, id object, BOOL *stop) {
-        if (object != nil && [(NSString*)object length] != 0)
+        if (object != nil && ((NSString*)object).length != 0)
             [list addObject:[NSString stringWithFormat:@"%@ (%@)", key, object]];
     }];
     info.stringValue = [list componentsJoinedByString:@"\n"];
@@ -138,13 +138,13 @@
             case InvalidSignature:
                 status.stringValue = NSLocalizedString(@"The configuration file located on the server cannot be validated.", nil);
                 break;
-                
+
             case FileNotFound:
                 status.stringValue = NSLocalizedString(@"File not found", nil);
                 break;
 
             default:
-                status.stringValue = [error localizedDescription];
+                status.stringValue = error.localizedDescription;
                 break;
         }
     }
@@ -196,7 +196,7 @@
     [progress stopAnimation:self];
     [timer invalidate];
     timer = nil;
-    NSString *tmp = [NSString stringWithFormat:@"%@/%@", NSTemporaryDirectory(), [filename lastPathComponent]];
+    NSString *tmp = [NSString stringWithFormat:@"%@/%@", NSTemporaryDirectory(), filename.lastPathComponent];
     [NSFileManager.defaultManager removeItemAtPath:tmp error:nil];
     [NSFileManager.defaultManager moveItemAtPath:location.path toPath:tmp error:nil];
 
@@ -220,9 +220,14 @@
         return;
     }
 
-    id certref = nil;
+    NSData *certData;
     xar_signature_t sig = xar_signature_first(xar);
-    for (int32_t i = 0, count = xar_signature_get_x509certificate_count(sig); i < count; ++i)	{
+    xar_signature_t next = xar_signature_next(sig);
+    if(next && strcmp("CMS", xar_signature_type(next)) == 0)
+        sig = next;
+    NSString *signatureType = @(xar_signature_type(sig));
+    NSLog(@"Signature type %@", signatureType);
+    for (int32_t i = 0, count = xar_signature_get_x509certificate_count(sig); i < count; ++i) {
         uint32_t size = 0;
         const uint8_t *data = nil;
         if (xar_signature_get_x509certificate_data(sig, i, &data, &size))
@@ -230,34 +235,49 @@
 
         NSData *der = [NSData dataWithBytesNoCopy:(uint8_t*)data length:size freeWhenDone:NO];
         if ([update.centralConfig[@"CERT-BUNDLE"] containsObject:[der base64EncodedStringWithOptions:0]])
-            certref = CFAutorelease(SecCertificateCreateWithData(0, (__bridge CFDataRef)der));
+            certData = [NSData dataWithBytes:(uint8_t*)data length:size]; // Make copy of memory will be lost after xar_close
     }
 
-    if (!certref) {
+    if (!certData) {
         status.stringValue = NSLocalizedString(@"No matching certificate", nil);
         xar_close(xar);
         return;
     }
 
-    uint8_t *data = nil, *signature = nil;
-    uint32_t dataSize = 0, signatureSize = 0;
+    uint8_t *signedData = nil, *signatureData = nil;
+    uint32_t signedDataSize = 0, signatureDataSize = 0;
     off_t offset = 0;
-    uint8_t err = xar_signature_copy_signed_data(sig, &data, &dataSize, &signature, &signatureSize, &offset);
+    uint8_t err = xar_signature_copy_signed_data(sig, &signedData, &signedDataSize, &signatureData, &signatureDataSize, &offset);
+    NSData *signature = [NSData dataWithBytesNoCopy:signatureData length:signatureDataSize];
+    NSData *data = [NSData dataWithBytesNoCopy:signedData length:signedDataSize];
     xar_close(xar);
     if (err) {
         status.stringValue = NSLocalizedString(@"Failed to copy signature", nil);
         return;
     }
 
+    if([signatureType isEqualToString:@"CMS"]) {
+        if ([update verifyCMSSignature:signature data:data cert:certData])
+            [NSTask launchedTaskWithLaunchPath:@"/usr/bin/open" arguments:@[path]];
+        else
+        {
+            NSLog(@"CMS Verify error");
+            status.stringValue = NSLocalizedString(@"Failed to verify signature", nil);
+        }
+        return;
+    }
+
+    SecCertificateRef certref = SecCertificateCreateWithData(0, (__bridge CFDataRef)certData);
     SecKeyRef publickey = nil;
-    OSStatus oserr = SecCertificateCopyPublicKey((__bridge SecCertificateRef)certref, &publickey);
+    OSStatus oserr = SecCertificateCopyPublicKey(certref, &publickey);
+    CFRelease(certref);
     if (oserr) {
         status.stringValue = NSLocalizedString(@"Failed to copy public key", nil);
         return;
     }
 
     NSError *error = nil;
-    bool isValid = [update verifySignature:[NSData dataWithBytesNoCopy:signature length:signatureSize] data:[NSData dataWithBytesNoCopy:data length:dataSize] key:publickey digest:nil error:&error];
+    bool isValid = [update verifySignature:signature data:data key:publickey digestSize:nil error:&error];
     CFRelease(publickey);
     if (isValid)
         [NSTask launchedTaskWithLaunchPath:@"/usr/bin/open" arguments:@[path]];

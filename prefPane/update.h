@@ -36,7 +36,8 @@ enum {
 - (id)initWithDelegate:(id <UpdateDelegate>)delegate;
 - (void)request;
 - (NSString *)userAgent;
-- (BOOL)verifySignature:(NSData *)signature data:(NSData *)data key:(SecKeyRef)key digest:(CFNumberRef)digest error:(NSError **)error;
+- (BOOL)verifyCMSSignature:(NSData *)signatureData data:(NSData *)data cert:(NSData *)cert;
+- (BOOL)verifySignature:(NSData *)signature data:(NSData *)data key:(SecKeyRef)key digestSize:(CFNumberRef)digestSize error:(NSError **)error;
 - (NSString*)versionInfo:(NSString *)pkg;
 
 @property(retain) NSString *baseversion;

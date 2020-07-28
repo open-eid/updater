@@ -1,3 +1,9 @@
+Id-updater version [3.13.0](https://github.com/open-eid/updater/releases/tag/v3.13.0) release notes
+--------------------------------------
+- Implement CMS based macOS package signature check
+
+[Full Changelog](https://github.com/open-eid/updater/compare/v3.12.9...v3.13.0)
+
 Id-updater version [3.12.9](https://github.com/open-eid/updater/releases/tag/v3.12.9) release notes
 --------------------------------------
 - Enable dark mode when building old sdk (#42)

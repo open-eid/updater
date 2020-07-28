@@ -19,9 +19,8 @@
 
 #import "update.h"
 
-#import <PCSC/winscard.h>
-
-#include <Security/Security.h>
+#import <CryptoTokenKit/CryptoTokenKit.h>
+#import <Security/Security.h>
 
 #include <sys/utsname.h>
 
@@ -61,19 +60,7 @@
     struct utsname unameData;
     uname(&unameData);
 
-    SCARDCONTEXT ctx = 0;
-    SCardEstablishContext(SCARD_SCOPE_SYSTEM, 0, 0, &ctx);
-    uint32_t size = 0;
-    SCardListReaders(ctx, 0, 0, &size);
-    char *readers = (char*)malloc(size * sizeof(char));
-    SCardListReaders(ctx, 0, readers, &size);
-    NSMutableArray *list = [NSMutableArray array];
-    for (char *p = readers; *p; p += strlen(p) + 1) {
-        [list addObject:[NSString stringWithCString:p encoding:NSUTF8StringEncoding]];
-    }
-    free(readers);
-    SCardReleaseContext(ctx);
-
+    NSString *devices = [TKSmartCardSlotManager.defaultManager.slotNames componentsJoinedByString:@"/"];
     NSMutableArray *agent = [NSMutableArray arrayWithObject:[NSString stringWithFormat:@"id-updater/%@", self.baseversion]];
     if (self.clientversion) {
         [agent addObject:[NSString stringWithFormat:@"qdigidocclient/%@", self.clientversion]];
@@ -85,13 +72,13 @@
         [agent addObject:[NSString stringWithFormat:@"qdigidoc4/%@", self.digidoc4]];
     }
     [agent addObject:[NSString stringWithFormat:@"(Mac OS %@(%lu/%s)) Locale: %@ Devices: %@",
-        [os objectForKey:@"ProductVersion"], sizeof(void *)<<3, unameData.machine, @"UTF-8", [list componentsJoinedByString:@"/"]]];
+        os[@"ProductVersion"], sizeof(void *)<<3, unameData.machine, @"UTF-8", devices]];
     return [agent componentsJoinedByString:@" "];
 }
 
 - (BOOL)verify:(NSData *)data error:(NSError **)error
 {
-    NSString *pem = [NSString stringWithUTF8String:(char*)config_pub];
+    NSString *pem = @((char*)config_pub);
     pem = [pem stringByReplacingOccurrencesOfString:@"-----BEGIN RSA PUBLIC KEY-----" withString:@""];
     pem = [pem stringByReplacingOccurrencesOfString:@"-----END RSA PUBLIC KEY-----" withString:@""];
     pem = [NSString stringWithFormat:@"%@%@", @"MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8A", pem];
@@ -103,34 +90,74 @@
     CFErrorRef err = 0;
     id key = CFBridgingRelease(SecKeyCreateFromData((__bridge CFDictionaryRef)parameters, (__bridge CFDataRef)keyData, &err));
     if (err) { if(error) *error = CFBridgingRelease(err); return false; }
-    return [self verifySignature:[[NSData alloc] initWithBase64EncodedString:signature options:NSDataBase64DecodingIgnoreUnknownCharacters] data:data key:(__bridge SecKeyRef)key digest:(__bridge CFNumberRef)@512 error:error];
+    return [self verifySignature:[[NSData alloc] initWithBase64EncodedString:signature options:NSDataBase64DecodingIgnoreUnknownCharacters] data:data key:(__bridge SecKeyRef)key digestSize:(__bridge CFNumberRef)@512 error:error];
 }
 
-- (BOOL)verifySignature:(NSData *)signatureData data:(NSData *)data key:(SecKeyRef)key digest:(CFNumberRef)digest error:(NSError **)error {
+- (BOOL)verifyCMSSignature:(NSData *)signatureData data:(NSData *)data cert:(NSData *)cert {
+    #define RETURN_IF_OERROR(MSG) if (oserr) { NSLog(MSG); return false; }
+    CMSDecoderRef decoderRef;
+    OSStatus oserr = CMSDecoderCreate(&decoderRef);
+    RETURN_IF_OERROR(@"CMSDecoderCreate")
+    id decoder = CFBridgingRelease(decoderRef);
+
+    oserr = CMSDecoderUpdateMessage((__bridge CMSDecoderRef)decoder, signatureData.bytes, signatureData.length);
+    RETURN_IF_OERROR(@"CMSDecoderUpdateMessage")
+    oserr = CMSDecoderFinalizeMessage((__bridge CMSDecoderRef)decoder);
+    RETURN_IF_OERROR(@"CMSDecoderFinalizeMessage")
+    oserr = CMSDecoderSetDetachedContent((__bridge CMSDecoderRef)decoder, (__bridge CFDataRef)data);
+    RETURN_IF_OERROR(@"CMSDecoderSetDetachedContent")
+
+    size_t numSignersOut = 0;
+    oserr = CMSDecoderGetNumSigners((__bridge CMSDecoderRef)decoder, &numSignersOut);
+    RETURN_IF_OERROR(@"CMSDecoderGetNumSigners")
+    if (numSignersOut != 1) {
+        NSLog(@"Invalid number of signers: %lu", numSignersOut);
+        return false;
+    }
+
+    SecPolicyRef policy = SecPolicyCreateBasicX509();
+    CMSSignerStatus status;
+    oserr = CMSDecoderCopySignerStatus((__bridge CMSDecoderRef)decoder, 0, policy, TRUE, &status, nil, nil);
+    CFRelease(policy);
+    RETURN_IF_OERROR(@"CMSDecoderCopySignerStatus")
+    bool isValid = status == kCMSSignerValid;
+
+    SecCertificateRef signerCert;
+    oserr = CMSDecoderCopySignerCert((__bridge CMSDecoderRef)decoder, 0, &signerCert);
+    RETURN_IF_OERROR(@"CMSDecoderCopySignerCert")
+    bool isSameCert = [cert isEqualToData:CFBridgingRelease(SecCertificateCopyData(signerCert))];
+    CFRelease(signerCert);
+
+    NSLog(@"Signature is (%d) and cert is equal(%d)", isValid, isSameCert);
+    return isValid && isSameCert;
+}
+
+- (BOOL)verifySignature:(NSData *)signatureData data:(NSData *)data key:(SecKeyRef)key digestSize:(CFNumberRef)digestSize error:(NSError **)error {
     CFErrorRef err = nil;
+    #define RETURN_IF_ERROR if (err) { if(error) *error = CFBridgingRelease(err); return false; }
     id verifier = CFBridgingRelease(SecVerifyTransformCreate(key, (__bridge CFDataRef)signatureData, &err));
-    if (err) { if(error) *error = CFBridgingRelease(err); return false; }
+    RETURN_IF_ERROR
     SecTransformSetAttribute((__bridge SecTransformRef)verifier, kSecTransformInputAttributeName, (__bridge CFDataRef)data, &err);
-    if (err) { if(error) *error = CFBridgingRelease(err); return false; }
-    if (digest != nil) {
+    RETURN_IF_ERROR
+    if (digestSize != nil) {
         SecTransformSetAttribute((__bridge SecTransformRef)verifier, kSecDigestTypeAttribute, kSecDigestSHA2, &err);
-        if (err) { if(error) *error = CFBridgingRelease(err); return false; }
-        SecTransformSetAttribute((__bridge SecTransformRef)verifier, kSecDigestLengthAttribute, digest, &err);
-        if (err) { if(error) *error = CFBridgingRelease(err); return false; }
+        RETURN_IF_ERROR
+        SecTransformSetAttribute((__bridge SecTransformRef)verifier, kSecDigestLengthAttribute, digestSize, &err);
+        RETURN_IF_ERROR
     } else {
         SecTransformSetAttribute((__bridge SecTransformRef)verifier, kSecInputIsAttributeName, kSecInputIsDigest, &err);
-        if (err) { if(error) *error = CFBridgingRelease(err); return false; }
+        RETURN_IF_ERROR
     }
     CFTypeRef result = SecTransformExecute((__bridge SecTransformRef)verifier, &err);
     bool isValid = result == kCFBooleanTrue;
     CFRelease(result);
-    if (err) { if(error) *error = CFBridgingRelease(err); return false; }
+    RETURN_IF_ERROR
     return isValid;
 }
 
 - (NSString*)versionInfo:(NSString *)pkg {
     NSDictionary *list = [NSDictionary dictionaryWithContentsOfFile:[NSString stringWithFormat:@"/var/db/receipts/%@.plist", pkg]];
-    return list ? [list objectForKey:@"PackageVersion"] : [NSString string];
+    return list ? list[@"PackageVersion"] : [NSString string];
 }
 
 - (void)receivedData:(NSData *)data withResponse:(NSURLResponse *)response
