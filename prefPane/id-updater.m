@@ -122,10 +122,6 @@
 
 #pragma mark - UserNotificationCenter Delegate
 
-/*- (BOOL)userNotificationCenter:(NSUserNotificationCenter *)center shouldPresentNotification:(NSUserNotification *)notification {
-    return YES;
-}*/
-
 - (void)userNotificationCenter:(NSUserNotificationCenter *)center didActivateNotification:(NSUserNotification *)notification {
     [center removeAllDeliveredNotifications];
 }
@@ -133,54 +129,60 @@
 #pragma mark - Update delegate
 
 - (void)didFinish:(NSError *)error {
-    if (error) {
-        switch (error.code) {
-            case InvalidSignature:
-                status.stringValue = NSLocalizedString(@"The configuration file located on the server cannot be validated.", nil);
-                break;
+    dispatch_sync(dispatch_get_main_queue(), ^{
+        if (error) {
+            switch (error.code) {
+                case InvalidSignature:
+                    status.stringValue = NSLocalizedString(@"The configuration file located on the server cannot be validated.", nil);
+                    break;
 
-            case FileNotFound:
-                status.stringValue = NSLocalizedString(@"File not found", nil);
-                break;
+                case FileNotFound:
+                    status.stringValue = NSLocalizedString(@"File not found", nil);
+                    break;
 
-            default:
-                status.stringValue = error.localizedDescription;
-                break;
+                default:
+                    status.stringValue = error.localizedDescription;
+                    break;
+            }
         }
-    }
+    });
 }
 
 - (void)message:(NSString *)message {
-    serverMessage.stringValue = message;
-    NSUserNotificationCenter *center = [NSUserNotificationCenter defaultUserNotificationCenter];
-    if (center) {
-        NSUserNotification *notification = [NSUserNotification new];
-        notification.title = NSLocalizedString(@"Update message", nil);
-        notification.subtitle = message;
-        notification.informativeText = message;
-        notification.soundName = NSUserNotificationDefaultSoundName;
-        center.delegate = self;
-        [center deliverNotification:notification];
-    }
+    dispatch_sync(dispatch_get_main_queue(), ^{
+        serverMessage.stringValue = message;
+        NSUserNotificationCenter *center = [NSUserNotificationCenter defaultUserNotificationCenter];
+        if (center) {
+            NSUserNotification *notification = [NSUserNotification new];
+            notification.title = NSLocalizedString(@"Update message", nil);
+            notification.subtitle = message;
+            notification.informativeText = message;
+            notification.soundName = NSUserNotificationDefaultSoundName;
+            center.delegate = self;
+            [center deliverNotification:notification];
+        }
+    });
 }
 
 - (void)updateAvailable:(NSString *)_available filename:(NSString *)_filename {
-    availableLabel.hidden = NO;
-    available.hidden = NO;
-    install.hidden = NO;
-    available.stringValue = _available;
-    filename = _filename;
+    dispatch_sync(dispatch_get_main_queue(), ^{
+        availableLabel.hidden = NO;
+        available.hidden = NO;
+        install.hidden = NO;
+        available.stringValue = _available;
+        filename = _filename;
 
-    NSUserNotificationCenter *center = [NSUserNotificationCenter defaultUserNotificationCenter];
-    if (center) {
-        NSUserNotification *notification = [NSUserNotification new];
-        notification.title = NSLocalizedString(@"Update available", nil);
-        notification.subtitle = _available;
-        notification.informativeText = NSLocalizedString(@"http://www.id.ee/eng/changelog", nil);
-        notification.soundName = NSUserNotificationDefaultSoundName;
-        center.delegate = self;
-        [center deliverNotification:notification];
-    }
+        NSUserNotificationCenter *center = [NSUserNotificationCenter defaultUserNotificationCenter];
+        if (center) {
+            NSUserNotification *notification = [NSUserNotification new];
+            notification.title = NSLocalizedString(@"Update available", nil);
+            notification.subtitle = _available;
+            notification.informativeText = NSLocalizedString(@"http://www.id.ee/eng/changelog", nil);
+            notification.soundName = NSUserNotificationDefaultSoundName;
+            center.delegate = self;
+            [center deliverNotification:notification];
+        }
+    });
 }
 
 #pragma mark - Connection delegate
