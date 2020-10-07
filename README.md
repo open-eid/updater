@@ -6,7 +6,7 @@
  * &copy; Estonian Information System Authority
 
 ## Building
-[![Build Status](https://travis-ci.org/open-eid/updater.svg?branch=master)](https://travis-ci.org/open-eid/updater)
+[![Build Status](https://travis-ci.com/open-eid/updater.svg?branch=master)](https://travis-ci.com/open-eid/updater)
 [![Build Status](https://ci.appveyor.com/api/projects/status/github/open-eid/updater?branch=master&svg=true)](https://ci.appveyor.com/project/open-eid/updater)
         
 ### OSX
@@ -35,6 +35,6 @@
         open /Library/PreferencePanes/id-updater.prefPane
 
 ## Support
-Official builds are provided through official distribution point [installer.id.ee](https://installer.id.ee). If you want support, you need to be using official builds.
+Official builds are provided through official distribution point [id.ee](https://www.id.ee/en/article/install-id-software/). If you want support, you need to be using official builds.
 
 Source code is provided on "as is" terms with no warranty (see license for more information). Do not file Github issues with generic support requests.
