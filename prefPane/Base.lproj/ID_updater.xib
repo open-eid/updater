@@ -166,11 +166,11 @@
                                                         <size key="minSize" width="504" height="20"/>
                                                         <size key="maxSize" width="604" height="10000000"/>
                                                         <attributedString key="textStorage">
-                                                            <fragment content="http://www.id.ee/eng/changelog">
+                                                            <fragment content="https://www.id.ee/en/article/id-software-versions-info-release-notes/">
                                                                 <attributes>
                                                                     <color key="NSColor" name="textColor" catalog="System" colorSpace="catalog"/>
                                                                     <font key="NSFont" size="13" name="LucidaGrande"/>
-                                                                    <url key="NSLink" string="http://www.id.ee/eng/changelog"/>
+                                                                    <url key="NSLink" string="https://www.id.ee/en/article/id-software-versions-info-release-notes/"/>
                                                                     <paragraphStyle key="NSParagraphStyle" alignment="natural" lineBreakMode="wordWrapping" baseWritingDirection="natural"/>
                                                                 </attributes>
                                                             </fragment>

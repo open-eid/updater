@@ -29,7 +29,7 @@
     </message>
     <message>
         <source>Failed to set schedule, check permissions. Try again with administrator permissions.</source>
-        <translation>Viga ajakava seadistamisel, palun kontrollige õigusi. Proovige uuesti administraatori õigustega.</translation>
+        <translation>Viga ajakava seadistamisel, palun kontrolli õigusi. Proovi uuesti administraatori õigustega.</translation>
     </message>
 </context>
 <context>
@@ -76,7 +76,7 @@
     </message>
     <message>
         <source>Update is available</source>
-        <translation>ID-kaardi baastarkvarast on saadaval uus versioon</translation>
+        <translation>ID-tarkvara uus versioon on saadaval</translation>
     </message>
     <message>
         <source>No updates are available</source>
@@ -102,8 +102,8 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Changelog: &lt;a href=&quot;http://www.id.ee/eng/changelog&quot;&gt;http://www.id.ee/eng/changelog&lt;/a&gt;</source>
-        <translation>Muudatuste ajalugu: &lt;a href=&quot;http://www.id.ee/changelog&quot;&gt;http://www.id.ee/changelog&lt;/a&gt;</translation>
+        <source>Changelog: &lt;a href=&quot;https://www.id.ee/en/article/id-software-versions-info-release-notes/&quot;&gt;www.id.ee&lt;/a&gt;</source>
+        <translation>Muudatuste ajalugu: &lt;a href=&quot;https://www.id.ee/artikkel/id-tarkvara-versioonide-info-release-notes/&quot;&gt;www.id.ee&lt;/a&gt;</translation>
     </message>
     <message>
         <source>Installed:</source>
