@@ -102,8 +102,8 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Changelog: &lt;a href=&quot;http://www.id.ee/eng/changelog&quot;&gt;http://www.id.ee/eng/changelog&lt;/a&gt;</source>
-        <translation>История обновлений: &lt;a href=&quot;http://www.id.ee/rus/changelog&quot;&gt;http://www.id.ee/rus/changelog&lt;/a&gt;</translation>
+        <source>Changelog: &lt;a href=&quot;https://www.id.ee/en/article/id-software-versions-info-release-notes/&quot;&gt;www.id.ee&lt;/a&gt;</source>
+        <translation>История обновлений: &lt;a href=&quot;https://www.id.ee/ru/artikkel/informacziya-o-versiyah-programmnogo-obespecheniya-id-karty-release-notes-2/&quot;&gt;www.id.ee&lt;/a&gt;</translation>
     </message>
     <message>
         <source>Installed:</source>

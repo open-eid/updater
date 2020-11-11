@@ -87,7 +87,7 @@
     updates.label = NSLocalizedString(updates.label, nil);
 
     NSMutableAttributedString *changelogurl = [[NSMutableAttributedString alloc]
-                                               initWithString:NSLocalizedString(@"http://www.id.ee/eng/changelog", nil)];
+                                               initWithString:NSLocalizedString(@"https://www.id.ee/en/article/id-software-versions-info-release-notes/", nil)];
     [changelogurl addAttribute:NSLinkAttributeName value:changelogurl.string range:NSMakeRange(0, changelogurl.length)];
     [changelog.textStorage setAttributedString:changelogurl];
 
@@ -177,7 +177,7 @@
             NSUserNotification *notification = [NSUserNotification new];
             notification.title = NSLocalizedString(@"Update available", nil);
             notification.subtitle = _available;
-            notification.informativeText = NSLocalizedString(@"http://www.id.ee/eng/changelog", nil);
+            notification.informativeText = NSLocalizedString(@"https://www.id.ee/en/article/id-software-versions-info-release-notes/", nil);
             notification.soundName = NSUserNotificationDefaultSoundName;
             center.delegate = self;
             [center deliverNotification:notification];
