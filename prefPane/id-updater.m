@@ -40,6 +40,7 @@
     IBOutlet NSTextField *speed;
     IBOutlet NSProgressIndicator *progress;
     IBOutlet NSButton *install;
+    IBOutlet NSButton *uninstall;
     IBOutlet NSTextField *info;
     IBOutlet NSTabViewItem *updates;
     IBOutlet NSTabViewItem *versionInfo;
@@ -79,6 +80,7 @@
     installedLabel.stringValue = NSLocalizedString(installedLabel.stringValue, nil);
     availableLabel.stringValue = NSLocalizedString(availableLabel.stringValue, nil);
     install.title = NSLocalizedString(install.title, nil);
+    uninstall.hidden = ![NSFileManager.defaultManager fileExistsAtPath:@"/usr/local/bin/open-eid-uninstall.sh"];
     for (int i = 0; i < changeSchedule.numberOfItems; ++i) {
         NSMenuItem *item = [changeSchedule itemAtIndex:i];
         item.title = NSLocalizedString(item.title, nil);
@@ -316,6 +318,23 @@
     [[defaultSession downloadTaskWithRequest:request] resume];
     lastRecvd = 0;
     timer = [NSTimer scheduledTimerWithTimeInterval:1.0 target:self selector:@selector(timer:) userInfo:nil repeats:YES];
+}
+- (IBAction)uninstall:(id)sender {
+
+    AuthorizationRef authorizationRef;
+    OSStatus status = AuthorizationCreate(NULL, kAuthorizationEmptyEnvironment, kAuthorizationFlagDefaults, &authorizationRef);
+
+    // Run the tool using the authorization reference
+    const char *tool = "/usr/local/bin/open-eid-uninstall.sh";
+    char *args[] = {NULL};
+    FILE *pipe = NULL;
+    status = AuthorizationExecuteWithPrivileges(authorizationRef, tool, kAuthorizationFlagDefaults, args, &pipe);
+    if (status == EXIT_SUCCESS) {
+        NSFileHandle *fileOut = [[NSFileHandle alloc] initWithFileDescriptor:fileno(pipe) closeOnDealloc:YES];
+        NSData *data = [fileOut readDataToEndOfFile];
+        [fileOut closeFile];
+        NSLog (@"Returned:\n%@", [[NSString alloc] initWithData: data encoding: NSUTF8StringEncoding]);
+    }
 }
 
 - (void)timer:(NSTimer*)timer {
