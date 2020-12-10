@@ -21,6 +21,17 @@
   <?define OpenSSLSuffix = "" ?>
 <?endif ?>
 
+<?if $(env.VisualStudioVersion) = "16.0" ?>
+<?define VCVER = "142" ?>
+<?define VCPATH = "$(env.VCTOOLSREDISTDIR)" ?>
+<?elseif $(env.VisualStudioVersion) = "15.0" ?>
+<?define VCVER = "141" ?>
+<?define VCPATH = "$(env.VCTOOLSREDISTDIR)" ?>
+<?elseif $(env.VisualStudioVersion) = "14.0" ?>
+<?define VCVER = "140" ?>
+<?define VCPATH = "$(env.VCINSTALLDIR)\redist" ?>
+<?endif?>
+
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
   <Product Name="Open-EID Updater" UpgradeCode="d3aa8bd7-e1e6-46d0-97a6-c9b87d2b830b"
       Id="*" Language="1033" Version="$(var.MSI_VERSION)" Codepage="1251" Manufacturer="RIA">
@@ -48,6 +59,11 @@
                 Name="Installed" Value="[APPLICATIONFOLDER]" Type="string"/>
 <?endif ?>
 <?ifdef var.qt_path ?>
+            <File Source="$(var.VCPATH)\$(var.Platform)\Microsoft.VC$(var.VCVER).CRT\msvcp140.dll"/>
+            <File Source="$(var.VCPATH)\$(var.Platform)\Microsoft.VC$(var.VCVER).CRT\vcruntime140.dll"/>
+<!--?if $(env.VisualStudioVersion) = "16.0" ?>
+            <File Source="$(var.VCPATH)\$(var.Platform)\Microsoft.VC$(var.VCVER).CRT\vcruntime140_1.dll"/>
+<?endif ?-->
             <File Source="$(var.libs_path)\libcrypto-1_1$(var.OpenSSLSuffix).dll"/>
             <File Source="$(var.libs_path)\libssl-1_1$(var.OpenSSLSuffix).dll"/>
             <File Source="$(var.qt_path)\bin\Qt5Core.dll"/>

@@ -7,7 +7,7 @@
 
 ## Building
 [![Build Status](https://github.com/open-eid/updater/workflows/CI/badge.svg?branch=master)](https://github.com/open-eid/updater/actions)
-        
+
 ### OSX
 
 1. Fetch the source
