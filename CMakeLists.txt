@@ -71,18 +71,21 @@ if( APPLE )
 		"-framework Cocoa -framework PreferencePanes -framework CryptoTokenKit -framework Security"
 	)
 	add_custom_command( TARGET ${PROGNAME} POST_BUILD
-		COMMAND cp $<TARGET_FILE:id-updater-helper> $<TARGET_FILE_DIR:${PROGNAME}>/../Resources )
+		COMMAND cp $<TARGET_FILE:id-updater-helper> $<TARGET_BUNDLE_CONTENT_DIR:${PROGNAME}>/Resources )
 	install( DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/${PROGNAME}.prefPane DESTINATION /Library/PreferencePanes )
 
-	add_custom_target( codesign DEPENDS id-updater-helper
-		COMMAND codesign -f --options=runtime -s "Developer ID Application: ${SIGNCERT}"
-			$<TARGET_FILE_DIR:${PROGNAME}>/../Resources/id-updater-helper
-			$<TARGET_FILE:${PROGNAME}>
-	)
-	add_custom_target( pkgbuild DEPENDS codesign
+	if(SIGNCERT)
+		add_custom_target( TARGET ${PROGNAME} POST_BUILD
+			COMMAND codesign -f --options=runtime -s "Developer ID Application: ${SIGNCERT}"
+				$<TARGET_BUNDLE_CONTENT_DIR:${PROGNAME}>/Resources/id-updater-helper
+				$<TARGET_FILE:${PROGNAME}>
+		)
+	endif()
+	add_custom_target( pkgbuild DEPENDS ${PROGNAME}
 		COMMAND make install DESTDIR=install
 		COMMAND chmod 755 install/Library/PreferencePanes/ID-updater.prefPane/Contents/Resources/id-updater-helper
-		COMMAND pkgbuild --root install --sign "Developer ID Installer: ${SIGNCERT}" updater_${VERSION}$ENV{VER_SUFFIX}.pkg
+		COMMAND pkgbuild --root install "$<$<BOOL:${SIGNCERT}>:--sign;${SIGNCERT}>" updater_${VERSION}$ENV{VER_SUFFIX}.pkg
+		COMMAND_EXPAND_LISTS
 	)
 	add_custom_target( zipdebug DEPENDS ${PROGNAME}
 		COMMAND dsymutil -o ${PROGNAME}.dSYM $<TARGET_FILE:${PROGNAME}>
@@ -96,7 +99,7 @@ else()
 	configure_file( common/config.qrc config.qrc COPYONLY )
 
 	find_package( OpenSSL REQUIRED )
-	find_package( Qt5 COMPONENTS Core Widgets Network LinguistTools REQUIRED )
+	find_package( Qt5 5.9.0 REQUIRED COMPONENTS Core Widgets Network LinguistTools )
 
 	include_directories( ${CMAKE_CURRENT_BINARY_DIR} common/qtsingleapplication/src )
 	add_subdirectory( common/qtsingleapplication )
@@ -106,23 +109,27 @@ else()
 		common/translations/qtbase_et.ts common/translations/qtbase_ru.ts
 		common/translations/common_et.ts common/translations/common_ru.ts
 	)
-	qt5_add_resources( SOURCES idupdater.qrc ${CMAKE_CURRENT_BINARY_DIR}/translations.qrc ${CMAKE_CURRENT_BINARY_DIR}/config.qrc )
-	qt5_wrap_ui( SOURCES idupdater.ui )
 
 	add_executable( ${PROGNAME} WIN32
 		${SOURCES}
-		idupdater.rc
 		Application.cpp
+		idupdater.qrc
+		idupdater.rc
+		idupdater.ui
 		idupdater.cpp
 		ScheduledUpdateTask.cpp
+		${CMAKE_CURRENT_BINARY_DIR}/translations.qrc
+		${CMAKE_CURRENT_BINARY_DIR}/config.qrc
 		common/Common.cpp
 		common/Configuration.cpp
 		common/QPCSC.cpp
 	)
 	set_target_properties( ${PROGNAME} PROPERTIES
 		AUTOMOC TRUE
+		AUTORCC TRUE
+		AUTOUIC TRUE
 		COMPILE_DEFINITIONS "UNICODE;CONFIG_URL=\"${CONFIG_URL}\";COMMON_STATIC;NO_CACHE"
-		COMPILE_OPTIONS "/Zc:wchar_t-;/guard:cf" # required for task scheduler BSTR type
+		COMPILE_OPTIONS "/guard:cf"
 		LINK_OPTIONS "/guard:cf"
 		INTERPROCEDURAL_OPTIMIZATION YES
 	)
@@ -130,7 +137,6 @@ else()
 		msi Mstask Userenv wintrust Crypt32 taskschd comsupp ws2_32 Setupapi winscard Wtsapi32
 	)
 	add_manifest( ${PROGNAME} )
-	install( TARGETS ${PROGNAME} DESTINATION ${CMAKE_INSTALL_PREFIX}/bin )
 
 	if(CMAKE_SIZEOF_VOID_P EQUAL 8)
 		set(PLATFORM x64)
@@ -141,6 +147,10 @@ else()
 	endif()
 	if(OPENSSL_ROOT_DIR)
 		set(SSL_PATH "${OPENSSL_ROOT_DIR}/bin")
+	endif()
+	if(NOT EXISTS "${SSL_PATH}")
+		get_filename_component(SSL_PATH "${OPENSSL_CRYPTO_LIBRARY}" DIRECTORY)
+		get_filename_component(SSL_PATH "${SSL_PATH}/../bin" ABSOLUTE)
 	endif()
 	set(MSI_FILE "ID-Updater-${VERSION}$ENV{VER_SUFFIX}.${PLATFORM}")
 	add_custom_target(installer DEPENDS ${PROGNAME}
