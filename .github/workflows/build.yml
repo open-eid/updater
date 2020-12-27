@@ -42,7 +42,7 @@ jobs:
       with:
         submodules: recursive
     - name: Prepare vcpkg
-      uses: lukka/run-vcpkg@v6.1
+      uses: lukka/run-vcpkg@v6
       id: runvcpkg
       with:
         vcpkgArguments: openssl
@@ -62,7 +62,6 @@ jobs:
       run: |
         mkdir build
         cd build
-        dir "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Redist\MSVC\14.28.29325\x86\Microsoft.VC142.CRT\"
         cmake "-GNMake Makefiles" `
           -DCMAKE_TOOLCHAIN_FILE=${{ env.VCPKG_ROOT }}/scripts/buildsystems/vcpkg.cmake ..
         cmake --build . --target installer

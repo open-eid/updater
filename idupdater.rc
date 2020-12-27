@@ -23,10 +23,10 @@ BEGIN
 			VALUE "CompanyName", "RIA"
 			VALUE "FileDescription", "ID Updater Application"
 			VALUE "FileVersion", VER_STR(MAJOR_VER.MINOR_VER.RELEASE_VER.BUILD_VER)
-			VALUE "InternalName", APP
-			VALUE "LegalCopyright", "Copyright (C) 2009-2020 Estonian Information System Authority"
-			VALUE "OriginalFilename", APP ".exe"
-			VALUE "ProductName", APP
+			VALUE "InternalName", "id-updater"
+			VALUE "LegalCopyright", "Copyright (C) 2009-2021 Estonian Information System Authority"
+			VALUE "OriginalFilename", "id-updater.exe"
+			VALUE "ProductName", "id-updater"
 			VALUE "ProductVersion", VER_STR(MAJOR_VER.MINOR_VER.RELEASE_VER.BUILD_VER)
 		END
 	END

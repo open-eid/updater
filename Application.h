@@ -43,6 +43,6 @@ private:
 
 	QFile log;
 	QString url;
-	idupdater *w;
+	idupdater *w = nullptr;
 };
 
