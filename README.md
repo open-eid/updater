@@ -6,8 +6,7 @@
  * &copy; Estonian Information System Authority
 
 ## Building
-[![Build Status](https://travis-ci.com/open-eid/updater.svg?branch=master)](https://travis-ci.com/open-eid/updater)
-[![Build Status](https://ci.appveyor.com/api/projects/status/github/open-eid/updater?branch=master&svg=true)](https://ci.appveyor.com/project/open-eid/updater)
+[![Build Status](https://github.com/open-eid/updater/workflows/CI/badge.svg?branch=master)](https://github.com/open-eid/updater/actions)
         
 ### OSX
 
