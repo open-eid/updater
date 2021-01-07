@@ -133,6 +133,7 @@ else()
 		LINK_OPTIONS "/guard:cf"
 		INTERPROCEDURAL_OPTIMIZATION YES
 	)
+	set_property(SOURCE ScheduledUpdateTask.cpp APPEND PROPERTY COMPILE_OPTIONS "/Zc:wchar_t-") # required for task scheduler BSTR type
 	target_link_libraries( ${PROGNAME} Qt5::Widgets Qt5::Network qtsingleapplication OpenSSL::Crypto
 		msi Mstask Userenv wintrust Crypt32 taskschd comsupp ws2_32 Setupapi winscard Wtsapi32
 	)
