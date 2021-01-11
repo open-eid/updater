@@ -1,18 +1,19 @@
 name: CI
 on: [push, pull_request]
 env:
-  MAKEFLAGS: -j3
   BUILD_NUMBER: ${{ github.run_number }}
-  MACOSX_DEPLOYMENT_TARGET: '10.13'
 jobs:
   macos:
     name: Build on macOS
     runs-on: macos-latest
+    env:
+      MAKEFLAGS: -j3
+      MACOSX_DEPLOYMENT_TARGET: '10.13'
     steps:
     - name: Checkout
       uses: actions/checkout@v2
       with:
-        submodules: 'true'
+        submodules: recursive
     - name: Build
       run: |
         mkdir build
@@ -27,32 +28,43 @@ jobs:
   windows:
     name: Build on Windows
     runs-on: windows-latest
+    strategy:
+      matrix:
+        arch: [x86, x64]
+        include:
+        - arch: x86
+          qt: win32_msvc2017
+        - arch: x64
+          qt: win64_msvc2017_64
     steps:
     - name: Checkout
       uses: actions/checkout@v2
       with:
-        submodules: 'true'
+        submodules: recursive
     - name: Prepare vcpkg
-      uses: lukka/run-vcpkg@v6
+      uses: lukka/run-vcpkg@v6.1
       id: runvcpkg
       with:
-        vcpkgArguments: openssl:x64-windows
-        vcpkgDirectory: ${{ runner.workspace }}/vcpkg/
-        vcpkgGitCommitId: 8e76503a769e153dad8f4e7b2c95a152bb35edaa
-        vcpkgTriplet: x64-windows
+        vcpkgArguments: openssl
+        vcpkgGitCommitId: ec6fe06e8da05a8157dc8581fa96b36b571c1bd5
+        vcpkgTriplet: ${{ matrix.arch }}-windows
     - name: Install Qt
       uses: jurplel/install-qt-action@v2
       with:
         version: '5.12.10'
-        host: 'windows'
-        target: 'desktop'
-        arch: 'win64_msvc2017_64'
-        dir: '${{ github.workspace }}/'
+        arch: ${{ matrix.qt }}
+    - name: Setup dev env
+      uses: ilammy/msvc-dev-cmd@v1
+      with:
+        arch: ${{ matrix.arch }}
+        toolset: 14.16
     - name: Build
       run: |
         mkdir build
         cd build
-        cmake -DCMAKE_TOOLCHAIN_FILE=${{ runner.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake -DQt5_DIR=${{ github.workspace }}/Qt/5.15.2/msvc2017_64/lib/cmake/Qt5 ..
+        dir "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Redist\MSVC\14.28.29325\x86\Microsoft.VC142.CRT\"
+        cmake "-GNMake Makefiles" `
+          -DCMAKE_TOOLCHAIN_FILE=${{ env.VCPKG_ROOT }}/scripts/buildsystems/vcpkg.cmake ..
         cmake --build . --target installer
     - name: Archive artifacts
       uses: actions/upload-artifact@v2
