@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.16)
 if(POLICY CMP0074)
 	cmake_policy(SET CMP0074 NEW)
 endif()
-project(id-updater VERSION 3.13.0 LANGUAGES CXX)
+project(id-updater VERSION 3.13.1)
 
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake/modules")
 
@@ -16,7 +16,6 @@ string( REPLACE ".json" ".pub" PUB_URL ${CONFIG_URL} )
 file( DOWNLOAD ${PUB_URL} ${CMAKE_CURRENT_BINARY_DIR}/config.pub )
 
 if( APPLE )
-	enable_language(OBJC)
 	add_custom_command( OUTPUT config.h
 		COMMAND xxd -i config.pub config.h
 		COMMENT "Generating config.h"
@@ -72,7 +71,7 @@ if( APPLE )
 	)
 	add_custom_command( TARGET ${PROGNAME} POST_BUILD
 		COMMAND cp $<TARGET_FILE:id-updater-helper> $<TARGET_BUNDLE_CONTENT_DIR:${PROGNAME}>/Resources )
-	install( DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/${PROGNAME}.prefPane DESTINATION /Library/PreferencePanes )
+	install( TARGETS ${PROGNAME} DESTINATION /Library/PreferencePanes )
 
 	if(SIGNCERT)
 		add_custom_target( TARGET ${PROGNAME} POST_BUILD
@@ -159,11 +158,11 @@ else()
 			-dMSI_VERSION=${VERSION} ${CANDLE_EXTRA} -dqt_path=${_qt5Core_install_prefix}
 			-dqtconf=${CMAKE_SOURCE_DIR}/qt.conf -dlibs_path="${SSL_PATH}"
 			-dupdater_path=$<TARGET_FILE:${PROGNAME}> ${CMAKE_SOURCE_DIR}/idupdater.wxs
-			${CMAKE_SOURCE_DIR}/cmake/modules/WelcomeDlg2.wxs ${CMAKE_SOURCE_DIR}/cmake/modules/WixUI_Minimal2.wxs
+			${CMAKE_MODULE_PATH}/WelcomeDlg2.wxs ${CMAKE_MODULE_PATH}/WixUI_Minimal2.wxs
 		COMMAND "$ENV{WIX}bin\\light.exe" -nologo -o "${MSI_FILE}.msi" -ext WixUIExtension
 			idupdater.wixobj  WelcomeDlg2.wixobj WixUI_Minimal2.wixobj
-			-dWixUIDialogBmp=${CMAKE_SOURCE_DIR}/cmake/modules/dlgbmp.bmp
-			-dWixUIBannerBmp=${CMAKE_SOURCE_DIR}/cmake/modules/banner.bmp
+			-dWixUIDialogBmp=${CMAKE_MODULE_PATH}/dlgbmp.bmp
+			-dWixUIBannerBmp=${CMAKE_MODULE_PATH}/banner.bmp
 	)
 	if(SIGNCERT)
 		if(CROSSSIGNCERT)
