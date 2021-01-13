@@ -1,3 +1,10 @@
+Id-updater version [3.13.1](https://github.com/open-eid/updater/releases/tag/v3.13.1) release notes
+--------------------------------------
+- Update UI in main thread (#47)
+- Include MSVC runtimes (#51)
+
+[Full Changelog](https://github.com/open-eid/updater/compare/v3.13.0...v3.13.1)
+
 Id-updater version [3.13.0](https://github.com/open-eid/updater/releases/tag/v3.13.0) release notes
 --------------------------------------
 - Implement CMS based macOS package signature check
