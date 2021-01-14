@@ -74,10 +74,10 @@ if( APPLE )
 	install( TARGETS ${PROGNAME} DESTINATION /Library/PreferencePanes )
 
 	if(SIGNCERT)
-		add_custom_target( TARGET ${PROGNAME} POST_BUILD
+		add_custom_command( TARGET ${PROGNAME} POST_BUILD
 			COMMAND codesign -f --options=runtime -s "Developer ID Application: ${SIGNCERT}"
 				$<TARGET_BUNDLE_CONTENT_DIR:${PROGNAME}>/Resources/id-updater-helper
-				$<TARGET_FILE:${PROGNAME}>
+				$<TARGET_BUNDLE_DIR:${PROGNAME}>
 		)
 	endif()
 	add_custom_target( pkgbuild DEPENDS ${PROGNAME}
