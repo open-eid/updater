@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.16)
 if(POLICY CMP0074)
 	cmake_policy(SET CMP0074 NEW)
 endif()
-project(id-updater VERSION 3.13.1)
+project(id-updater VERSION 3.13.2)
 
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake/modules")
 

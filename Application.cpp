@@ -47,38 +47,37 @@ int main( int argc, char *argv[] )
 
 Application::Application( int &argc, char **argv )
 :	QtSingleApplication( argc, argv )
-,	w(0)
 {
-	log.setFileName( QDir::tempPath() + "/id-updater.log" );
+	log.setFileName(QDir::tempPath() + QStringLiteral("/id-updater.log"));
 	if( log.exists() && log.open( QFile::WriteOnly|QFile::Append ) )
 		qInstallMessageHandler( msgHandler );
 
 	QString lang;
 	switch( QLocale().language() )
 	{
-	case QLocale::English: lang = "en"; break;
-	case QLocale::Russian: lang = "ru"; break;
+	case QLocale::English: lang = QStringLiteral("en"); break;
+	case QLocale::Russian: lang = QStringLiteral("ru"); break;
 	case QLocale::Estonian:
-	default: lang = "et"; break;
+	default: lang = QStringLiteral("et"); break;
 	}
-	lang = QSettings( "Estonian ID Card", QString() ).value( "Main/Language", lang ).toString();
+	lang = QSettings(QStringLiteral("Estonian ID Card"), {}).value(QStringLiteral("Main/Language"), lang).toString();
 
 	QTranslator *qt = new QTranslator( this );
 	QTranslator *common = new QTranslator( this );
 	QTranslator *t = new QTranslator( this );
-	qt->load( QString(":/qtbase_%1.qm").arg( lang ) );
-	common->load( QString(":/common_%1.qm").arg( lang ) );
-	t->load( QString(":/idupdater_%1.qm").arg( lang ) );
+	qt->load(QStringLiteral(":/qtbase_%1.qm").arg(lang));
+	common->load(QStringLiteral(":/common_%1.qm").arg(lang));
+	t->load(QStringLiteral(":/idupdater_%1.qm").arg(lang));
 	installTranslator( qt );
 	installTranslator( common );
 	installTranslator( t );
-	setLibraryPaths( QStringList() << applicationDirPath() );
-	setWindowIcon( QIcon( ":/appicon.png" ) );
-	setApplicationName( APP );
-	setApplicationVersion( QString( "%1.%2.%3.%4" )
+	setLibraryPaths({ applicationDirPath() });
+	setWindowIcon(QIcon(QStringLiteral(":/appicon.png")));
+	setApplicationName(QStringLiteral("id-updater"));
+	setApplicationVersion(QStringLiteral( "%1.%2.%3.%4" )
 		.arg( MAJOR_VER ).arg( MINOR_VER ).arg( RELEASE_VER ).arg( BUILD_VER ) );
-	setOrganizationDomain( "ria.ee" );
-	setOrganizationName("RIA");
+	setOrganizationDomain(QStringLiteral("ria.ee"));
+	setOrganizationName(QStringLiteral("RIA"));
 	QNetworkProxyFactory::setUseSystemConfiguration(true);
 }
 
@@ -91,15 +90,15 @@ Application::~Application()
 int Application::confTask( const QStringList &args ) const
 {
 	ScheduledUpdateTask task;
-	if( args.contains("-status") )
+	if(args.contains(QStringLiteral("-status")))
 		return task.status();
-	if( args.contains("-daily") )
+	if(args.contains(QStringLiteral("-daily")))
 		return task.configure(ScheduledUpdateTask::DAILY);
-	if( args.contains("-weekly") )
+	if(args.contains(QStringLiteral("-weekly")))
 		return task.configure(ScheduledUpdateTask::WEEKLY);
-	if( args.contains("-monthly") )
+	if(args.contains(QStringLiteral("-monthly")))
 		return task.configure(ScheduledUpdateTask::MONTHLY);
-	if( args.contains("-remove") )
+	if(args.contains(QStringLiteral("-remove")))
 		task.remove();
 	return true;
 }
@@ -108,7 +107,7 @@ bool Application::execute(const QStringList &arguments)
 {
 	// http://www.codeproject.com/KB/vista-security/interaction-in-vista.aspx
 	qDebug() << "ProcessStarter begin";
-	QString command = QDir::toNativeSeparators(applicationFilePath()) + " " + arguments.join(" ");
+	QString command = QDir::toNativeSeparators(applicationFilePath()) + " " + arguments.join(' ');
 	qDebug() << "command:" << command;
 
 	PWTS_SESSION_INFOW sessionInfo = 0;
@@ -170,19 +169,19 @@ void Application::messageReceived( const QString &str )
 void Application::msgHandler( QtMsgType type, const QMessageLogContext &, const QString &msg )
 {
 	QFile *log = &qobject_cast<Application*>(qApp->instance())->log;
-	log->write( QDateTime::currentDateTime().toString( "yyyy-MM-dd hh:mm:ss:zzz " ).toUtf8() );
+	log->write(QDateTime::currentDateTime().toString(QStringLiteral("yyyy-MM-dd hh:mm:ss:zzz ")).toUtf8());
 	switch( type )
 	{
-	case QtDebugMsg: log->write( QString( "DBG: %1\n" ).arg( msg ).toUtf8() ); break;
-	case QtWarningMsg: log->write( QString( "WRN: %1\n" ).arg( msg ).toUtf8() ); break;
-	case QtCriticalMsg: log->write( QString( "CRI: %1\n" ).arg( msg ).toUtf8() ); break;
-	case QtFatalMsg: log->write( QString( "FAT: %1\n" ).arg( msg ).toUtf8() ); abort();
+	case QtDebugMsg: log->write(QStringLiteral("DBG: %1\n").arg(msg).toUtf8()); break;
+	case QtWarningMsg: log->write(QStringLiteral("WRN: %1\n").arg(msg).toUtf8()); break;
+	case QtCriticalMsg: log->write(QStringLiteral("CRI: %1\n").arg( msg).toUtf8()); break;
+	case QtFatalMsg: log->write(QStringLiteral("FAT: %1\n").arg(msg).toUtf8()); abort();
 	}
 }
 
 void Application::printHelp()
 {
-	QMessageBox::information( 0, "ID Updater", QString(
+	QMessageBox::information(nullptr, QStringLiteral("ID Updater"), QStringLiteral(
 		"<table><tr><td>-help</td><td>%1</td></tr>"
 		"<tr><td>-autoupdate</td><td>%2</td></tr>"
 		"<tr><td>-autoclose</td><td>%3</td></tr>"
