@@ -106,7 +106,7 @@
         <translation>Muudatuste ajalugu: &lt;a href=&quot;https://www.id.ee/artikkel/id-tarkvara-versioonide-info-release-notes/&quot;&gt;www.id.ee&lt;/a&gt;</translation>
     </message>
     <message>
-        <source>Installed:</source>
+        <source>Currently installed version:</source>
         <translation>Sinu arvutis olev tarkvara versioon:</translation>
     </message>
     <message>

@@ -29,8 +29,8 @@
 /* Class = "NSTabViewItem"; label = "Updates"; ObjectID = "XOS-WI-hKa"; */
 "Updates" = "Обновления";
 
-/* Class = "NSTextFieldCell"; title = "Installed:"; ObjectID = "Xr7-Ls-jOQ"; */
-"Installed:" = "На Вашем компьютере установлена версия:";
+/* Class = "NSTextFieldCell"; title = "Currently installed version:"; ObjectID = "Xr7-Ls-jOQ"; */
+"Currently installed version:" = "На Вашем компьютере установлена версия:";
 
 /* Class = "NSTextFieldCell"; title = "Available:"; ObjectID = "ZgI-Qu-BYN"; */
 "Available:" = "Обновлённая версия:";

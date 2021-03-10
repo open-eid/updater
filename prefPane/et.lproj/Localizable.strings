@@ -28,8 +28,8 @@
 /* Class = "NSTabViewItem"; label = "Updates"; ObjectID = "XOS-WI-hKa"; */
 "Updates" = "Uuendused";
 
-/* Class = "NSTextFieldCell"; title = "Installed:"; ObjectID = "Xr7-Ls-jOQ"; */
-"Installed:" = "Sinu arvutis olev tarkvara versioon:";
+/* Class = "NSTextFieldCell"; title = "Currently installed version:"; ObjectID = "Xr7-Ls-jOQ"; */
+"Currently installed version:" = "Sinu arvutis olev tarkvara versioon:";
 
 /* Class = "NSTextFieldCell"; title = "Available:"; ObjectID = "ZgI-Qu-BYN"; */
 "Available:" = "Paigaldatav tarkvara versioon:";
