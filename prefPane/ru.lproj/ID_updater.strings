@@ -29,7 +29,7 @@
 /* Class = "NSTabViewItem"; label = "Updates"; ObjectID = "XOS-WI-hKa"; */
 "XOS-WI-hKa.label" = "Обновления";
 
-/* Class = "NSTextFieldCell"; title = "Installed:"; ObjectID = "Xr7-Ls-jOQ"; */
+/* Class = "NSTextFieldCell"; title = "Currently installed version:"; ObjectID = "Xr7-Ls-jOQ"; */
 "Xr7-Ls-jOQ.title" = "На Вашем компьютере установлена версия:";
 
 /* Class = "NSTextFieldCell"; title = "Available:"; ObjectID = "ZgI-Qu-BYN"; */

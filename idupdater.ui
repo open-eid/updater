@@ -52,7 +52,7 @@
       <item row="1" column="0">
        <widget class="QLabel" name="installedVerLabel">
         <property name="text">
-         <string>Installed:</string>
+         <string>Currently installed version:</string>
         </property>
        </widget>
       </item>

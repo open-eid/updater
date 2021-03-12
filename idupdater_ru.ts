@@ -106,7 +106,7 @@
         <translation>История обновлений: &lt;a href=&quot;https://www.id.ee/ru/artikkel/informacziya-o-versiyah-programmnogo-obespecheniya-id-karty-release-notes-2/&quot;&gt;www.id.ee&lt;/a&gt;</translation>
     </message>
     <message>
-        <source>Installed:</source>
+        <source>Currently installed version:</source>
         <translation>На Вашем компьютере установлена версия:</translation>
     </message>
     <message>
