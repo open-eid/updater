@@ -53,9 +53,10 @@ public:
 
 	static bool lessThanVersion( const QString &current, const QString &available );
 
-signals:
+Q_SIGNALS:
 	void error( const QString &msg );
 	void status( const QString &msg );
+	void message(const QString &msg);
 
 private:
 	void finished(bool changed, const QString &error);
@@ -63,8 +64,8 @@ private:
 	void reply( QNetworkReply *reply );
 	bool verifyPackage(const QString &filePath) const;
 
-	bool m_autoupdate, m_autoclose;
+	bool m_autoupdate = false, m_autoclose = false;
 	QNetworkRequest request;
 	QString version;
-	idupdaterui *w;
+	idupdaterui *w = nullptr;
 };

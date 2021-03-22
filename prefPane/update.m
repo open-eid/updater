@@ -198,7 +198,7 @@
             NSLog(@"Message: %@", message);
             [self.delegate message:message];
         }
-        else if (version) {
+        if (version) {
             NSLog(@"Remote version: %@", version);
             if ([version compare:self.baseversion options:NSNumericSearch] > 0) {
                 [self.delegate updateAvailable:version filename:json[@"OSX-DOWNLOAD"]];

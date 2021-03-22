@@ -44,7 +44,12 @@ idupdaterui::idupdaterui( const QString &version, idupdater *parent )
 :	QWidget()
 {
 	setupUi( this );
+	m_message->hide();
 	connect( parent, &idupdater::status, m_updateStatus, &QLabel::setText );
+	connect( parent, &idupdater::message, m_message, [this](const QString &msg) {
+		m_message->setHidden(msg.isEmpty());
+		m_message->setText(msg);
+	});
 	connect( parent, &idupdater::error, this, &idupdaterui::setError );
 	connect( buttonBox, &QDialogButtonBox::accepted, parent, &idupdater::startInstall );
 	connect( buttonBox,  &QDialogButtonBox::rejected, qApp, &QCoreApplication::quit );
@@ -97,17 +102,14 @@ void idupdaterui::setProgress( QNetworkReply *reply )
 
 idupdater::idupdater( QObject *parent )
 	: QNetworkAccessManager( parent )
-	, m_autoupdate( false )
-	, m_autoclose( false )
 	, version(installedVersion("{f1c4d351-269d-4bee-8cdb-6ea70c968875}"))
-	, w(0)
 {
 	QLocale::Language language = QLocale::system().language();
 	QString locale = language == QLocale::C ? "English/United States" : QLocale::languageToString( language );
-	CPINFOEX CPInfoEx = { 0 };
+	CPINFOEX CPInfoEx = {};
 	if( GetCPInfoExW( GetConsoleCP(), 0, &CPInfoEx ) != 0 )
-		locale += " / " + QString( (QChar*)CPInfoEx.CodePageName );
-	QString userAgent = QString( "%1/%2 (%3) Locale: %4 Devices: %5")
+		locale += QStringLiteral(" / ") + QString::fromWCharArray(CPInfoEx.CodePageName);
+	QString userAgent = QStringLiteral( "%1/%2 (%3) Locale: %4 Devices: %5")
 		.arg(qApp->applicationName(), version, Common::applicationOs(), locale, QPCSC::instance().drivers().join("/"));
 	qDebug() << "User-Agent:" << userAgent;
 	request.setRawHeader( "User-Agent", userAgent.toUtf8() );
@@ -166,7 +168,7 @@ void idupdater::finished(bool /*changed*/, const QString &err)
 
 	QJsonObject obj = Configuration::instance().object();
 	if(obj.contains("WIN-MESSAGE"))
-		return emit status(obj.value("WIN-MESSAGE").toString());
+		emit message(obj.value("WIN-MESSAGE").toString());
 
 	if(obj.contains("WIN-UPGRADECODE"))
 		version = installedVersion(obj.value("WIN-UPGRADECODE").toString());
@@ -196,20 +198,20 @@ void idupdater::finished(bool /*changed*/, const QString &err)
 QString idupdater::installedVersion(const QString &upgradeCode) const
 {
 	QString code = upgradeCode.toUpper();
-	QString path = "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall";
+	QString path = QStringLiteral("SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall");
 	HKEY reg = HKEY_LOCAL_MACHINE;
 	REGSAM param = KEY_READ|KEY_WOW64_32KEY;
 	HKEY key;
 	long result = RegOpenKeyEx(reg, LPWSTR(path.utf16()), 0, param, &key);
 	if(result != ERROR_SUCCESS)
-		return QString();
+		return {};
 
 	DWORD numSubgroups = 0, maxSubgroupSize = 0;
 	result = RegQueryInfoKey(key, 0, 0, 0, &numSubgroups, &maxSubgroupSize, 0, 0, 0, 0, 0, 0);
 	if(result != ERROR_SUCCESS)
 	{
 		RegCloseKey(key);
-		return QString();
+		return {};
 	}
 
 	for(DWORD j = 0; j < numSubgroups; ++j)
@@ -218,21 +220,21 @@ QString idupdater::installedVersion(const QString &upgradeCode) const
 		QString group(groupSize, 0);
 		result = RegEnumKeyEx(key, j, LPWSTR(group.data()), &groupSize, 0, 0, 0, 0);
 		if(result != ERROR_SUCCESS)
-			return QString();
+			return {};
 		group.resize(groupSize);
 
 		HKEY subkey;
 		QString subpath = path + "\\" + group;
 		result = RegOpenKeyEx(reg, LPCWSTR(subpath.utf16()), 0, param, &subkey);
 		if(result != ERROR_SUCCESS)
-			return QString();
+			return {};
 
 		DWORD numKeys = 0, maxKeySize = 0, maxValueSize = 0;
 		result = RegQueryInfoKey(subkey, 0, 0, 0, 0, 0, 0, &numKeys, &maxKeySize, &maxValueSize, 0, 0);
 		if(result != ERROR_SUCCESS)
 		{
 			RegCloseKey(subkey);
-			return QString();
+			return {};
 		}
 
 		QString regcode, version;
@@ -284,7 +286,7 @@ QString idupdater::installedVersion(const QString &upgradeCode) const
 
 	WCHAR prodCode[40];
 	if(ERROR_SUCCESS != MsiEnumRelatedProducts(L"{58A1DBA8-81A2-4D58-980B-4A6174D5B66B}", 0, 0, prodCode))
-		return QString();
+		return {};
 
 	DWORD size = 0;
 	MsiGetProductInfo(prodCode, INSTALLPROPERTY_VERSIONSTRING, 0, &size);
@@ -333,7 +335,7 @@ bool idupdater::verifyPackage(const QString &filePath) const
 	HCRYPTMSG msg = nullptr;
 	if(!CryptQueryObject(CERT_QUERY_OBJECT_FILE, LPCWSTR(path.utf16()),
 		CERT_QUERY_CONTENT_FLAG_PKCS7_SIGNED_EMBED, CERT_QUERY_FORMAT_FLAG_BINARY,
-		0, 0, 0, 0, &store, &msg, NULL))
+		0, 0, 0, 0, &store, &msg, nullptr))
 		return false;
 
 	DWORD infoSize = 0;
@@ -369,10 +371,12 @@ bool idupdater::verifyPackage(const QString &filePath) const
 	if(!list.contains(cert))
 		return false;
 
-	WINTRUST_FILE_INFO FileData = { sizeof(WINTRUST_FILE_INFO) };
+	WINTRUST_FILE_INFO FileData {};
+	FileData.cbStruct = sizeof(WINTRUST_FILE_INFO);
 	FileData.pcwszFilePath = LPCWSTR(path.utf16());
 
-	WINTRUST_DATA WinTrustData = { sizeof(WinTrustData) };
+	WINTRUST_DATA WinTrustData {};
+	WinTrustData.cbStruct = sizeof(WinTrustData);
 	WinTrustData.dwUIChoice = m_autoupdate ? WTD_UI_NONE : WTD_UI_ALL;
 	WinTrustData.fdwRevocationChecks = WTD_REVOKE_NONE;
 	WinTrustData.dwUnionChoice = WTD_CHOICE_FILE;
