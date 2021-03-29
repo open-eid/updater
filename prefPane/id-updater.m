@@ -177,7 +177,7 @@
             NSUserNotification *notification = [NSUserNotification new];
             notification.title = NSLocalizedString(@"Update available", nil);
             notification.subtitle = [NSString stringWithFormat: @"%@ %@",
-									 NSLocalizedString(@"ID-software", nil), _available];
+                                     NSLocalizedString(@"ID-software", nil), _available];
             notification.informativeText = NSLocalizedString(@"https://www.id.ee/en/article/id-software-versions-info-release-notes/", nil);
             notification.soundName = NSUserNotificationDefaultSoundName;
             center.delegate = self;
