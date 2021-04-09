@@ -127,12 +127,13 @@ else()
 		AUTOMOC TRUE
 		AUTORCC TRUE
 		AUTOUIC TRUE
-		COMPILE_DEFINITIONS "UNICODE;CONFIG_URL=\"${CONFIG_URL}\";COMMON_STATIC;NO_CACHE"
 		COMPILE_OPTIONS "/guard:cf"
 		LINK_OPTIONS "/guard:cf"
 		INTERPROCEDURAL_OPTIMIZATION YES
+		INTERPROCEDURAL_OPTIMIZATION_DEBUG NO
 	)
 	set_property(SOURCE ScheduledUpdateTask.cpp APPEND PROPERTY COMPILE_OPTIONS "/Zc:wchar_t-") # required for task scheduler BSTR type
+	target_compile_definitions(${PROGNAME} PRIVATE WIN32_LEAN_AND_MEAN UNICODE CONFIG_URL="${CONFIG_URL}" COMMON_STATIC NO_CACHE)
 	target_link_libraries( ${PROGNAME} Qt5::Widgets Qt5::Network qtsingleapplication OpenSSL::Crypto
 		msi Mstask Userenv wintrust Crypt32 taskschd comsupp ws2_32 Setupapi winscard Wtsapi32
 	)
@@ -140,10 +141,8 @@ else()
 
 	if(CMAKE_SIZEOF_VOID_P EQUAL 8)
 		set(PLATFORM x64)
-		set(SSL_PATH "C:/OpenSSL-Win64/bin")
 	else()
 		set(PLATFORM x86)
-		set(SSL_PATH "C:/OpenSSL-Win32/bin")
 	endif()
 	if(OPENSSL_ROOT_DIR)
 		set(SSL_PATH "${OPENSSL_ROOT_DIR}/bin")
@@ -155,7 +154,7 @@ else()
 	set(MSI_FILE "ID-Updater-${VERSION}$ENV{VER_SUFFIX}.${PLATFORM}")
 	add_custom_target(installer DEPENDS ${PROGNAME}
 		COMMAND "$ENV{WIX}bin\\candle.exe" -nologo -arch ${PLATFORM} -dPlatform=${PLATFORM}
-			-dMSI_VERSION=${VERSION} ${CANDLE_EXTRA} -dqt_path=${_qt5Core_install_prefix}
+			-dMSI_VERSION=${VERSION} -dqt_path=${_qt5Core_install_prefix}
 			-dqtconf=${CMAKE_SOURCE_DIR}/qt.conf -dlibs_path="${SSL_PATH}"
 			-dupdater_path=$<TARGET_FILE:${PROGNAME}> ${CMAKE_SOURCE_DIR}/idupdater.wxs
 			${CMAKE_MODULE_PATH}/WelcomeDlg2.wxs ${CMAKE_MODULE_PATH}/WixUI_Minimal2.wxs
