@@ -2,7 +2,7 @@
 
 <!--
 "%WIX%\bin\candle.exe" idupdater.wxs -dMSI_VERSION=3.9.5
- -dqt_path=C:\Qt\5.3\msvc2013
+ -dqt_path=C:\Qt\5.9.10\msvc2017
  -dlibs_path="C:\OpenSSL-Win32\bin"
  -dupdater_path=id-updater.exe
 
