@@ -1,6 +1,6 @@
 
 /* Class = "NSWindow"; title = "ID-updater"; ObjectID = "12"; */
-"ID-updater" = "Проверка обновлений програмного обеспечения ID-карты";
+"ID-updater" = "Проверка обновлений программного обеспечения ID-карты";
 
 /* Class = "NSMenuItem"; title = "Remove"; ObjectID = "3bN-hp-rYM"; */
 "Remove" = "Удалить";
@@ -39,7 +39,7 @@
 "Update check interval" = "Проверить на обновления";
 
 /* Class = "NSTabViewItem"; label = "Version info"; ObjectID = "hng-hr-Q6P"; */
-"Version info" = "Версия информация";
+"Version info" = "Информация о версии";
 
 /* Class = "NSMenuItem"; title = "Once a week"; ObjectID = "wj9-Or-Pru"; */
 "Once a week" = "Раз в неделю";
@@ -99,8 +99,10 @@
 "Tokend" = "Tokend";
 
 /* No comment provided by engineer. */
-"Update available" = "Update available";
+"Update available" = "Обновление доступно";
 
 /* No comment provided by engineer. */
-"Update message" = "Update message";
+"Update message" = "Сообщение об обновлении";
 
+/* No comment provided by engineer. */
+"ID-software" = "программное обеспечение ID-карты";

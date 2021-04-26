@@ -39,7 +39,7 @@
 "dPb-83-7q8.title" = "Проверить на обновления";
 
 /* Class = "NSTabViewItem"; label = "Version info"; ObjectID = "hng-hr-Q6P"; */
-"hng-hr-Q6P.label" = "Версия информация";
+"hng-hr-Q6P.label" = "Информация о версии";
 
 /* Class = "NSMenuItem"; title = "Once a week"; ObjectID = "wj9-Or-Pru"; */
 "wj9-Or-Pru.title" = "Раз в неделю";

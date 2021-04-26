@@ -36,7 +36,7 @@
     <name>idupdater</name>
     <message>
         <source>Failed: </source>
-        <translation>Неудалось:</translation>
+        <translation>Не удалось:</translation>
     </message>
     <message>
         <source>Check completed</source>
@@ -95,7 +95,7 @@
     <name>idupdaterui</name>
     <message>
         <source>ID-updater</source>
-        <translation>Проверка обновлений програмного обеспечения ID-карты</translation>
+        <translation>Проверка обновлений программного обеспечения ID-карты</translation>
     </message>
     <message>
         <source>Ready</source>
