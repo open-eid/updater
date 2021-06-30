@@ -155,7 +155,6 @@
         if (center) {
             NSUserNotification *notification = [NSUserNotification new];
             notification.title = NSLocalizedString(@"Update message", nil);
-            notification.subtitle = message;
             notification.informativeText = message;
             notification.soundName = NSUserNotificationDefaultSoundName;
             center.delegate = self;
