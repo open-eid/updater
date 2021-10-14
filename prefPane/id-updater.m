@@ -95,21 +95,26 @@
         NSLocalizedString(@"DigiDoc3 Client", nil): update.clientversion,
         NSLocalizedString(@"DigiDoc4", nil): update.digidoc4,
         NSLocalizedString(@"ID-Card Utility", nil): update.utilityversion,
-        NSLocalizedString(@"Open-EID", nil): update.baseversion,
-        NSLocalizedString(@"ID-Updater", nil): [update versionInfo:@"ee.ria.ID-updater"],
+        @"Open-EID": update.baseversion,
+        @"ID-Updater": [update versionInfo:@"ee.ria.ID-updater"],
         NSLocalizedString(@"Safari (Extensions) browser plugin", nil): [update versionInfo:@"ee.ria.safari-token-signing"],
         NSLocalizedString(@"Safari (NPAPI) browser plugin", nil): [update versionInfo:@"ee.ria.firefox-token-signing"],
         NSLocalizedString(@"Chrome/Firefox browser plugin", nil): [update versionInfo:@"ee.ria.chrome-token-signing"],
         NSLocalizedString(@"Chrome browser plugin", nil): [update versionInfo:@"ee.ria.token-signing-chrome"],
         NSLocalizedString(@"Chrome browser plugin policy", nil): [update versionInfo:@"ee.ria.token-signing-chrome-policy"],
         NSLocalizedString(@"Firefox browser plugin", nil): [update versionInfo:@"ee.ria.token-signing-firefox"],
+        NSLocalizedString(@"Web-eID native component", nil): [update versionInfo:@"eu.web-eid.web-eid"],
+        NSLocalizedString(@"Safari browser extension (Web-eID)", nil): [update versionInfo:@"eu.web-eid.web-eid-safari"],
+        NSLocalizedString(@"Chrome browser extension (Web-eID)", nil): [update versionInfo:@"eu.web-eid.web-eid-chrome"],
+        NSLocalizedString(@"Chrome browser extension policy (Web-eID)", nil): [update versionInfo:@"eu.web-eid.web-eid-chrome-policy"],
+        NSLocalizedString(@"Firefox browser extension (Web-eID)", nil): [update versionInfo:@"eu.web-eid.web-eid-firefox"],
         NSLocalizedString(@"PKCS11 loader", nil): [update versionInfo:@"ee.ria.firefox-pkcs11-loader"],
         NSLocalizedString(@"IDEMIA PKCS11 loader", nil): [update versionInfo:@"com.idemia.awp.xpi"],
-        NSLocalizedString(@"OpenSC", nil): [update versionInfo:@"org.opensc-project.mac"],
-        NSLocalizedString(@"IDEMIA PKCS11", nil): [update versionInfo:@"com.idemia.awp.pkcs11"],
-        NSLocalizedString(@"EstEID Tokend", nil): [update versionInfo:@"ee.ria.esteid-tokend"],
-        NSLocalizedString(@"EstEID CTK Tokend", nil): [update versionInfo:@"ee.ria.esteid-ctk-tokend"],
-        NSLocalizedString(@"IDEMIA Tokend", nil): [update versionInfo:@"com.idemia.awp.tokend"],
+        @"OpenSC": [update versionInfo:@"org.opensc-project.mac"],
+        @"IDEMIA PKCS11": [update versionInfo:@"com.idemia.awp.pkcs11"],
+        @"EstEID Tokend": [update versionInfo:@"ee.ria.esteid-tokend"],
+        @"EstEID CTK Tokend": [update versionInfo:@"ee.ria.esteid-ctk-tokend"],
+        @"IDEMIA Tokend": [update versionInfo:@"com.idemia.awp.tokend"],
     };
     NSMutableArray *list = [[NSMutableArray alloc] init];
     [versions enumerateKeysAndObjectsUsingBlock:^(id key, id object, BOOL *stop) {
@@ -270,10 +275,9 @@
     }
 
     SecCertificateRef certref = SecCertificateCreateWithData(0, (__bridge CFDataRef)certData);
-    SecKeyRef publickey = nil;
-    OSStatus oserr = SecCertificateCopyPublicKey(certref, &publickey);
+    SecKeyRef publickey = SecCertificateCopyKey(certref);
     CFRelease(certref);
-    if (oserr) {
+    if (publickey == nil) {
         status.stringValue = NSLocalizedString(@"Failed to copy public key", nil);
         return;
     }

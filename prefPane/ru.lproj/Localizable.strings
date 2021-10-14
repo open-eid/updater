@@ -45,6 +45,18 @@
 "Once a week" = "Раз в неделю";
 
 /* No comment provided by engineer. */
+"Chrome browser extension (Web-eID)" = "Chrome browser extension (Web-eID)";
+
+/* No comment provided by engineer. */
+"Chrome browser extension policy (Web-eID)" = "Chrome browser extension policy (Web-eID)";
+
+/* No comment provided by engineer. */
+"Chrome browser plugin" = "Chrome browser plugin";
+
+/* No comment provided by engineer. */
+"Chrome browser plugin policy" = "Chrome browser plugin policy";
+
+/* No comment provided by engineer. */
 "Chrome/Firefox browser plugin" = "Chrome/Firefox browser plugin";
 
 /* No comment provided by engineer. */
@@ -63,10 +75,16 @@
 "Failed to open xar archive: %@" = "Failed to open xar archive: %@";
 
 /* No comment provided by engineer. */
-"Failed to parse certificate" = "Failed to parse certificate";
+"Failed to verify signature" = "Failed to verify signature";
 
 /* No comment provided by engineer. */
-"Failed to verify signature" = "Failed to verify signature";
+"File not found" = "File not found";
+
+/* No comment provided by engineer. */
+"Firefox browser extension (Web-eID)" = "Firefox browser extension (Web-eID)";
+
+/* No comment provided by engineer. */
+"Firefox browser plugin" = "Firefox browser plugin";
 
 /* No comment provided by engineer. */
 "https://www.id.ee/en/article/id-software-versions-info-release-notes/" = "https://www.id.ee/ru/artikkel/informacziya-o-versiyah-programmnogo-obespecheniya-id-karty-release-notes-2/";
@@ -75,16 +93,16 @@
 "ID-Card Utility" = "ID-Card Utility";
 
 /* No comment provided by engineer. */
-"No matching certificate" = "No matching certificate";
-
-/* No comment provided by engineer. */
-"PKCS11" = "PKCS11";
-
-/* No comment provided by engineer. */
-"PKCS11 loader" = "PKCS11 loader";
+"ID-software" = "программное обеспечение ID-карты";
 
 /* No comment provided by engineer. */
 "IDEMIA PKCS11 loader" = "IDEMIA PKCS11 loader";
+
+/* No comment provided by engineer. */
+"No matching certificate" = "No matching certificate";
+
+/* No comment provided by engineer. */
+"PKCS11 loader" = "PKCS11 loader";
 
 /* No comment provided by engineer. */
 "Safari (Extensions) browser plugin" = "Safari (Extensions) browser plugin";
@@ -93,16 +111,16 @@
 "Safari (NPAPI) browser plugin" = "Safari (NPAPI) browser plugin";
 
 /* No comment provided by engineer. */
-"The configuration file located on the server cannot be validated." = "Находящийся на сервере конфигурационный файл не валидируется.";
+"Safari browser extension (Web-eID)" = "Safari browser extension (Web-eID)";
 
 /* No comment provided by engineer. */
-"Tokend" = "Tokend";
+"The configuration file located on the server cannot be validated." = "Находящийся на сервере конфигурационный файл не валидируется.";
 
 /* No comment provided by engineer. */
 "Update available" = "Обновление доступно";
 
 /* No comment provided by engineer. */
 "Update message" = "Сообщение об обновлении";
-
 /* No comment provided by engineer. */
-"ID-software" = "программное обеспечение ID-карты";
+"Web-eID native component" = "Web-eID native component";
+

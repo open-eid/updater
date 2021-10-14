@@ -8,7 +8,7 @@ jobs:
     runs-on: macos-latest
     env:
       MAKEFLAGS: -j3
-      MACOSX_DEPLOYMENT_TARGET: '10.13'
+      MACOSX_DEPLOYMENT_TARGET: '10.14'
     steps:
     - name: Checkout
       uses: actions/checkout@v2
@@ -18,7 +18,7 @@ jobs:
       run: |
         mkdir build
         cd build
-        cmake ..
+        cmake -DCMAKE_OSX_ARCHITECTURES="x86_64;arm64" ..
         cmake --build . --target pkgbuild
     - name: Archive artifacts
       uses: actions/upload-artifact@v2
@@ -27,15 +27,27 @@ jobs:
         path: build/*.pkg
   windows:
     name: Build on Windows
-    runs-on: windows-latest
+    runs-on: ${{ matrix.image }}
     strategy:
       matrix:
-        arch: [x86, x64]
+        build: [VC17x86, VC17x64, VC19x86, VC19x64]
         include:
-        - arch: x86
+        - build: VC17x86
+          arch: x86
           qt: win32_msvc2017
-        - arch: x64
+          image: 'windows-2016'
+        - build: VC17x64
+          arch: x64
           qt: win64_msvc2017_64
+          image: 'windows-2016'
+        - build: VC19x86
+          arch: x86
+          qt: win32_msvc2017
+          image: 'windows-2019'
+        - build: VC19x64
+          arch: x64
+          qt: win64_msvc2017_64
+          image: 'windows-2019'
     steps:
     - name: Checkout
       uses: actions/checkout@v2
@@ -46,18 +58,17 @@ jobs:
       id: runvcpkg
       with:
         vcpkgArguments: openssl
-        vcpkgGitCommitId: 18376a2f2ce989e022db5c1199b468e43f7c1a79
+        vcpkgGitCommitId: 772d435ba18bf2f342458e0187ab7b48b84fe3f0
         vcpkgTriplet: ${{ matrix.arch }}-windows
     - name: Install Qt
       uses: jurplel/install-qt-action@v2
       with:
-        version: '5.12.10'
+        version: '5.12.11'
         arch: ${{ matrix.qt }}
     - name: Setup dev env
       uses: ilammy/msvc-dev-cmd@v1
       with:
         arch: ${{ matrix.arch }}
-        toolset: 14.16
     - name: Build
       run: |
         mkdir build
