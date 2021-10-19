@@ -28,38 +28,29 @@ jobs:
     runs-on: ${{ matrix.image }}
     strategy:
       matrix:
-        build: [VC17x86, VC17x64, VC19x86, VC19x64, VC22x86, VC22x64]
+        toolset: [14.16, 14.29, 14.31]
+        arch: [x64]
+        qtver: [5.12.12]
         include:
-        - build: VC17x86
-          arch: x86
-          qt: win32_msvc2017
+        - toolset: 14.16
           image: windows-2019
-          toolset: 14.16
-        - build: VC17x64
-          arch: x64
-          qt: win64_msvc2017_64
+        - toolset: 14.29
           image: windows-2019
-          toolset: 14.16
-        - build: VC19x86
-          arch: x86
-          qt: win32_msvc2017
-          image: windows-2019
-          toolset: 14.29
-        - build: VC19x64
-          arch: x64
-          qt: win64_msvc2017_64
-          image: windows-2019
-          toolset: 14.29
-        - build: VC22x86
-          arch: x86
-          qt: win32_msvc2017
+        - toolset: 14.31
           image: windows-2022
-          toolset: 14.30
-        - build: VC22x64
-          arch: x64
+        - arch: x64
           qt: win64_msvc2017_64
-          image: windows-2022
-          toolset: 14.30
+        - toolset: 14.29
+          arch: x86
+          qtver: 5.12.12
+          qt: win32_msvc2017
+          image: windows-2019
+        - toolset: 14.29
+          arch: x64
+          qtver: 6.3.0
+          qtmodules: qt5compat
+          qt: win64_msvc2019_64
+          image: windows-2019
     steps:
     - name: Checkout
       uses: actions/checkout@v2
@@ -70,13 +61,14 @@ jobs:
       id: runvcpkg
       with:
         vcpkgArguments: openssl
-        vcpkgGitCommitId: 772d435ba18bf2f342458e0187ab7b48b84fe3f0
+        vcpkgGitCommitId: a69b65229b3956b7f45abd81671b7330114bcaad
         vcpkgTriplet: ${{ matrix.arch }}-windows
     - name: Install Qt
       uses: jurplel/install-qt-action@v2
       with:
-        version: '5.12.12'
+        version: ${{ matrix.qtver }}
         arch: ${{ matrix.qt }}
+        modules: ${{ matrix.qtmodules }}
     - name: Setup dev env
       uses: ilammy/msvc-dev-cmd@v1
       with:

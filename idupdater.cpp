@@ -217,7 +217,7 @@ QString idupdater::installedVersion(const QString &upgradeCode) const
 	for(DWORD j = 0; j < numSubgroups; ++j)
 	{
 		DWORD groupSize = maxSubgroupSize + 1;
-		QString group(groupSize, 0);
+		QString group(groupSize, '\0');
 		result = RegEnumKeyEx(key, j, LPWSTR(group.data()), &groupSize, 0, 0, 0, 0);
 		if(result != ERROR_SUCCESS)
 			return {};
@@ -243,7 +243,7 @@ QString idupdater::installedVersion(const QString &upgradeCode) const
 			DWORD dataType = 0;
 			DWORD keySize = maxKeySize + 1;
 			DWORD dataSize = maxValueSize;
-			QString key(keySize, 0);
+			QString key(keySize, '\0');
 			QByteArray data(dataSize, 0);
 
 			result = RegEnumValue(subkey, k, LPWSTR(key.data()), &keySize, 0,
@@ -290,7 +290,7 @@ QString idupdater::installedVersion(const QString &upgradeCode) const
 
 	DWORD size = 0;
 	MsiGetProductInfo(prodCode, INSTALLPROPERTY_VERSIONSTRING, 0, &size);
-	QString version(size, 0);
+	QString version(size, '\0');
 	size += 1;
 	MsiGetProductInfo(prodCode, INSTALLPROPERTY_VERSIONSTRING, LPWSTR(version.data()), &size);
 	return version;
