@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.16)
 if(POLICY CMP0074)
 	cmake_policy(SET CMP0074 NEW)
 endif()
-project(id-updater VERSION 3.13.2)
+project(id-updater VERSION 3.13.3)
 
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake/modules")
 
@@ -73,14 +73,15 @@ if( APPLE )
 		COMMAND cp $<TARGET_FILE:id-updater-helper> $<TARGET_BUNDLE_CONTENT_DIR:${PROGNAME}>/Resources )
 	install( TARGETS ${PROGNAME} DESTINATION /Library/PreferencePanes )
 
+	add_custom_target( signhelper DEPENDS ${PROGNAME} )
 	if(SIGNCERT)
-		add_custom_command( TARGET ${PROGNAME} POST_BUILD
+		add_custom_command( TARGET signhelper POST_BUILD
 			COMMAND codesign -f --options=runtime -s "Developer ID Application: ${SIGNCERT}"
 				$<TARGET_BUNDLE_CONTENT_DIR:${PROGNAME}>/Resources/id-updater-helper
 				$<TARGET_BUNDLE_DIR:${PROGNAME}>
 		)
 	endif()
-	add_custom_target( pkgbuild DEPENDS ${PROGNAME}
+	add_custom_target( pkgbuild DEPENDS signhelper
 		COMMAND make install DESTDIR=install
 		COMMAND chmod 755 install/Library/PreferencePanes/ID-updater.prefPane/Contents/Resources/id-updater-helper
 		COMMAND pkgbuild --root install "$<$<BOOL:${SIGNCERT}>:--sign;${SIGNCERT}>" updater_${VERSION}$ENV{VER_SUFFIX}.pkg
@@ -137,7 +138,6 @@ else()
 	target_link_libraries( ${PROGNAME} Qt5::Widgets Qt5::Network qtsingleapplication OpenSSL::Crypto
 		msi Mstask Userenv wintrust Crypt32 taskschd comsupp ws2_32 Setupapi winscard Wtsapi32
 	)
-	add_manifest( ${PROGNAME} )
 
 	if(CMAKE_SIZEOF_VOID_P EQUAL 8)
 		set(PLATFORM x64)
