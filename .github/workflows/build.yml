@@ -16,10 +16,8 @@ jobs:
         submodules: recursive
     - name: Build
       run: |
-        mkdir build
-        cd build
-        cmake -DCMAKE_OSX_ARCHITECTURES="x86_64;arm64" ..
-        cmake --build . --target pkgbuild
+        cmake -DCMAKE_OSX_ARCHITECTURES="x86_64;arm64" -S . -B build
+        cmake --build build --target pkgbuild
     - name: Archive artifacts
       uses: actions/upload-artifact@v2
       with:
@@ -30,24 +28,38 @@ jobs:
     runs-on: ${{ matrix.image }}
     strategy:
       matrix:
-        build: [VC17x86, VC17x64, VC19x86, VC19x64]
+        build: [VC17x86, VC17x64, VC19x86, VC19x64, VC22x86, VC22x64]
         include:
         - build: VC17x86
           arch: x86
           qt: win32_msvc2017
-          image: 'windows-2016'
+          image: windows-2019
+          toolset: 14.16
         - build: VC17x64
           arch: x64
           qt: win64_msvc2017_64
-          image: 'windows-2016'
+          image: windows-2019
+          toolset: 14.16
         - build: VC19x86
           arch: x86
           qt: win32_msvc2017
-          image: 'windows-2019'
+          image: windows-2019
+          toolset: 14.29
         - build: VC19x64
           arch: x64
           qt: win64_msvc2017_64
-          image: 'windows-2019'
+          image: windows-2019
+          toolset: 14.29
+        - build: VC22x86
+          arch: x86
+          qt: win32_msvc2017
+          image: windows-2022
+          toolset: 14.30
+        - build: VC22x64
+          arch: x64
+          qt: win64_msvc2017_64
+          image: windows-2022
+          toolset: 14.30
     steps:
     - name: Checkout
       uses: actions/checkout@v2
@@ -63,19 +75,18 @@ jobs:
     - name: Install Qt
       uses: jurplel/install-qt-action@v2
       with:
-        version: '5.12.11'
+        version: '5.12.12'
         arch: ${{ matrix.qt }}
     - name: Setup dev env
       uses: ilammy/msvc-dev-cmd@v1
       with:
         arch: ${{ matrix.arch }}
+        toolset: ${{ matrix.toolset }}
     - name: Build
       run: |
-        mkdir build
-        cd build
         cmake "-GNMake Makefiles" `
-          -DCMAKE_TOOLCHAIN_FILE=${{ env.VCPKG_ROOT }}/scripts/buildsystems/vcpkg.cmake ..
-        cmake --build . --target installer
+          -DCMAKE_TOOLCHAIN_FILE=${{ env.VCPKG_ROOT }}/scripts/buildsystems/vcpkg.cmake -S . -B build
+        cmake --build build --target installer
     - name: Archive artifacts
       uses: actions/upload-artifact@v2
       with:
