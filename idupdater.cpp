@@ -100,6 +100,7 @@ void idupdaterui::setProgress( QNetworkReply *reply )
 idupdater::idupdater( QObject *parent )
 	: QNetworkAccessManager( parent )
 	, version(installedVersion("{f1c4d351-269d-4bee-8cdb-6ea70c968875}"))
+	, conf(new Configuration(this))
 {
 	QLocale::Language language = QLocale::system().language();
 	QString locale = language == QLocale::C ? "English/United States" : QLocale::languageToString( language );
@@ -110,7 +111,7 @@ idupdater::idupdater( QObject *parent )
 		.arg(qApp->applicationName(), qApp->applicationVersion(), Common::applicationOs(), locale, QPCSC::instance().drivers().join('/'));
 	qDebug() << "User-Agent:" << userAgent;
 	request.setRawHeader( "User-Agent", userAgent.toUtf8() );
-	connect(&Configuration::instance(), &Configuration::finished, this, &idupdater::finished);
+	connect(conf, &Configuration::finished, this, &idupdater::finished);
 	connect(this, &QNetworkAccessManager::sslErrors, this, [=](QNetworkReply *reply, const QList<QSslError> &errors){
 		QList<QSslError> ignore;
 		for(const QSslError &error: errors)
@@ -141,7 +142,7 @@ void idupdater::checkUpdates(bool autoupdate, bool autoclose)
 		request.setRawHeader("User-Agent", request.rawHeader( "User-Agent" ) + " manual");
 	}
 	emit status(tr("Checking for update.."));
-	Configuration::instance().update();
+	conf->update();
 }
 
 void idupdater::finished(bool /*changed*/, const QString &err)
@@ -155,10 +156,10 @@ void idupdater::finished(bool /*changed*/, const QString &err)
 	ssl.setCaCertificates({});
 	request.setSslConfiguration(ssl);
 	trusted.clear();
-	for(const QJsonValue c: Configuration::instance().object().value(QStringLiteral("CERT-BUNDLE")).toArray())
+	for(const QJsonValue c: conf->object().value(QStringLiteral("CERT-BUNDLE")).toArray())
 		trusted << QSslCertificate(QByteArray::fromBase64(c.toString().toLatin1()), QSsl::Der);
 
-	QJsonObject obj = Configuration::instance().object();
+	QJsonObject obj = conf->object();
 	if(obj.contains(QStringLiteral("UPDATER-MESSAGE-URL")))
 	{
 		request.setUrl(obj.value(QStringLiteral("UPDATER-MESSAGE-URL")).toString());
