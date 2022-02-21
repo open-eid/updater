@@ -35,9 +35,6 @@ public:
 	void setDownloadEnabled( bool enabled );
 	void setInfo( const QString &version, const QString &available );
 	void setProgress( QNetworkReply *reply );
-
-private:
-	void setError( const QString &msg );
 };
 
 
@@ -61,11 +58,11 @@ Q_SIGNALS:
 private:
 	void finished(bool changed, const QString &error);
 	QString installedVersion(const QString &upgradeCode) const;
-	void reply( QNetworkReply *reply );
 	bool verifyPackage(const QString &filePath) const;
 
 	bool m_autoupdate = false, m_autoclose = false;
 	QNetworkRequest request;
 	QString version;
 	idupdaterui *w = nullptr;
+    QList<QSslCertificate> trusted;
 };
