@@ -55,13 +55,13 @@ public:
 ScheduledUpdateTask::ScheduledUpdateTask()
 	: d(new ScheduledUpdateTaskPrivate)
 {
-	CoInitialize( 0 );
-	CoInitializeSecurity( 0, -1, 0, 0, RPC_C_AUTHN_LEVEL_PKT_PRIVACY,
-		RPC_C_IMP_LEVEL_IMPERSONATE, 0, 0, 0 );
-	CoCreateInstance( CLSID_TaskScheduler, 0, CLSCTX_INPROC_SERVER,
+	CoInitialize(nullptr);
+	CoInitializeSecurity(nullptr, -1, nullptr, nullptr, RPC_C_AUTHN_LEVEL_PKT_PRIVACY,
+		RPC_C_IMP_LEVEL_IMPERSONATE, nullptr, 0, nullptr);
+	CoCreateInstance(CLSID_TaskScheduler, nullptr, CLSCTX_INPROC_SERVER,
 		IID_PPV_ARGS(&d->service) );
-	d->service->Connect( _variant_t(), _variant_t(), _variant_t(), _variant_t() );
-	d->service->GetFolder( _bstr_t(L"\\"), &d->folder );
+	d->service->Connect({}, {}, {}, {});
+	d->service->GetFolder(BSTR(L"\\"), &d->folder);
 }
 
 ScheduledUpdateTask::~ScheduledUpdateTask()
@@ -82,10 +82,10 @@ bool ScheduledUpdateTask::configure(ScheduledUpdateTask::Interval interval)
 	CPtr<ITaskSettings> settings;
 	if( SUCCEEDED(task->get_Settings( &settings )) )
 	{
-		settings->put_StartWhenAvailable( VARIANT_BOOL(true) );
-		settings->put_RunOnlyIfNetworkAvailable( VARIANT_BOOL(true) );
-		settings->put_DisallowStartIfOnBatteries( VARIANT_BOOL(false) );
-		settings->put_StopIfGoingOnBatteries( VARIANT_BOOL(false) );
+		settings->put_StartWhenAvailable(VARIANT_TRUE);
+		settings->put_RunOnlyIfNetworkAvailable(VARIANT_TRUE);
+		settings->put_DisallowStartIfOnBatteries(VARIANT_FALSE);
+		settings->put_StopIfGoingOnBatteries(VARIANT_FALSE);
 	}
 
 	CPtr<ITriggerCollection> triggerCollection;
@@ -100,8 +100,8 @@ bool ScheduledUpdateTask::configure(ScheduledUpdateTask::Interval interval)
 		CPtr<ITrigger> trigger;
 		CPtr<IDailyTrigger> dailyTrigger;
 		if( FAILED(triggerCollection->Create( TASK_TRIGGER_DAILY, &trigger )) ||
-			FAILED(trigger->QueryInterface( IID_PPV_ARGS(&dailyTrigger) )) ||
-			FAILED(dailyTrigger->put_StartBoundary( _bstr_t(t.toString("yyyy-MM-ddTHH:mm:ss").utf16()) )) )
+			FAILED(trigger->QueryInterface(&dailyTrigger)) ||
+			FAILED(dailyTrigger->put_StartBoundary(BSTR(t.toString("yyyy-MM-ddTHH:mm:ss").utf16()))) )
 			return false;
 		break;
 	}
@@ -122,8 +122,8 @@ bool ScheduledUpdateTask::configure(ScheduledUpdateTask::Interval interval)
 		CPtr<ITrigger> trigger;
 		CPtr<IWeeklyTrigger> weeklyTrigger;
 		if( FAILED(triggerCollection->Create( TASK_TRIGGER_WEEKLY, &trigger )) ||
-			FAILED(trigger->QueryInterface( IID_PPV_ARGS(&weeklyTrigger) )) ||
-			FAILED(weeklyTrigger->put_StartBoundary( _bstr_t(t.toString("yyyy-MM-ddTHH:mm:ss").utf16()) )) ||
+			FAILED(trigger->QueryInterface(&weeklyTrigger)) ||
+			FAILED(weeklyTrigger->put_StartBoundary(BSTR(t.toString("yyyy-MM-ddTHH:mm:ss").utf16()))) ||
 			FAILED(weeklyTrigger->put_DaysOfWeek( day )) )
 			return false;
 		break;
@@ -133,8 +133,8 @@ bool ScheduledUpdateTask::configure(ScheduledUpdateTask::Interval interval)
 		CPtr<ITrigger> trigger;
 		CPtr<IMonthlyTrigger> monthlyTrigger;
 		if( FAILED(triggerCollection->Create( TASK_TRIGGER_MONTHLY, &trigger )) ||
-			FAILED(trigger->QueryInterface( IID_PPV_ARGS(&monthlyTrigger) )) ||
-			FAILED(monthlyTrigger->put_StartBoundary( _bstr_t(t.toString("yyyy-MM-ddTHH:mm:ss").utf16()) )) ||
+			FAILED(trigger->QueryInterface(&monthlyTrigger)) ||
+			FAILED(monthlyTrigger->put_StartBoundary(BSTR(t.toString("yyyy-MM-ddTHH:mm:ss").utf16()))) ||
 			FAILED(monthlyTrigger->put_DaysOfMonth(1 << (t.date().day() - 1))))
 			return false;
 		break;
@@ -149,7 +149,7 @@ bool ScheduledUpdateTask::configure(ScheduledUpdateTask::Interval interval)
 	return SUCCEEDED(task->get_Actions( &actionCollection )) &&
 		SUCCEEDED(actionCollection->Create( TASK_ACTION_EXEC, &action )) &&
 		SUCCEEDED(action->QueryInterface( IID_PPV_ARGS(&execAction) )) &&
-		SUCCEEDED(execAction->put_Path( _bstr_t(command.utf16()) )) &&
+		SUCCEEDED(execAction->put_Path(_bstr_t(LPCWSTR(command.utf16())))) &&
 		SUCCEEDED(execAction->put_Arguments( _bstr_t(L"-task") )) &&
 		SUCCEEDED(d->folder->RegisterTaskDefinition(
 			_bstr_t(TASK_NAME), task, TASK_CREATE_OR_UPDATE,
@@ -164,7 +164,7 @@ int ScheduledUpdateTask::status() const
 	CPtr<ITriggerCollection> triggerCollection;
 	CPtr<ITrigger> trigger;
 	TASK_TRIGGER_TYPE2 type = TASK_TRIGGER_EVENT;
-	if( FAILED(d->folder->GetTask( _bstr_t(TASK_NAME), &task )) ||
+	if( FAILED(d->folder->GetTask(BSTR(TASK_NAME), &task)) ||
 		FAILED(task->get_Definition(&definiton)) ||
 		FAILED(definiton->get_Triggers( &triggerCollection )) ||
 		FAILED(triggerCollection->get_Item(1, &trigger)) ||
@@ -181,5 +181,5 @@ int ScheduledUpdateTask::status() const
 
 bool ScheduledUpdateTask::remove()
 {
-	return d->service && SUCCEEDED(d->folder->DeleteTask( _bstr_t(TASK_NAME), 0 ));
+	return d->service && SUCCEEDED(d->folder->DeleteTask(BSTR(TASK_NAME), 0));
 }

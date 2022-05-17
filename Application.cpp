@@ -30,7 +30,6 @@
 #include <QMenu>
 #include <QMessageBox>
 #include <QSettings>
-#include <QTextCodec>
 #include <QTranslator>
 #include <QtNetwork/QNetworkProxyFactory>
 
@@ -65,9 +64,9 @@ Application::Application( int &argc, char **argv )
 	QTranslator *qt = new QTranslator( this );
 	QTranslator *common = new QTranslator( this );
 	QTranslator *t = new QTranslator( this );
-	qt->load(QStringLiteral(":/qtbase_%1.qm").arg(lang));
-	common->load(QStringLiteral(":/common_%1.qm").arg(lang));
-	t->load(QStringLiteral(":/idupdater_%1.qm").arg(lang));
+	void(qt->load(QStringLiteral(":/qtbase_%1.qm").arg(lang)));
+	void(common->load(QStringLiteral(":/common_%1.qm").arg(lang)));
+	void(t->load(QStringLiteral(":/idupdater_%1.qm").arg(lang)));
 	installTranslator( qt );
 	installTranslator( common );
 	installTranslator( t );
@@ -84,7 +83,7 @@ Application::Application( int &argc, char **argv )
 Application::~Application()
 {
 	qDebug() << "Application is quiting";
-	qInstallMessageHandler( 0 );
+	qInstallMessageHandler(nullptr);
 }
 
 int Application::confTask( const QStringList &args ) const
@@ -149,7 +148,8 @@ bool Application::execute(const QStringList &arguments)
 	qDebug() << "CreateEnvironmentBlock" << environment << ret <<  GetLastError();
 
 	qDebug() << "creating as user";
-	STARTUPINFO StartupInfo = { sizeof(StartupInfo) };
+	STARTUPINFO StartupInfo {};
+	StartupInfo.cb = sizeof(StartupInfo);
 	PROCESS_INFORMATION processInfo;
 	ret = CreateProcessAsUserW(primaryToken, 0, LPWSTR(command.utf16()), 0, 0,
 		false, CREATE_NO_WINDOW | CREATE_UNICODE_ENVIRONMENT,
@@ -173,6 +173,7 @@ void Application::msgHandler( QtMsgType type, const QMessageLogContext &, const 
 	switch( type )
 	{
 	case QtDebugMsg: log->write(QStringLiteral("DBG: %1\n").arg(msg).toUtf8()); break;
+	case QtInfoMsg: log->write(QStringLiteral("INF: %1\n").arg(msg).toUtf8()); break;
 	case QtWarningMsg: log->write(QStringLiteral("WRN: %1\n").arg(msg).toUtf8()); break;
 	case QtCriticalMsg: log->write(QStringLiteral("CRI: %1\n").arg( msg).toUtf8()); break;
 	case QtFatalMsg: log->write(QStringLiteral("FAT: %1\n").arg(msg).toUtf8()); abort();

@@ -4,7 +4,7 @@ if(POLICY CMP0074)
 endif()
 project(id-updater VERSION 3.13.3)
 
-set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake/modules")
+set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake/modules)
 
 include( VersionInfo )
 set_app_name( PROGNAME ID-updater )
@@ -99,13 +99,19 @@ else()
 	configure_file( common/config.qrc config.qrc COPYONLY )
 
 	find_package( OpenSSL REQUIRED )
-	find_package( Qt5 5.9.0 REQUIRED COMPONENTS Core Widgets Network LinguistTools )
+	find_package(QT NAMES Qt6 Qt5 COMPONENTS Core REQUIRED)
+	find_package(Qt${QT_VERSION_MAJOR} 5.12.0 REQUIRED COMPONENTS Core Widgets Network LinguistTools)
+	if(${QT_VERSION} VERSION_LESS "5.15.0")
+		macro(qt_add_translation)
+			qt5_add_translation(${ARGN})
+		endmacro()
+	endif()
 
 	include_directories( ${CMAKE_CURRENT_BINARY_DIR} common/qtsingleapplication/src )
 	add_subdirectory( common/qtsingleapplication )
 
 	configure_file( translations.qrc translations.qrc COPYONLY )
-	qt5_add_translation( SOURCES idupdater_et.ts idupdater_ru.ts
+	qt_add_translation(SOURCES idupdater_et.ts idupdater_ru.ts
 		common/translations/qtbase_et.ts common/translations/qtbase_ru.ts
 		common/translations/common_et.ts common/translations/common_ru.ts
 	)
@@ -133,9 +139,8 @@ else()
 		INTERPROCEDURAL_OPTIMIZATION YES
 		INTERPROCEDURAL_OPTIMIZATION_DEBUG NO
 	)
-	set_property(SOURCE ScheduledUpdateTask.cpp APPEND PROPERTY COMPILE_OPTIONS "/Zc:wchar_t-") # required for task scheduler BSTR type
 	target_compile_definitions(${PROGNAME} PRIVATE WIN32_LEAN_AND_MEAN UNICODE CONFIG_URL="${CONFIG_URL}" COMMON_STATIC NO_CACHE)
-	target_link_libraries( ${PROGNAME} Qt5::Widgets Qt5::Network qtsingleapplication OpenSSL::Crypto
+	target_link_libraries( ${PROGNAME} Qt${QT_VERSION_MAJOR}::Widgets Qt${QT_VERSION_MAJOR}::Network qtsingleapplication OpenSSL::Crypto
 		msi Mstask Userenv wintrust Crypt32 taskschd comsupp ws2_32 Setupapi winscard Wtsapi32
 	)
 
@@ -148,30 +153,21 @@ else()
 		set(SSL_PATH "${OPENSSL_ROOT_DIR}/bin")
 	endif()
 	if(NOT EXISTS "${SSL_PATH}")
-		if(WIN32 AND "optimized" IN_LIST OPENSSL_CRYPTO_LIBRARY
-				 AND     "debug" IN_LIST OPENSSL_CRYPTO_LIBRARY)
-			cmake_parse_arguments(SSL_LIBRARY "" "" "debug;optimized" ${OPENSSL_CRYPTO_LIBRARY})
-			if(CMAKE_BUILD_TYPE MATCHES "^Debug$")
-				get_filename_component(SSL_PATH "${SSL_LIBRARY_debug}" DIRECTORY)
-			else()
-				get_filename_component(SSL_PATH "${SSL_LIBRARY_optimized}" DIRECTORY)
-			endif()
-		else()
-			get_filename_component(SSL_PATH "${OPENSSL_CRYPTO_LIBRARY}" DIRECTORY)
-		endif()
-		get_filename_component(SSL_PATH "${SSL_PATH}/../bin" ABSOLUTE)
+		get_filename_component(SSL_PATH "${OPENSSL_INCLUDE_DIR}/../bin" ABSOLUTE)
 	endif()
 	set(MSI_FILE "ID-Updater-${VERSION}$ENV{VER_SUFFIX}.${PLATFORM}")
+	get_target_property(qtCore_install_prefix Qt${QT_VERSION_MAJOR}::qmake IMPORTED_LOCATION)
+	get_filename_component(qtCore_install_prefix ${qtCore_install_prefix} DIRECTORY)
 	add_custom_target(installer DEPENDS ${PROGNAME}
 		COMMAND "$ENV{WIX}bin\\candle.exe" -nologo -arch ${PLATFORM} -dPlatform=${PLATFORM}
-			-dMSI_VERSION=${VERSION} -dqt_path=${_qt5Core_install_prefix}
-			-dqtconf=${CMAKE_SOURCE_DIR}/qt.conf -dlibs_path="${SSL_PATH}"
+			-dMSI_VERSION=${VERSION} -dqt_path=${qtCore_install_prefix} -dqt_ver_major=${QT_VERSION_MAJOR}
+			-dqt_suffix=$<$<CONFIG:Debug>:d> -dqtconf=${CMAKE_SOURCE_DIR}/qt.conf -dlibs_path="${SSL_PATH}"
 			-dupdater_path=$<TARGET_FILE:${PROGNAME}> ${CMAKE_SOURCE_DIR}/idupdater.wxs
-			${CMAKE_MODULE_PATH}/WelcomeDlg2.wxs ${CMAKE_MODULE_PATH}/WixUI_Minimal2.wxs
+			${CMAKE_SOURCE_DIR}/cmake/modules/WelcomeDlg2.wxs ${CMAKE_SOURCE_DIR}/cmake/modules/WixUI_Minimal2.wxs
 		COMMAND "$ENV{WIX}bin\\light.exe" -nologo -o "${MSI_FILE}.msi" -ext WixUIExtension
 			idupdater.wixobj  WelcomeDlg2.wixobj WixUI_Minimal2.wixobj
-			-dWixUIDialogBmp=${CMAKE_MODULE_PATH}/dlgbmp.bmp
-			-dWixUIBannerBmp=${CMAKE_MODULE_PATH}/banner.bmp
+			-dWixUIDialogBmp=${CMAKE_SOURCE_DIR}/cmake/modules/dlgbmp.bmp
+			-dWixUIBannerBmp=${CMAKE_SOURCE_DIR}/cmake/modules/banner.bmp
 	)
 	if(SIGNCERT)
 		if(CROSSSIGNCERT)

@@ -29,6 +29,12 @@
 <?define VCVER = "141" ?>
 <?endif?>
 
+<?if $(var.qt_suffix) = "d" ?>
+<?define VCPATH = "$(env.VCTOOLSREDISTDIR)\Debug_NonRedist\$(var.Platform)\Microsoft.VC$(var.VCVER).DebugCRT" ?>
+<?else ?>
+<?define VCPATH = "$(env.VCTOOLSREDISTDIR)\$(var.Platform)\Microsoft.VC$(var.VCVER).CRT" ?>
+<?endif ?>
+
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
   <Product Name="Open-EID Updater" UpgradeCode="d3aa8bd7-e1e6-46d0-97a6-c9b87d2b830b"
       Id="*" Language="1033" Version="$(var.MSI_VERSION)" Codepage="1251" Manufacturer="RIA">
@@ -56,48 +62,63 @@
                 Name="Installed" Value="[APPLICATIONFOLDER]" Type="string"/>
 <?endif ?>
 <?ifdef var.qt_path ?>
-            <File Source="$(env.VCTOOLSREDISTDIR)\$(var.Platform)\Microsoft.VC$(var.VCVER).CRT\msvcp140.dll"/>
-            <File Source="$(env.VCTOOLSREDISTDIR)\$(var.Platform)\Microsoft.VC$(var.VCVER).CRT\vcruntime140.dll"/>
-<!--?if $(env.VisualStudioVersion) = "16.0" ?>
-            <File Source="$(env.VCTOOLSREDISTDIR)\$(var.Platform)\Microsoft.VC$(var.VCVER).CRT\vcruntime140_1.dll"/>
-<?endif ?-->
+            <File Source="$(var.VCPATH)\msvcp140$(var.qt_suffix).dll"/>
+            <File Source="$(var.VCPATH)\vcruntime140$(var.qt_suffix).dll"/>
+<?if $(var.Platform) = x64 AND $(env.VisualStudioVersion) != "15.0" ?>
+            <File Source="$(var.VCPATH)\msvcp140_1$(var.qt_suffix).dll"/>
+            <File Source="$(var.VCPATH)\MSVCP140_2$(var.qt_suffix).dll"/>
+            <File Source="$(var.VCPATH)\vcruntime140_1$(var.qt_suffix).dll"/>
+<?endif ?>
             <File Source="$(var.libs_path)\libcrypto-1_1$(var.OpenSSLSuffix).dll"/>
             <File Source="$(var.libs_path)\libssl-1_1$(var.OpenSSLSuffix).dll"/>
-            <File Source="$(var.qt_path)\bin\Qt5Core.dll"/>
-            <File Source="$(var.qt_path)\bin\Qt5Gui.dll"/>
-            <File Source="$(var.qt_path)\bin\Qt5Network.dll"/>
-            <File Source="$(var.qt_path)\bin\Qt5PrintSupport.dll"/>
-            <File Source="$(var.qt_path)\bin\Qt5Svg.dll"/>
-            <File Source="$(var.qt_path)\bin\Qt5Widgets.dll"/>
-            <File Source="$(var.qt_path)\bin\Qt5WinExtras.dll"/>
-            <File Source="$(var.qt_path)\bin\libEGL.dll"/>
-            <File Source="$(var.qt_path)\bin\libGLESv2.dll"/>
-            <File Source="$(var.qt_path)\bin\D3DCompiler_47.dll"/>
-            <File Source="$(var.qt_path)\bin\opengl32sw.dll"/>
+            <File Source="$(var.qt_path)\Qt$(var.qt_ver_major)Core$(var.qt_suffix).dll"/>
+            <File Source="$(var.qt_path)\Qt$(var.qt_ver_major)Gui$(var.qt_suffix).dll"/>
+            <File Source="$(var.qt_path)\Qt$(var.qt_ver_major)Network$(var.qt_suffix).dll"/>
+            <File Source="$(var.qt_path)\Qt$(var.qt_ver_major)PrintSupport$(var.qt_suffix).dll"/>
+            <File Source="$(var.qt_path)\Qt$(var.qt_ver_major)Svg$(var.qt_suffix).dll"/>
+            <File Source="$(var.qt_path)\Qt$(var.qt_ver_major)Widgets$(var.qt_suffix).dll"/>
+            <File Source="$(var.qt_path)\D3DCompiler_47.dll"/>
+            <File Source="$(var.qt_path)\opengl32sw.dll"/>
+<?if $(var.qt_ver_major) = "5" ?>
+            <File Source="$(var.qt_path)\Qt5WinExtras$(var.qt_suffix).dll"/>
+            <File Source="$(var.qt_path)\libEGL$(var.qt_suffix).dll"/>
+            <File Source="$(var.qt_path)\libGLESv2$(var.qt_suffix).dll"/>
             <File Source="$(var.qtconf)" />
+<?else ?>
+            <File Source="$(var.qt_path)\Qt6Core5Compat$(var.qt_suffix).dll"/>
+            <File Source="$(var.qt_path)\Qt6SvgWidgets$(var.qt_suffix).dll"/>
+<?endif?>
 <?endif?>
           </Component>
 <?ifdef var.qt_path ?>
-          <Directory Id="platforms" Name="platforms" FileSource="$(var.qt_path)\plugins\platforms">
+          <Directory Id="platforms" Name="platforms" FileSource="$(var.qt_path)\..\plugins\platforms">
             <Component Id="qwindows.dll">
-              <File Name="qwindows.dll"/>
+              <File Name="qwindows$(var.qt_suffix).dll"/>
             </Component>
           </Directory>
-          <Directory Id="printsupport" Name="printsupport" FileSource="$(var.qt_path)\plugins\printsupport">
+<?if $(var.qt_ver_major) = "5" ?>
+          <Directory Id="printsupport" Name="printsupport" FileSource="$(var.qt_path)\..\plugins\printsupport">
             <Component Id="windowsprintersupport.dll">
-              <File Name="windowsprintersupport.dll"/>
+              <File Name="windowsprintersupport$(var.qt_suffix).dll"/>
             </Component>
           </Directory>
-          <Directory Id="styles" Name="styles" FileSource="$(var.qt_path)\plugins\styles">
+<?else ?>
+          <Directory Id="tls" Name="tls" FileSource="$(var.qt_path)\..\plugins\tls">
+            <Component Id="qopensslbackend.dll">
+              <File Name="qopensslbackend$(var.qt_suffix).dll"/>
+            </Component>
+          </Directory>
+<?endif?>
+          <Directory Id="styles" Name="styles" FileSource="$(var.qt_path)\..\plugins\styles">
             <Component Id="qwindowsvistastyle.dll">
-              <File Name="qwindowsvistastyle.dll"/>
+              <File Name="qwindowsvistastyle$(var.qt_suffix).dll"/>
             </Component>
           </Directory>
-          <Directory Id="imageformats" Name="imageformats" FileSource="$(var.qt_path)\plugins\imageformats">
+          <Directory Id="imageformats" Name="imageformats" FileSource="$(var.qt_path)\..\plugins\imageformats">
             <Component Id="imageformats.dll" Guid="4ae32624-e869-4e4c-8a1c-624c31133ce3">
-              <File Name="qgif.dll"/>
-              <File Name="qjpeg.dll"/>
-              <File Name="qsvg.dll"/>
+              <File Name="qgif$(var.qt_suffix).dll"/>
+              <File Name="qjpeg$(var.qt_suffix).dll"/>
+              <File Name="qsvg$(var.qt_suffix).dll"/>
             </Component>
           </Directory>
 <?endif?>
@@ -110,7 +131,11 @@
 <?ifdef var.qt_path ?>
       <ComponentRef Id="qwindows.dll" />
       <ComponentRef Id="qwindowsvistastyle.dll" />
+<?if $(var.qt_ver_major) = "5" ?>
       <ComponentRef Id="windowsprintersupport.dll" />
+<?else ?>
+      <ComponentRef Id="qopensslbackend.dll" />
+<?endif?>
       <ComponentRef Id="imageformats.dll" />
 <?endif?>
     </Feature>
