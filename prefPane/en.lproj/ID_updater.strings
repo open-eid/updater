@@ -2,44 +2,20 @@
 /* Class = "NSWindow"; title = "ID-updater"; ObjectID = "12"; */
 "12.title" = "ID-updater";
 
-/* Class = "NSMenuItem"; title = "Remove"; ObjectID = "3bN-hp-rYM"; */
-"3bN-hp-rYM.title" = "Remove";
+/* Class = "NSTextFieldCell"; title = "Your ID-software is up to date"; ObjectID = "Kje-PT-lDq"; */
+"Kje-PT-lDq.title" = "Your ID-software is up to date";
 
-/* Class = "NSMenuItem"; title = "Once a day"; ObjectID = "47t-6c-CcN"; */
-"47t-6c-CcN.title" = "Once a day";
+/* Class = "NSButtonCell"; title = "Update now"; ObjectID = "Tk7-kF-JTm"; */
+"Tk7-kF-JTm.title" = "Update now";
 
-/* Class = "NSTextFieldCell"; title = "Ready"; ObjectID = "93X-h4-Pxn"; */
-"93X-h4-Pxn.title" = "Ready";
+/* Class = "NSButtonCell"; title = "Version info"; ObjectID = "UwB-jw-hW4"; */
+"UwB-jw-hW4.title" = "Version info";
 
-/* Class = "NSMenuItem"; title = "Once a month"; ObjectID = "DGb-lH-Nqo"; */
-"DGb-lH-Nqo.title" = "Once a month";
+/* Class = "NSImageView"; ibExternalAccessibilityDescription = "ID-updater"; ObjectID = "cBX-F9-CcO"; */
+"cBX-F9-CcO.ibExternalAccessibilityDescription" = "ID-updater";
 
-/* Class = "NSMenu"; title = "OtherViews"; ObjectID = "Kq2-Mx-1ek"; */
-"Kq2-Mx-1ek.title" = "OtherViews";
+/* Class = "NSTextFieldCell"; title = "Last checked:"; ObjectID = "sp4-up-rmr"; */
+"sp4-up-rmr.title" = "Last checked:";
 
-/* Class = "NSTextFieldCell"; title = "Changelog:"; ObjectID = "MH3-Hn-7hU"; */
-"MH3-Hn-7hU.title" = "Changelog:";
-
-/* Class = "NSButtonCell"; title = "Download update"; ObjectID = "OBO-RW-cVT"; */
-"OBO-RW-cVT.title" = "Download update";
-
-/* Class = "NSTextFieldCell"; title = "0 KB/s"; ObjectID = "PII-Zr-eT8"; */
-"PII-Zr-eT8.title" = "0 KB/s";
-
-/* Class = "NSTabViewItem"; label = "Updates"; ObjectID = "XOS-WI-hKa"; */
-"XOS-WI-hKa.label" = "Updates";
-
-/* Class = "NSTextFieldCell"; title = "Currently installed version:"; ObjectID = "Xr7-Ls-jOQ"; */
-"Xr7-Ls-jOQ.title" = "Currently installed version:";
-
-/* Class = "NSTextFieldCell"; title = "Available:"; ObjectID = "ZgI-Qu-BYN"; */
-"ZgI-Qu-BYN.title" = "Available:";
-
-/* Class = "NSTextFieldCell"; title = "Update check interval"; ObjectID = "dPb-83-7q8"; */
-"dPb-83-7q8.title" = "Update check interval";
-
-/* Class = "NSTabViewItem"; label = "Version info"; ObjectID = "hng-hr-Q6P"; */
-"hng-hr-Q6P.label" = "Version info";
-
-/* Class = "NSMenuItem"; title = "Once a week"; ObjectID = "wj9-Or-Pru"; */
-"wj9-Or-Pru.title" = "Once a week";
+/* Class = "NSButtonCell"; title = "Automatically check for updates"; ObjectID = "tXV-pa-oNo"; */
+"tXV-pa-oNo.title" = "Automatically check for updates";

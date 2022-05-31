@@ -1,4 +1,6 @@
-/* Localized versions of Info.plist keys */
+/* (No Comment) */
+"CFBundleDisplayName" = "ID-Updater";
 
-CFBundleName = "ID-Updater";
-CFBundleDisplayName = "ID-Updater";
+/* Localized versions of Info.plist keys */
+"CFBundleName" = "ID-Updater";
+
