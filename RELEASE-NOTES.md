@@ -1,3 +1,23 @@
+Id-updater version [3.13.4](https://github.com/open-eid/updater/releases/tag/v3.13.4) release notes
+--------------------------------------
+- Support MSVS 2022 toolchain (#67)
+- Qt 6 support (#65)
+
+[Full Changelog](https://github.com/open-eid/updater/compare/v3.13.3...v3.13.4)
+
+Id-updater version [3.13.3](https://github.com/open-eid/updater/releases/tag/v3.13.3) release notes
+--------------------------------------
+- Add web-eid to diagnostics (#64)
+
+[Full Changelog](https://github.com/open-eid/updater/compare/v3.13.2...v3.13.3)
+
+Id-updater version [3.13.2](https://github.com/open-eid/updater/releases/tag/v3.13.2) release notes
+--------------------------------------
+- Notification fixes (#58), (#54), (#61), (#63)
+- Build fixes (#53), (#60)
+
+[Full Changelog](https://github.com/open-eid/updater/compare/v3.13.1...v3.13.2)
+
 Id-updater version [3.13.1](https://github.com/open-eid/updater/releases/tag/v3.13.1) release notes
 --------------------------------------
 - Update UI in main thread (#47)

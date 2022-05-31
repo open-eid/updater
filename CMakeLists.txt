@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.16)
 if(POLICY CMP0074)
 	cmake_policy(SET CMP0074 NEW)
 endif()
-project(id-updater VERSION 3.13.3)
+project(id-updater VERSION 3.13.4)
 
 set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake/modules)
 
@@ -29,35 +29,27 @@ if( APPLE )
 		COMMAND ibtool --errors --warnings --notices --output-format human-readable-text
 			--compile ID_updater.nib ${CMAKE_CURRENT_SOURCE_DIR}/prefPane/Base.lproj/ID_updater.xib
 	)
+	set(EN_RESOURCES prefPane/en.lproj/InfoPlist.strings prefPane/en.lproj/ID_updater.strings prefPane/en.lproj/Localizable.strings)
+	set(ET_RESOURCES prefPane/et.lproj/InfoPlist.strings prefPane/et.lproj/ID_updater.strings prefPane/et.lproj/Localizable.strings)
+	set(RU_RESOURCES prefPane/ru.lproj/InfoPlist.strings prefPane/ru.lproj/ID_updater.strings prefPane/ru.lproj/Localizable.strings)
 
 	find_library( XAR xar )
 	add_library( ${PROGNAME} MODULE
 		ID_updater.nib
 		config.h
 		prefPane/Base.lproj/ID_updater.xib
-		prefPane/en.lproj/InfoPlist.strings
-		prefPane/en.lproj/Localizable.strings
-		prefPane/en.lproj/ID_updater.strings
-		prefPane/et.lproj/InfoPlist.strings
-		prefPane/et.lproj/Localizable.strings
-		prefPane/et.lproj/ID_updater.strings
-		prefPane/ru.lproj/InfoPlist.strings
-		prefPane/ru.lproj/Localizable.strings
-		prefPane/ru.lproj/ID_updater.strings
+		${EN_RESOURCES}
+		${ET_RESOURCES}
+		${RU_RESOURCES}
 		prefPane/Icon.icns
 		prefPane/id-updater.m
 		prefPane/update.m
 	)
-	set_source_files_properties( prefPane/Icon.icns
-		PROPERTIES MACOSX_PACKAGE_LOCATION Resources )
-	set_source_files_properties( ID_updater.nib
-		PROPERTIES MACOSX_PACKAGE_LOCATION Resources/Base.lproj )
-	set_source_files_properties( prefPane/en.lproj/InfoPlist.strings prefPane/en.lproj/ID_updater.strings prefPane/en.lproj/Localizable.strings
-		PROPERTIES MACOSX_PACKAGE_LOCATION Resources/en.lproj )
-	set_source_files_properties( prefPane/et.lproj/InfoPlist.strings prefPane/et.lproj/ID_updater.strings prefPane/et.lproj/Localizable.strings
-		PROPERTIES MACOSX_PACKAGE_LOCATION Resources/et.lproj )
-	set_source_files_properties( prefPane/ru.lproj/InfoPlist.strings prefPane/ru.lproj/ID_updater.strings prefPane/ru.lproj/Localizable.strings
-		PROPERTIES MACOSX_PACKAGE_LOCATION Resources/ru.lproj )
+	set_source_files_properties(prefPane/Icon.icns PROPERTIES MACOSX_PACKAGE_LOCATION Resources)
+	set_source_files_properties(ID_updater.nib PROPERTIES MACOSX_PACKAGE_LOCATION Resources/Base.lproj)
+	set_source_files_properties(${EN_RESOURCES} PROPERTIES MACOSX_PACKAGE_LOCATION Resources/en.lproj)
+	set_source_files_properties(${ET_RESOURCES} PROPERTIES MACOSX_PACKAGE_LOCATION Resources/et.lproj)
+	set_source_files_properties(${RU_RESOURCES} PROPERTIES MACOSX_PACKAGE_LOCATION Resources/ru.lproj)
 	set_target_properties( ${PROGNAME} PROPERTIES
 		BUNDLE YES
 		BUNDLE_EXTENSION prefPane

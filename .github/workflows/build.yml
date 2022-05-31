@@ -28,7 +28,7 @@ jobs:
     runs-on: ${{ matrix.image }}
     strategy:
       matrix:
-        toolset: [14.16, 14.29, 14.31]
+        toolset: [14.16, 14.29, 14.32]
         arch: [x64]
         qtver: [5.12.12]
         include:
@@ -36,7 +36,7 @@ jobs:
           image: windows-2019
         - toolset: 14.29
           image: windows-2019
-        - toolset: 14.31
+        - toolset: 14.32
           image: windows-2022
         - arch: x64
           qt: win64_msvc2017_64
@@ -61,7 +61,7 @@ jobs:
       id: runvcpkg
       with:
         vcpkgArguments: openssl
-        vcpkgGitCommitId: a69b65229b3956b7f45abd81671b7330114bcaad
+        vcpkgGitCommitId: 89295c9fe22e97ca9e380a6c771ccf2ff09dca95
         vcpkgTriplet: ${{ matrix.arch }}-windows
     - name: Install Qt
       uses: jurplel/install-qt-action@v2

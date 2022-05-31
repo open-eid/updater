@@ -66,7 +66,7 @@
             <File Source="$(var.VCPATH)\vcruntime140$(var.qt_suffix).dll"/>
 <?if $(var.Platform) = x64 AND $(env.VisualStudioVersion) != "15.0" ?>
             <File Source="$(var.VCPATH)\msvcp140_1$(var.qt_suffix).dll"/>
-            <File Source="$(var.VCPATH)\MSVCP140_2$(var.qt_suffix).dll"/>
+            <File Source="$(var.VCPATH)\msvcp140_2$(var.qt_suffix).dll"/>
             <File Source="$(var.VCPATH)\vcruntime140_1$(var.qt_suffix).dll"/>
 <?endif ?>
             <File Source="$(var.libs_path)\libcrypto-1_1$(var.OpenSSLSuffix).dll"/>
@@ -116,7 +116,6 @@
           </Directory>
           <Directory Id="imageformats" Name="imageformats" FileSource="$(var.qt_path)\..\plugins\imageformats">
             <Component Id="imageformats.dll" Guid="4ae32624-e869-4e4c-8a1c-624c31133ce3">
-              <File Name="qgif$(var.qt_suffix).dll"/>
               <File Name="qjpeg$(var.qt_suffix).dll"/>
               <File Name="qsvg$(var.qt_suffix).dll"/>
             </Component>
