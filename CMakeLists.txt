@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.16)
 if(POLICY CMP0074)
 	cmake_policy(SET CMP0074 NEW)
 endif()
-project(id-updater VERSION 3.13.4)
+project(id-updater VERSION 3.13.5)
 
 set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake/modules)
 
@@ -57,6 +57,7 @@ if( APPLE )
 		COMPILE_FLAGS "-Wno-unused-parameter -fobjc-arc"
 		XCODE_ATTRIBUTE_WRAPPER_EXTENSION prefPane
 		MACOSX_BUNDLE_INFO_PLIST ${CMAKE_CURRENT_SOURCE_DIR}/prefPane/Info.plist.cmake
+		XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER "ee.ria.${PROGNAME}"
 	)
 	target_link_libraries(${PROGNAME} ${XAR}
 		"-framework Cocoa -framework PreferencePanes -framework CryptoTokenKit -framework Security"

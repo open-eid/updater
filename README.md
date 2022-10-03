@@ -17,17 +17,15 @@
 
 2. Configure
 
-        mkdir build
-        cd build
-        cmake ..
+        cmake -B build -S .
 
 3. Build
 
-        make
+        cmake --build build
 
 4. Install
 
-        sudo make install
+        sudo cmake --build build --target install
 
 6. Execute
 

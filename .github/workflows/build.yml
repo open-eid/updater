@@ -8,10 +8,10 @@ jobs:
     runs-on: macos-latest
     env:
       MAKEFLAGS: -j3
-      MACOSX_DEPLOYMENT_TARGET: '10.14'
+      MACOSX_DEPLOYMENT_TARGET: 10.15
     steps:
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
       with:
         submodules: recursive
     - name: Build
@@ -19,7 +19,7 @@ jobs:
         cmake -DCMAKE_OSX_ARCHITECTURES="x86_64;arm64" -S . -B build
         cmake --build build --target pkgbuild
     - name: Archive artifacts
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
         name: pkg
         path: build/*.pkg
@@ -28,7 +28,7 @@ jobs:
     runs-on: ${{ matrix.image }}
     strategy:
       matrix:
-        toolset: [14.16, 14.29, 14.32]
+        toolset: [14.16, 14.29, 14.33]
         arch: [x64]
         qtver: [5.12.12]
         include:
@@ -36,7 +36,7 @@ jobs:
           image: windows-2019
         - toolset: 14.29
           image: windows-2019
-        - toolset: 14.32
+        - toolset: 14.33
           image: windows-2022
         - arch: x64
           qt: win64_msvc2017_64
@@ -47,13 +47,13 @@ jobs:
           image: windows-2019
         - toolset: 14.29
           arch: x64
-          qtver: 6.3.0
+          qtver: 6.3.1
           qtmodules: qt5compat
           qt: win64_msvc2019_64
           image: windows-2019
     steps:
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
       with:
         submodules: recursive
     - name: Prepare vcpkg
@@ -80,7 +80,7 @@ jobs:
           -DCMAKE_TOOLCHAIN_FILE=${{ env.VCPKG_ROOT }}/scripts/buildsystems/vcpkg.cmake -S . -B build
         cmake --build build --target installer
     - name: Archive artifacts
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
         name: msi
         path: build/*.msi

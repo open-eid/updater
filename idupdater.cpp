@@ -50,7 +50,9 @@ idupdaterui::idupdaterui( const QString &version, idupdater *parent )
 		m_message->setHidden(msg.isEmpty());
 		m_message->setText(msg);
 	});
-	connect( parent, &idupdater::error, this, &idupdaterui::setError );
+	connect(parent, &idupdater::error, m_updateStatus, [this](const QString &msg) {
+		m_updateStatus->setText(idupdater::tr("Failed: ") + msg);
+	});
 	connect( buttonBox, &QDialogButtonBox::accepted, parent, &idupdater::startInstall );
 	connect( buttonBox,  &QDialogButtonBox::rejected, qApp, &QCoreApplication::quit );
 	buttonBox->button( QDialogButtonBox::Ok )->setText( tr("Start downloading") );
@@ -66,11 +68,6 @@ void idupdaterui::setDownloadEnabled( bool enabled )
 	m_availableVer->setVisible( enabled );
 	m_downloadProgress->setVisible( enabled );
 	buttonBox->button( QDialogButtonBox::Ok )->setEnabled( enabled );
-}
-
-void idupdaterui::setError( const QString &msg )
-{
-	m_updateStatus->setText( idupdater::tr("Failed: ") + msg );
 }
 
 void idupdaterui::setInfo( const QString &version, const QString &available )
@@ -110,40 +107,28 @@ idupdater::idupdater( QObject *parent )
 	if( GetCPInfoExW( GetConsoleCP(), 0, &CPInfoEx ) != 0 )
 		locale += QStringLiteral(" / ") + QString::fromWCharArray(CPInfoEx.CodePageName);
 	QString userAgent = QStringLiteral( "%1/%2 (%3) Locale: %4 Devices: %5")
-		.arg(qApp->applicationName(), version, Common::applicationOs(), locale, QPCSC::instance().drivers().join("/"));
+		.arg(qApp->applicationName(), qApp->applicationVersion(), Common::applicationOs(), locale, QPCSC::instance().drivers().join('/'));
 	qDebug() << "User-Agent:" << userAgent;
 	request.setRawHeader( "User-Agent", userAgent.toUtf8() );
-	connect( this, &QNetworkAccessManager::finished, this, &idupdater::reply );
 	connect(&Configuration::instance(), &Configuration::finished, this, &idupdater::finished);
-}
-
-void idupdater::reply( QNetworkReply *reply )
-{
-	if(reply->error() != QNetworkReply::NoError)
-	{
-		emit error(reply->errorString());
-		return reply->deleteLater();
-	}
-
-	qDebug() << "Downloaded" << reply->url().toString();
-	emit status(tr("Download finished, starting installation..."));
-	QFile tmp(QDir::tempPath() + "/" + reply->url().fileName());
-	if(!tmp.open(QFile::WriteOnly))
-		return emit error(tr("Downloaded package integrity check failed"));
-
-	tmp.write(reply->readAll());
-	tmp.close();
-	reply->deleteLater();
-
-	bool verify = verifyPackage(tmp.fileName());
-	qDebug() << "Package signature" << (verify ? "OK" : "NOT OK");
-	if(!verify)
-		return emit error( tr("Downloaded package integrity check failed") );
-	if(!QProcess::startDetached( tmp.fileName(),
-			m_autoupdate ? QStringList("/quiet") : QStringList()))
-		return emit error( tr("Package installation failed"));
-	emit status(tr("Package installed"));
-	QApplication::quit();
+	connect(this, &QNetworkAccessManager::sslErrors, this, [=](QNetworkReply *reply, const QList<QSslError> &errors){
+		QList<QSslError> ignore;
+		for(const QSslError &error: errors)
+		{
+			switch(error.error())
+			{
+			case QSslError::UnableToGetLocalIssuerCertificate:
+			case QSslError::CertificateUntrusted:
+			case QSslError::SelfSignedCertificateInChain:
+				if(trusted.contains(reply->sslConfiguration().peerCertificate())) {
+					ignore << error;
+					break;
+				}
+			default: break;
+			}
+		}
+		reply->ignoreSslErrors(ignore);
+	});
 }
 
 void idupdater::checkUpdates(bool autoupdate, bool autoclose)
@@ -166,14 +151,31 @@ void idupdater::finished(bool /*changed*/, const QString &err)
 
 	emit status(tr("Check completed"));
 
-	QJsonObject obj = Configuration::instance().object();
-	if(obj.contains("WIN-MESSAGE"))
-		emit message(obj.value("WIN-MESSAGE").toString());
+	QSslConfiguration ssl = QSslConfiguration::defaultConfiguration();
+	ssl.setCaCertificates({});
+	request.setSslConfiguration(ssl);
+	trusted.clear();
+	for(const QJsonValue c: Configuration::instance().object().value(QStringLiteral("CERT-BUNDLE")).toArray())
+		trusted << QSslCertificate(QByteArray::fromBase64(c.toString().toLatin1()), QSsl::Der);
 
-	if(obj.contains("WIN-UPGRADECODE"))
-		version = installedVersion(obj.value("WIN-UPGRADECODE").toString());
-	QString available = obj.value("WIN-LATEST").toString();
-	request.setUrl(obj.value("WIN-DOWNLOAD").toString());
+	QJsonObject obj = Configuration::instance().object();
+	if(obj.contains(QStringLiteral("UPDATER-MESSAGE-URL")))
+	{
+		request.setUrl(obj.value(QStringLiteral("UPDATER-MESSAGE-URL")).toString());
+		QNetworkReply *reply = get(request);
+		connect(reply, &QNetworkReply::finished, this, [this, reply]{
+			if(reply->error() == QNetworkReply::NoError)
+				emit message(reply->readAll());
+			reply->deleteLater();
+		});
+	}
+	else if(obj.contains(QStringLiteral("WIN-MESSAGE")))
+		emit message(obj.value(QStringLiteral("WIN-MESSAGE")).toString());
+
+	if(obj.contains(QStringLiteral("WIN-UPGRADECODE")))
+		version = installedVersion(obj.value(QStringLiteral("WIN-UPGRADECODE")).toString());
+	QString available = obj.value(QStringLiteral("WIN-LATEST")).toString();
+	request.setUrl(obj.value(QStringLiteral("WIN-DOWNLOAD")).toString());
 	qDebug() << "Installed version" << version << "available version" << available;
 
 	if(!lessThanVersion(version, available))
@@ -198,91 +200,13 @@ void idupdater::finished(bool /*changed*/, const QString &err)
 QString idupdater::installedVersion(const QString &upgradeCode) const
 {
 	QString code = upgradeCode.toUpper();
-	QString path = QStringLiteral("SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall");
-	HKEY reg = HKEY_LOCAL_MACHINE;
-	REGSAM param = KEY_READ|KEY_WOW64_32KEY;
-	HKEY key;
-	long result = RegOpenKeyEx(reg, LPWSTR(path.utf16()), 0, param, &key);
-	if(result != ERROR_SUCCESS)
-		return {};
-
-	DWORD numSubgroups = 0, maxSubgroupSize = 0;
-	result = RegQueryInfoKey(key, 0, 0, 0, &numSubgroups, &maxSubgroupSize, 0, 0, 0, 0, 0, 0);
-	if(result != ERROR_SUCCESS)
-	{
-		RegCloseKey(key);
-		return {};
+	QSettings s(QStringLiteral("HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall"), QSettings::Registry32Format);
+	for(const QString &key: s.childGroups()) {
+		s.beginGroup(key);
+		if(s.value(QStringLiteral("/BundleUpgradeCode")).toString().toUpper() == code)
+			return s.value(QStringLiteral("/DisplayVersion")).toString();
+		s.endGroup();
 	}
-
-	for(DWORD j = 0; j < numSubgroups; ++j)
-	{
-		DWORD groupSize = maxSubgroupSize + 1;
-		QString group(groupSize, '\0');
-		result = RegEnumKeyEx(key, j, LPWSTR(group.data()), &groupSize, 0, 0, 0, 0);
-		if(result != ERROR_SUCCESS)
-			return {};
-		group.resize(groupSize);
-
-		HKEY subkey;
-		QString subpath = path + "\\" + group;
-		result = RegOpenKeyEx(reg, LPCWSTR(subpath.utf16()), 0, param, &subkey);
-		if(result != ERROR_SUCCESS)
-			return {};
-
-		DWORD numKeys = 0, maxKeySize = 0, maxValueSize = 0;
-		result = RegQueryInfoKey(subkey, 0, 0, 0, 0, 0, 0, &numKeys, &maxKeySize, &maxValueSize, 0, 0);
-		if(result != ERROR_SUCCESS)
-		{
-			RegCloseKey(subkey);
-			return {};
-		}
-
-		QString regcode, version;
-		for(DWORD k = 0; k < numKeys; ++k)
-		{
-			DWORD dataType = 0;
-			DWORD keySize = maxKeySize + 1;
-			DWORD dataSize = maxValueSize;
-			QString key(keySize, '\0');
-			QByteArray data(dataSize, 0);
-
-			result = RegEnumValue(subkey, k, LPWSTR(key.data()), &keySize, 0,
-				&dataType, (unsigned char*)data.data(), &dataSize);
-			if(result != ERROR_SUCCESS)
-				continue;
-			key.resize(keySize);
-			data.resize(dataSize);
-
-			QString value;
-			switch(dataType)
-			{
-			case REG_SZ:
-				value = QString::fromUtf16((const ushort*)data.constData());
-				break;
-			case REG_MULTI_SZ:
-			{
-				QStringList l;
-				for(int i = 0;;) {
-					QString s = QString::fromUtf16((const ushort*)data.constData() + i);
-					i += s.length() + 1;
-					if (s.isEmpty())
-						break;
-					l.append(s);
-				}
-				value = l.value(0);
-				break;
-			}
-			default: continue;
-			}
-
-			if(key == "BundleUpgradeCode") regcode = value;
-			if(key == "DisplayVersion") version = value;
-		}
-		RegCloseKey(subkey);
-		if(regcode.toUpper() == code)
-			return version;
-	}
-	RegCloseKey(key);
 
 	WCHAR prodCode[40];
 	if(ERROR_SUCCESS != MsiEnumRelatedProducts(L"{58A1DBA8-81A2-4D58-980B-4A6174D5B66B}", 0, 0, prodCode))
@@ -324,8 +248,35 @@ void idupdater::startInstall()
 {
 	qDebug() << "Starting install";
 	emit status( tr("Downloading...") );
-	QNetworkReply *reply = get( request );
-	if( w ) w->setProgress( reply );
+	QNetworkReply *reply = get(request);
+	connect(reply, &QNetworkReply::finished, this, [this,reply] {
+		if(reply->error() != QNetworkReply::NoError)
+		{
+			emit error(reply->errorString());
+			return reply->deleteLater();
+		}
+
+		qDebug() << "Downloaded" << reply->url().toString();
+		emit status(tr("Download finished, starting installation..."));
+		QFile tmp(QDir::tempPath() + "/" + reply->url().fileName());
+		if(!tmp.open(QFile::WriteOnly))
+			return emit error(tr("Downloaded package integrity check failed"));
+
+		tmp.write(reply->readAll());
+		tmp.close();
+		reply->deleteLater();
+
+		bool verify = verifyPackage(tmp.fileName());
+		qDebug() << "Package signature" << (verify ? "OK" : "NOT OK");
+		if(!verify)
+			return emit error( tr("Downloaded package integrity check failed") );
+		if(!QProcess::startDetached( tmp.fileName(),
+				m_autoupdate ? QStringList("/quiet") : QStringList()))
+			return emit error( tr("Package installation failed"));
+		emit status(tr("Package installed"));
+		QApplication::quit();
+	});
+	if( w ) w->setProgress(reply);
 }
 
 bool idupdater::verifyPackage(const QString &filePath) const
@@ -335,11 +286,11 @@ bool idupdater::verifyPackage(const QString &filePath) const
 	HCRYPTMSG msg = nullptr;
 	if(!CryptQueryObject(CERT_QUERY_OBJECT_FILE, LPCWSTR(path.utf16()),
 		CERT_QUERY_CONTENT_FLAG_PKCS7_SIGNED_EMBED, CERT_QUERY_FORMAT_FLAG_BINARY,
-		0, 0, 0, 0, &store, &msg, nullptr))
+		0, nullptr, nullptr, nullptr, &store, &msg, nullptr))
 		return false;
 
 	DWORD infoSize = 0;
-	if(!CryptMsgGetParam(msg, CMSG_SIGNER_CERT_INFO_PARAM, 0, 0, &infoSize))
+	if(!CryptMsgGetParam(msg, CMSG_SIGNER_CERT_INFO_PARAM, 0, nullptr, &infoSize))
 	{
 		CryptMsgClose(msg);
 		CertCloseStore(store, 0);
@@ -356,7 +307,7 @@ bool idupdater::verifyPackage(const QString &filePath) const
 	CryptMsgClose(msg);
 
 	PCCERT_CONTEXT certContext = CertFindCertificateInStore(store,
-		X509_ASN_ENCODING, 0, CERT_FIND_SUBJECT_CERT, info.data(), 0);
+		X509_ASN_ENCODING, 0, CERT_FIND_SUBJECT_CERT, info.data(), nullptr);
 	CertCloseStore(store, 0);
 	if(!certContext)
 		return false;
@@ -365,18 +316,13 @@ bool idupdater::verifyPackage(const QString &filePath) const
 		(const char*)certContext->pbCertEncoded, certContext->cbCertEncoded ), QSsl::Der);
 	CertFreeCertificateContext(certContext);
 
-	QList<QSslCertificate> list;
-	for(const QJsonValue &cert: Configuration::instance().object().value("CERT-BUNDLE").toArray())
-		list << QSslCertificate(QByteArray::fromBase64(cert.toString().toLatin1()), QSsl::Der);
-	if(!list.contains(cert))
+	if(!trusted.contains(cert))
 		return false;
 
-	WINTRUST_FILE_INFO FileData {};
-	FileData.cbStruct = sizeof(WINTRUST_FILE_INFO);
+	WINTRUST_FILE_INFO FileData { sizeof(WINTRUST_FILE_INFO) };
 	FileData.pcwszFilePath = LPCWSTR(path.utf16());
 
-	WINTRUST_DATA WinTrustData {};
-	WinTrustData.cbStruct = sizeof(WinTrustData);
+	WINTRUST_DATA WinTrustData { sizeof(WinTrustData) };
 	WinTrustData.dwUIChoice = m_autoupdate ? WTD_UI_NONE : WTD_UI_ALL;
 	WinTrustData.fdwRevocationChecks = WTD_REVOKE_NONE;
 	WinTrustData.dwUnionChoice = WTD_CHOICE_FILE;

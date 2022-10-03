@@ -192,6 +192,18 @@
 
 #pragma mark - Connection delegate
 
+- (void)URLSession:(NSURLSession *)session didReceiveChallenge:(NSURLAuthenticationChallenge *)challenge
+        completionHandler:(void (^)(NSURLSessionAuthChallengeDisposition, NSURLCredential *))completionHandler {
+    if([challenge.protectionSpace.authenticationMethod isEqualToString:NSURLAuthenticationMethodServerTrust]) {
+        if ([update checkCertificatePinning:challenge]) {
+            completionHandler(NSURLSessionAuthChallengeUseCredential,
+                              [NSURLCredential credentialForTrust:challenge.protectionSpace.serverTrust]);
+        } else {
+            completionHandler(NSURLSessionAuthChallengeCancelAuthenticationChallenge, nil);
+        }
+    }
+}
+
 - (void)URLSession:(NSURLSession *)session downloadTask:(NSURLSessionDownloadTask *)downloadTask didWriteData:(int64_t)bytesWritten totalBytesWritten:(int64_t)totalBytesWritten totalBytesExpectedToWrite:(int64_t)totalBytesExpectedToWrite {
     dispatch_sync(dispatch_get_main_queue(), ^{
         self->progress.maxValue = totalBytesExpectedToWrite;
@@ -241,7 +253,7 @@
             continue;
 
         NSData *der = [NSData dataWithBytesNoCopy:(uint8_t*)data length:size freeWhenDone:NO];
-        if ([update.centralConfig[@"CERT-BUNDLE"] containsObject:[der base64EncodedStringWithOptions:0]])
+        if ([update.cert_bundle containsObject:der])
             certData = [NSData dataWithBytes:(uint8_t*)data length:size]; // Make copy of memory will be lost after xar_close
     }
 
@@ -282,14 +294,15 @@
         return;
     }
 
-    NSError *error = nil;
-    bool isValid = [update verifySignature:signature data:data key:publickey digestSize:nil error:&error];
+    CFErrorRef error = nil;
+    bool isValid = SecKeyVerifySignature(publickey, kSecKeyAlgorithmRSASignatureDigestPKCS1v15SHA1,
+                                         (__bridge CFDataRef)data, (__bridge CFDataRef)signature, &error);
     CFRelease(publickey);
     if (isValid)
         [NSTask launchedTaskWithLaunchPath:@"/usr/bin/open" arguments:@[path]];
     else
     {
-        NSLog(@"Verify error: %@", error);
+        NSLog(@"Verify error: %@", CFBridgingRelease(error));
         status.stringValue = NSLocalizedString(@"Failed to verify signature", nil);
     }
 }
@@ -316,7 +329,7 @@
     [progress startAnimation:self];
     NSURLSession *defaultSession = [NSURLSession sessionWithConfiguration:NSURLSessionConfiguration.defaultSessionConfiguration delegate:self delegateQueue:nil];
     NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:[NSURL URLWithString:filename]];
-    [request addValue:[update userAgent] forHTTPHeaderField:@"User-Agent"];
+    [request addValue:[update userAgent:YES] forHTTPHeaderField:@"User-Agent"];
     [[defaultSession downloadTaskWithRequest:request] resume];
     lastRecvd = 0;
     timer = [NSTimer scheduledTimerWithTimeInterval:1.0 target:self selector:@selector(timer:) userInfo:nil repeats:YES];

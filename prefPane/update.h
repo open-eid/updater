@@ -25,7 +25,7 @@
 - (void)updateAvailable:(NSString*)available filename:(NSString*)filename;
 @end
 
-@interface Update : NSObject
+@interface Update : NSObject <NSURLSessionDelegate>
 
 enum {
     InvalidSignature = 1000,
@@ -34,16 +34,18 @@ enum {
 };
 
 - (id)initWithDelegate:(id <UpdateDelegate>)delegate;
+- (BOOL)checkCertificatePinning:(NSURLAuthenticationChallenge *)challenge;
 - (void)request;
-- (NSString *)userAgent;
+- (NSString *)userAgent:(BOOL)diagnostics;
 - (BOOL)verifyCMSSignature:(NSData *)signatureData data:(NSData *)data cert:(NSData *)cert;
-- (BOOL)verifySignature:(NSData *)signature data:(NSData *)data key:(SecKeyRef)key digestSize:(CFNumberRef)digestSize error:(NSError **)error;
 - (NSString*)versionInfo:(NSString *)pkg;
 
 @property(retain) NSString *baseversion;
+@property(retain) NSString *updaterversion;
 @property(retain) NSString *clientversion;
 @property(retain) NSString *digidoc4;
 @property(retain) NSString *utilityversion;
 @property(retain) NSDictionary *centralConfig;
+@property(retain) NSArray *cert_bundle;
 @property(assign) id <UpdateDelegate> delegate;
 @end

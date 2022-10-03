@@ -36,6 +36,7 @@
 - (id)initWithDelegate:(id <UpdateDelegate>)delegate {
     if (self = [super init]) {
         self.delegate = delegate;
+        self.updaterversion = [self versionInfo:@"ee.ria.ID-updater"];
         self.baseversion = [self versionInfo:@"ee.ria.open-eid"];
         self.clientversion = [self versionInfo:@"ee.ria.qdigidocclient"];
         self.digidoc4 = [self versionInfo:@"ee.ria.qdigidoc4"];
@@ -44,40 +45,54 @@
     return self;
 }
 
+- (BOOL)checkCertificatePinning:(NSURLAuthenticationChallenge *)challenge {
+    SecTrustRef serverTrust = challenge.protectionSpace.serverTrust;
+    SecTrustResultType trustResult;
+    SecTrustEvaluate(serverTrust, &trustResult);
+    if ((trustResult == kSecTrustResultUnspecified ||
+         trustResult == kSecTrustResultProceed) &&
+        SecTrustGetCertificateCount(serverTrust) > 0) {
+        SecCertificateRef certificate = SecTrustGetCertificateAtIndex(serverTrust, 0);
+        NSData *der = CFBridgingRelease(SecCertificateCopyData(certificate));
+        return [self.cert_bundle containsObject:der];
+    }
+    return NO;
+}
+
 - (void)request {
     NSURL *url = [NSURL URLWithString:@CONFIG_URL];
     url = [url.URLByDeletingLastPathComponent URLByAppendingPathComponent:@"config.rsa"];
     request = [NSMutableURLRequest requestWithURL:url
         cachePolicy:NSURLRequestReloadIgnoringLocalCacheData timeoutInterval:10];
-    [request addValue:[self userAgent] forHTTPHeaderField:@"User-Agent"];
+    [request addValue:[self userAgent:YES] forHTTPHeaderField:@"User-Agent"];
     [[NSURLSession.sharedSession dataTaskWithRequest:request completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
         [self receivedData:data withResponse:response];
     }] resume];
 }
 
-- (NSString*)userAgent {
+- (NSString*)userAgent:(BOOL)diangostics {
     NSDictionary *os = [NSDictionary dictionaryWithContentsOfFile:@"/System/Library/CoreServices/SystemVersion.plist"];
     struct utsname unameData;
     uname(&unameData);
 
     NSString *devices = [TKSmartCardSlotManager.defaultManager.slotNames componentsJoinedByString:@"/"];
-    NSMutableArray *agent = [NSMutableArray arrayWithObject:[NSString stringWithFormat:@"id-updater/%@", self.baseversion]];
-    if (self.clientversion) {
+    NSMutableArray *agent = [NSMutableArray arrayWithObject:[NSString stringWithFormat:@"id-updater/%@", self.updaterversion]];
+    if (diangostics && self.clientversion.length) {
         [agent addObject:[NSString stringWithFormat:@"qdigidocclient/%@", self.clientversion]];
     }
-    if (self.utilityversion) {
+    if (diangostics && self.utilityversion.length) {
         [agent addObject:[NSString stringWithFormat:@"qesteidutility/%@", self.utilityversion]];
     }
-    if (self.digidoc4) {
+    if (diangostics && self.digidoc4.length) {
         [agent addObject:[NSString stringWithFormat:@"qdigidoc4/%@", self.digidoc4]];
     }
-    [agent addObject:[NSString stringWithFormat:@"(Mac OS %@(%lu/%s)) Locale: %@ Devices: %@",
-        os[@"ProductVersion"], sizeof(void *)<<3, unameData.machine, @"UTF-8", devices]];
+    NSString *locale = NSBundle.mainBundle.preferredLocalizations[0];
+    [agent addObject:[NSString stringWithFormat:@"(Mac OS %@ (%lu/%s)) Locale: %@ / %@ Devices: %@",
+        os[@"ProductVersion"], sizeof(void *)<<3, unameData.machine, locale, @"UTF-8", devices]];
     return [agent componentsJoinedByString:@" "];
 }
 
-- (BOOL)verify:(NSData *)data error:(NSError **)error
-{
+- (BOOL)verify:(NSData *)data error:(NSError **)error {
     NSString *pem = @((char*)config_pub);
     pem = [pem stringByReplacingOccurrencesOfString:@"-----BEGIN RSA PUBLIC KEY-----" withString:@""];
     pem = [pem stringByReplacingOccurrencesOfString:@"-----END RSA PUBLIC KEY-----" withString:@""];
@@ -87,10 +102,15 @@
         (__bridge id)kSecAttrKeyType: (__bridge id)kSecAttrKeyTypeRSA,
         (__bridge id)kSecAttrKeyClass: (__bridge id)kSecAttrKeyClassPublic
     };
-    CFErrorRef err = 0;
+    CFErrorRef err = nil;
     id key = CFBridgingRelease(SecKeyCreateFromData((__bridge CFDictionaryRef)parameters, (__bridge CFDataRef)keyData, &err));
     if (err) { if(error) *error = CFBridgingRelease(err); return false; }
-    return [self verifySignature:[[NSData alloc] initWithBase64EncodedString:signature options:NSDataBase64DecodingIgnoreUnknownCharacters] data:data key:(__bridge SecKeyRef)key digestSize:(__bridge CFNumberRef)@512 error:error];
+
+    NSData *signatureData = [[NSData alloc] initWithBase64EncodedString:signature options:NSDataBase64DecodingIgnoreUnknownCharacters];
+    BOOL isValid = SecKeyVerifySignature((__bridge SecKeyRef)key, kSecKeyAlgorithmRSASignatureMessagePKCS1v15SHA512,
+                                         (__bridge CFDataRef)data, (__bridge CFDataRef)signatureData, &err);
+    if (err) { if(error) *error = CFBridgingRelease(err); return false; }
+    return isValid;
 }
 
 - (BOOL)verifyCMSSignature:(NSData *)signatureData data:(NSData *)data cert:(NSData *)cert {
@@ -132,36 +152,24 @@
     return isValid && isSameCert;
 }
 
-- (BOOL)verifySignature:(NSData *)signatureData data:(NSData *)data key:(SecKeyRef)key digestSize:(CFNumberRef)digestSize error:(NSError **)error {
-    CFErrorRef err = nil;
-    #define RETURN_IF_ERROR if (err) { if(error) *error = CFBridgingRelease(err); return false; }
-    id verifier = CFBridgingRelease(SecVerifyTransformCreate(key, (__bridge CFDataRef)signatureData, &err));
-    RETURN_IF_ERROR
-    SecTransformSetAttribute((__bridge SecTransformRef)verifier, kSecTransformInputAttributeName, (__bridge CFDataRef)data, &err);
-    RETURN_IF_ERROR
-    if (digestSize != nil) {
-        SecTransformSetAttribute((__bridge SecTransformRef)verifier, kSecDigestTypeAttribute, kSecDigestSHA2, &err);
-        RETURN_IF_ERROR
-        SecTransformSetAttribute((__bridge SecTransformRef)verifier, kSecDigestLengthAttribute, digestSize, &err);
-        RETURN_IF_ERROR
-    } else {
-        SecTransformSetAttribute((__bridge SecTransformRef)verifier, kSecInputIsAttributeName, kSecInputIsDigest, &err);
-        RETURN_IF_ERROR
-    }
-    CFTypeRef result = SecTransformExecute((__bridge SecTransformRef)verifier, &err);
-    bool isValid = result == kCFBooleanTrue;
-    CFRelease(result);
-    RETURN_IF_ERROR
-    return isValid;
-}
-
 - (NSString*)versionInfo:(NSString *)pkg {
     NSDictionary *list = [NSDictionary dictionaryWithContentsOfFile:[NSString stringWithFormat:@"/var/db/receipts/%@.plist", pkg]];
     return list ? list[@"PackageVersion"] : [NSString string];
 }
 
-- (void)receivedData:(NSData *)data withResponse:(NSURLResponse *)response
-{
+- (void)URLSession:(NSURLSession *)session didReceiveChallenge:(NSURLAuthenticationChallenge *)challenge
+        completionHandler:(void (^)(NSURLSessionAuthChallengeDisposition, NSURLCredential *))completionHandler {
+    if([challenge.protectionSpace.authenticationMethod isEqualToString:NSURLAuthenticationMethodServerTrust]) {
+        if ([self checkCertificatePinning:challenge]) {
+            completionHandler(NSURLSessionAuthChallengeUseCredential,
+                              [NSURLCredential credentialForTrust:challenge.protectionSpace.serverTrust]);
+        } else {
+            completionHandler(NSURLSessionAuthChallengeCancelAuthenticationChallenge, nil);
+        }
+    }
+}
+
+- (void)receivedData:(NSData *)data withResponse:(NSURLResponse *)response {
     NSHTTPURLResponse *http = (NSHTTPURLResponse*)response;
     if (http.statusCode != 200) {
         [self.delegate didFinish:[NSError errorWithDomain:@"ee.ria.ID-updater" code:FileNotFound userInfo:nil]];
@@ -192,17 +200,39 @@
         }
 
         self.centralConfig = json;
-        NSString *message = json[@"OSX-MESSAGE"];
-        NSString *version = json[@"OSX-LATEST"];
-        if (message) {
-            NSLog(@"Message: %@", message);
-            [self.delegate message:message];
+        NSMutableArray *certs = [NSMutableArray arrayWithCapacity:[self.centralConfig[@"CERT-BUNDLE"] count]];
+        for (NSString *b64 in self.centralConfig[@"CERT-BUNDLE"]) {
+            [certs addObject:[[NSData alloc] initWithBase64EncodedString:b64 options:NSDataBase64DecodingIgnoreUnknownCharacters]];
         }
+        self.cert_bundle = certs;
+        NSString *version = json[@"OSX-LATEST"];
         if (version) {
             NSLog(@"Remote version: %@", version);
             if ([version compare:self.baseversion options:NSNumericSearch] > 0) {
                 [self.delegate updateAvailable:version filename:json[@"OSX-DOWNLOAD"]];
             }
+        }
+        NSString *message_url = json[@"UPDATER-MESSAGE-URL"];
+        if (message_url) {
+            NSURLSession *session = [NSURLSession sessionWithConfiguration:NSURLSessionConfiguration.defaultSessionConfiguration delegate:self delegateQueue:Nil];
+            NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:[NSURL URLWithString:message_url]
+                cachePolicy:NSURLRequestReloadIgnoringLocalCacheData timeoutInterval:10];
+            [request addValue:[self userAgent:NO] forHTTPHeaderField:@"User-Agent"];
+            [[session dataTaskWithRequest:request completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
+                NSHTTPURLResponse *http = (NSHTTPURLResponse*)response;
+                if (http.statusCode != 200) {
+                    [self.delegate didFinish:nil];
+                    return;
+                }
+                [self.delegate message:[[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding]];
+                [self.delegate didFinish:nil];
+            }] resume];
+            return;
+        }
+        NSString *message = json[@"OSX-MESSAGE"];
+        if (message) {
+            NSLog(@"Message: %@", message);
+            [self.delegate message:message];
         }
         [self.delegate didFinish:error];
     } else if ([file isEqualToString:@"config.rsa"]) {
