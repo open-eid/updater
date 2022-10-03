@@ -59,7 +59,6 @@ Application::Application( int &argc, char **argv )
 	case QLocale::Estonian:
 	default: lang = QStringLiteral("et"); break;
 	}
-	lang = QSettings(QStringLiteral("Estonian ID Card"), {}).value(QStringLiteral("Main/Language"), lang).toString();
 
 	QTranslator *qt = new QTranslator( this );
 	QTranslator *common = new QTranslator( this );
@@ -188,12 +187,12 @@ void Application::printHelp()
 		"<tr><td>-autoclose</td><td>%3</td></tr>"
 		"<tr><td>-task</td><td>%4</td></tr>"
 		"<tr><td colspan=\"2\">-daily|-monthly|-weekly|-remove</td></tr>"
-		"<tr><td colspan=\"2\">%6</td></tr></table>")
-		.arg( tr("this help") )
-		.arg( tr("update automatically") )
-		.arg( tr("close automatically when no updates are available") )
-		.arg( tr("execute subprocess to right window session under windows") )
-		.arg( tr("configure scheduled task to run at given interval, or remove it") ) );
+		"<tr><td colspan=\"2\">%6</td></tr></table>").arg(
+		tr("this help"),
+		tr("update automatically"),
+		tr("close automatically when no updates are available"),
+		tr("execute subprocess to right window session under windows"),
+		tr("configure scheduled task to run at given interval, or remove it")));
 }
 
 int Application::run()

@@ -25,6 +25,7 @@
 
 #include <QNetworkRequest>
 
+class Configuration;
 class idupdater;
 class idupdaterui: public QWidget, private Ui::idupdaterui
 {
@@ -63,6 +64,7 @@ private:
 	bool m_autoupdate = false, m_autoclose = false;
 	QNetworkRequest request;
 	QString version;
-	idupdaterui *w = nullptr;
-    QList<QSslCertificate> trusted;
+	Configuration *conf {};
+	idupdaterui *w {};
+	QList<QSslCertificate> trusted;
 };
