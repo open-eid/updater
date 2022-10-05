@@ -33,7 +33,7 @@
     NSString *signature;
 }
 
-- (id)initWithDelegate:(id <UpdateDelegate>)delegate {
+- (instancetype)initWithDelegate:(id <UpdateDelegate>)delegate {
     if (self = [super init]) {
         self.delegate = delegate;
         self.updaterversion = [self versionInfo:@"ee.ria.ID-updater"];

@@ -1,45 +1,21 @@
-
 /* Class = "NSWindow"; title = "ID-updater"; ObjectID = "12"; */
 "12.title" = "ID-tarkvara uuenduste kontroll";
 
-/* Class = "NSMenuItem"; title = "Remove"; ObjectID = "3bN-hp-rYM"; */
-"3bN-hp-rYM.title" = "Eemalda";
+/* Class = "NSImageView"; ibExternalAccessibilityDescription = "ID-updater"; ObjectID = "cBX-F9-CcO"; */
+"cBX-F9-CcO.ibExternalAccessibilityDescription" = "ID-updater";
 
-/* Class = "NSMenuItem"; title = "Once a day"; ObjectID = "47t-6c-CcN"; */
-"47t-6c-CcN.title" = "Kord päevas";
+/* Class = "NSTextFieldCell"; title = "Your ID-software is up to date"; ObjectID = "Kje-PT-lDq"; */
+"Kje-PT-lDq.title" = "Sinu ID-tarkvara on ajakohane";
 
-/* Class = "NSTextFieldCell"; title = "Ready"; ObjectID = "93X-h4-Pxn"; */
-"93X-h4-Pxn.title" = "Valmis";
+/* Class = "NSTextFieldCell"; title = "Last checked:"; ObjectID = "sp4-up-rmr"; */
+"sp4-up-rmr.title" = "Viimati kontrollitud:";
 
-/* Class = "NSMenuItem"; title = "Once a month"; ObjectID = "DGb-lH-Nqo"; */
-"DGb-lH-Nqo.title" = "Kord kuus";
+/* Class = "NSButtonCell"; title = "Update now"; ObjectID = "Tk7-kF-JTm"; */
+"Tk7-kF-JTm.title" = "Uuenda kohe";
 
-/* Class = "NSMenu"; title = "OtherViews"; ObjectID = "Kq2-Mx-1ek"; */
-"Kq2-Mx-1ek.title" = "OtherViews";
+/* Class = "NSButtonCell"; title = "Automatically check for updates"; ObjectID = "tXV-pa-oNo"; */
+"tXV-pa-oNo.title" = "Kontrolli automaatselt värskendusi";
 
-/* Class = "NSTextFieldCell"; title = "Changelog:"; ObjectID = "MH3-Hn-7hU"; */
-"MH3-Hn-7hU.title" = "Muudatuste ajalugu:";
+/* Class = "NSButtonCell"; title = "Version info"; ObjectID = "UwB-jw-hW4"; */
+"UwB-jw-hW4.title" = "Versiooni info";
 
-/* Class = "NSButtonCell"; title = "Download update"; ObjectID = "OBO-RW-cVT"; */
-"OBO-RW-cVT.title" = "Alusta paigaldust";
-
-/* Class = "NSTextFieldCell"; title = "0 KB/s"; ObjectID = "PII-Zr-eT8"; */
-"PII-Zr-eT8.title" = "0 KB/s";
-
-/* Class = "NSTabViewItem"; label = "Updates"; ObjectID = "XOS-WI-hKa"; */
-"XOS-WI-hKa.label" = "Uuendused";
-
-/* Class = "NSTextFieldCell"; title = "Currently installed version:"; ObjectID = "Xr7-Ls-jOQ"; */
-"Xr7-Ls-jOQ.title" = "Sinu arvutis olev tarkvara versioon:";
-
-/* Class = "NSTextFieldCell"; title = "Available:"; ObjectID = "ZgI-Qu-BYN"; */
-"ZgI-Qu-BYN.title" = "Paigaldatav tarkvara versioon:";
-
-/* Class = "NSTextFieldCell"; title = "Update check interval"; ObjectID = "dPb-83-7q8"; */
-"dPb-83-7q8.title" = "Kontrolli uuendusi";
-
-/* Class = "NSTabViewItem"; label = "Version info"; ObjectID = "hng-hr-Q6P"; */
-"hng-hr-Q6P.label" = "Versiooni info";
-
-/* Class = "NSMenuItem"; title = "Once a week"; ObjectID = "wj9-Or-Pru"; */
-"wj9-Or-Pru.title" = "Kord nädalas";

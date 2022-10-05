@@ -1,48 +1,3 @@
-/* Class = "NSWindow"; title = "ID-updater"; ObjectID = "12"; */
-"ID-updater" = "ID-tarkvara uuenduste kontroll";
-
-/* Class = "NSMenuItem"; title = "Remove"; ObjectID = "3bN-hp-rYM"; */
-"Remove" = "Eemalda";
-
-/* Class = "NSMenuItem"; title = "Once a day"; ObjectID = "47t-6c-CcN"; */
-"Once a day" = "Kord päevas";
-
-/* Class = "NSTextFieldCell"; title = "Ready"; ObjectID = "93X-h4-Pxn"; */
-"Ready" = "Valmis";
-
-/* Class = "NSMenuItem"; title = "Once a month"; ObjectID = "DGb-lH-Nqo"; */
-"Once a month" = "Kord kuus";
-
-/* Class = "NSMenu"; title = "OtherViews"; ObjectID = "Kq2-Mx-1ek"; */
-"Kq2-Mx-1ek.title" = "OtherViews";
-
-/* Class = "NSTextFieldCell"; title = "Changelog:"; ObjectID = "MH3-Hn-7hU"; */
-"Changelog:" = "Muudatuste ajalugu:";
-
-/* Class = "NSButtonCell"; title = "Download update"; ObjectID = "OBO-RW-cVT"; */
-"Download update" = "Alusta paigaldust";
-
-/* Class = "NSTextFieldCell"; title = "0 KB/s"; ObjectID = "PII-Zr-eT8"; */
-"PII-Zr-eT8.title" = "0 KB/s";
-
-/* Class = "NSTabViewItem"; label = "Updates"; ObjectID = "XOS-WI-hKa"; */
-"Updates" = "Uuendused";
-
-/* Class = "NSTextFieldCell"; title = "Currently installed version:"; ObjectID = "Xr7-Ls-jOQ"; */
-"Currently installed version:" = "Sinu arvutis olev tarkvara versioon:";
-
-/* Class = "NSTextFieldCell"; title = "Available:"; ObjectID = "ZgI-Qu-BYN"; */
-"Available:" = "Paigaldatav tarkvara versioon:";
-
-/* Class = "NSTextFieldCell"; title = "Update check interval"; ObjectID = "dPb-83-7q8"; */
-"Update check interval" = "Kontrolli uuendusi";
-
-/* Class = "NSTabViewItem"; label = "Version info"; ObjectID = "hng-hr-Q6P"; */
-"Version info" = "Versiooni info";
-
-/* Class = "NSMenuItem"; title = "Once a week"; ObjectID = "wj9-Or-Pru"; */
-"Once a week" = "Kord nädalas";
-
 /* No comment provided by engineer. */
 "Chrome browser extension (Web-eID)" = "Chrome browser extension (Web-eID)";
 
@@ -60,9 +15,6 @@
 
 /* No comment provided by engineer. */
 "DigiDoc3 Client" = "DigiDoc3 Client";
-
-/* No comment provided by engineer. */
-"DigiDoc4" = "DigiDoc4";
 
 /* No comment provided by engineer. */
 "Failed to copy public key" = "Failed to copy public key";
@@ -86,6 +38,9 @@
 "Firefox browser plugin" = "Firefox browser plugin";
 
 /* No comment provided by engineer. */
+"https://www.id.ee" = "https://www.id.ee";
+
+/* No comment provided by engineer. */
 "https://www.id.ee/en/article/id-software-versions-info-release-notes/" = "https://www.id.ee/artikkel/id-tarkvara-versioonide-info-release-notes/";
 
 /* No comment provided by engineer. */
@@ -96,6 +51,9 @@
 
 /* No comment provided by engineer. */
 "IDEMIA PKCS11 loader" = "IDEMIA PKCS11 loader";
+
+/* No comment provided by engineer. */
+"Last checked:" = "Viimati kontrollitud:";
 
 /* No comment provided by engineer. */
 "No matching certificate" = "No matching certificate";

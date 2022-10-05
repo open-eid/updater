@@ -27,45 +27,80 @@
 #define NSLocalizedString(key, comment) \
 [bundlelang localizedStringForKey:(key) value:@"" table:nil]
 
-@interface ID_updater : NSPreferencePane <UpdateDelegate, NSURLSessionDownloadDelegate, NSUserNotificationCenterDelegate> {
-    IBOutlet NSPopUpButton *changeSchedule;
-    IBOutlet NSTextField *changeScheduleLabel;
-    IBOutlet NSTextField *status;
-    IBOutlet NSTextView *changelog;
-    IBOutlet NSTextField *changelogLabel;
-    IBOutlet NSTextField *installed;
-    IBOutlet NSTextField *installedLabel;
-    IBOutlet NSTextField *available;
-    IBOutlet NSTextField *availableLabel;
-    IBOutlet NSTextField *speed;
-    IBOutlet NSProgressIndicator *progress;
-    IBOutlet NSButton *install;
-    IBOutlet NSTextField *info;
-    IBOutlet NSTabViewItem *updates;
-    IBOutlet NSTabViewItem *versionInfo;
-    IBOutlet NSTextField *serverMessage;
+@interface AdvancedWindowController: NSWindowController
+@end
+
+@implementation AdvancedWindowController
+
+- (instancetype)initWithText:(NSString*)text {
+    if (self = [super init]) {
+        NSView *view = [[NSView alloc] init];
+
+        NSTextField *label = [NSTextField labelWithString:text];
+        label.translatesAutoresizingMaskIntoConstraints = NO;
+        [view addSubview:label];
+        [label.topAnchor constraintEqualToAnchor:view.topAnchor constant:25].active = YES;
+        [label.centerXAnchor constraintEqualToAnchor:view.centerXAnchor].active = YES;
+
+        NSButton *ok = [[NSButton alloc] init];
+        ok.translatesAutoresizingMaskIntoConstraints = NO;
+        ok.title = @"OK";
+        ok.keyEquivalent = @"\r";
+        ok.highlighted = YES;
+        ok.bezelStyle = NSBezelStyleRounded;
+        ok.target = self;
+        ok.action = @selector(buttonPressed:);
+        [view addSubview:ok];
+        [ok.bottomAnchor constraintEqualToAnchor:view.bottomAnchor constant:-25].active = YES;
+        [ok.rightAnchor constraintEqualToAnchor:view.rightAnchor constant:-25].active = YES;
+
+        self.window = [[NSWindow alloc] initWithContentRect:NSMakeRect(0, 0, 400, 250)
+                                                  styleMask:NSWindowStyleMaskBorderless
+                                                    backing:NSBackingStoreBuffered
+                                                      defer:NO];
+        self.window.contentView = view;
+        self.window.defaultButtonCell = ok.cell;
+    }
+    return self;
+}
+
+- (void)buttonPressed:(id)sender {
+    [self.window.sheetParent endSheet:self.window];
+}
+
+- (void)showWindow:(id)sender {
+    [self.window makeKeyAndOrderFront:sender];
+}
+
+@end
+
+@interface ID_updater : NSPreferencePane <UpdateDelegate, NSURLSessionDownloadDelegate, NSUserNotificationCenterDelegate>
+
+@property (weak) IBOutlet NSTextField *mainLabel;
+@property (weak) IBOutlet NSTextField *statusLabel;
+@property (weak) IBOutlet NSTextField *infoLabel;
+@property (weak) IBOutlet NSProgressIndicator *progress;
+@property (weak) IBOutlet NSButton *install;
+@property (weak) IBOutlet NSButton *autoUpdate;
+@property (strong) AdvancedWindowController *advancedViewController;
+
+@end
+
+@implementation ID_updater {
     NSString *filename;
     NSTimer *timer;
     double lastRecvd;
     Update *update;
     NSBundle *bundlelang;
+    NSDateFormatter *df;
+    NSUserDefaults *defaults;
 }
-@end
-
-@implementation ID_updater
 
 - (void)mainViewDidLoad {
-    NSDictionary *schedule = [NSDictionary dictionaryWithContentsOfFile:(@"~/Library/LaunchAgents/ee.ria.id-updater.plist").stringByStandardizingPath];
-    if (!schedule) {
-        [changeSchedule selectItemAtIndex:3];
-    } else if (((NSDictionary*)schedule[@"StartCalendarInterval"])[@"Weekday"]) {
-        [changeSchedule selectItemAtIndex:1];
-    } else if (((NSDictionary*)schedule[@"StartCalendarInterval"])[@"Day"]) {
-        [changeSchedule selectItemAtIndex:2];
-    }
+    NSURL *url = [NSURL fileURLWithPath:@"~/Library/LaunchAgents/ee.ria.id-updater.plist".stringByStandardizingPath];
+    NSDictionary *schedule = [NSDictionary dictionaryWithContentsOfURL:url error:nil];
+    self.autoUpdate.state = schedule != nil;
 
-    update = [[Update alloc] initWithDelegate:self];
-    installed.stringValue = update.baseversion;
     bundlelang = self.bundle;
     NSArray *languages = [[NSUserDefaults standardUserDefaults] objectForKey:@"AppleLanguages"];
     NSLog(@"Languages %@", languages);
@@ -73,27 +108,232 @@
         NSLog(@"Estonian %@", [self.bundle pathForResource:languages[0] ofType:@"lproj"]);
         bundlelang = [NSBundle bundleWithPath:[self.bundle pathForResource:languages[0] ofType:@"lproj"]];
     }
-    status.stringValue = NSLocalizedString(status.stringValue, nil);
-    changeScheduleLabel.stringValue = NSLocalizedString(changeScheduleLabel.stringValue, nil);
-    changelogLabel.stringValue = NSLocalizedString(changelogLabel.stringValue, nil);
-    installedLabel.stringValue = NSLocalizedString(installedLabel.stringValue, nil);
-    availableLabel.stringValue = NSLocalizedString(availableLabel.stringValue, nil);
-    install.title = NSLocalizedString(install.title, nil);
-    for (int i = 0; i < changeSchedule.numberOfItems; ++i) {
-        NSMenuItem *item = [changeSchedule itemAtIndex:i];
-        item.title = NSLocalizedString(item.title, nil);
+
+    df = [[NSDateFormatter alloc] init];
+    df.dateFormat = @"yyyy-MM-dd HH:mm:ss";
+    defaults = NSUserDefaults.standardUserDefaults;
+    [self setLastUpdateCheck:NO];
+
+    update = [[Update alloc] initWithDelegate:self];
+    [update request];
+}
+
+- (void)setLastUpdateCheck:(BOOL)set {
+    NSDictionary *dict = [defaults persistentDomainForName:self.bundle.bundleIdentifier];
+    if (!dict)
+        dict = @{@"LastCheck": @"None"};
+    if (set) {
+        NSMutableDictionary *newDict = [dict mutableCopy];
+        newDict[@"LastCheck"] = [df stringFromDate:[[NSDate alloc] init]];
+        [defaults setPersistentDomain:newDict forName:self.bundle.bundleIdentifier];
+        [defaults synchronize];
+        dict = [defaults persistentDomainForName:self.bundle.bundleIdentifier];
     }
-    versionInfo.label = NSLocalizedString(versionInfo.label, nil);
-    updates.label = NSLocalizedString(updates.label, nil);
+    self.statusLabel.stringValue = [NSString stringWithFormat:@"%@ %@", NSLocalizedString(@"Last checked:", nil), dict[@"LastCheck"]];
+}
 
-    NSMutableAttributedString *changelogurl = [[NSMutableAttributedString alloc]
-                                               initWithString:NSLocalizedString(@"https://www.id.ee/en/article/id-software-versions-info-release-notes/", nil)];
-    [changelogurl addAttribute:NSLinkAttributeName value:changelogurl.string range:NSMakeRange(0, changelogurl.length)];
-    [changelog.textStorage setAttributedString:changelogurl];
+#pragma mark - UserNotificationCenter Delegate
 
+- (void)userNotificationCenter:(NSUserNotificationCenter *)center didActivateNotification:(NSUserNotification *)notification {
+    [center removeAllDeliveredNotifications];
+}
+
+#pragma mark - Update delegate
+
+- (void)didFinish:(NSError *)error {
+    dispatch_sync(dispatch_get_main_queue(), ^{
+        if (error) {
+            switch (error.code) {
+                case InvalidSignature:
+                    self.infoLabel.stringValue = NSLocalizedString(@"The configuration file located on the server cannot be validated.", nil);
+                    break;
+
+                case FileNotFound:
+                    self.infoLabel.stringValue = NSLocalizedString(@"File not found", nil);
+                    break;
+
+                default:
+                    self.infoLabel.stringValue = error.localizedDescription;
+                    break;
+            }
+        }
+    });
+}
+
+- (void)message:(NSString *)message {
+    dispatch_sync(dispatch_get_main_queue(), ^{
+        self.infoLabel.stringValue = message;
+        [self setLastUpdateCheck:YES];
+        NSUserNotificationCenter *center = [NSUserNotificationCenter defaultUserNotificationCenter];
+        if (center) {
+            NSUserNotification *notification = [NSUserNotification new];
+            notification.title = NSLocalizedString(@"Update message", nil);
+            notification.informativeText = message;
+            notification.soundName = NSUserNotificationDefaultSoundName;
+            center.delegate = self;
+            [center deliverNotification:notification];
+        }
+    });
+}
+
+- (void)updateAvailable:(NSString *)_available filename:(NSString *)_filename {
+    dispatch_sync(dispatch_get_main_queue(), ^{
+        self.install.hidden = NO;
+        filename = _filename;
+        self.mainLabel.stringValue = NSLocalizedString(@"Update available", nil);
+        [self setLastUpdateCheck:YES];
+        NSUserNotificationCenter *center = [NSUserNotificationCenter defaultUserNotificationCenter];
+        if (center) {
+            NSUserNotification *notification = [NSUserNotification new];
+            notification.title = NSLocalizedString(@"Update available", nil);
+            notification.subtitle = [NSString stringWithFormat: @"%@ %@",
+                                     NSLocalizedString(@"ID-software", nil), _available];
+            notification.informativeText = NSLocalizedString(@"https://www.id.ee/en/article/id-software-versions-info-release-notes/", nil);
+            notification.soundName = NSUserNotificationDefaultSoundName;
+            center.delegate = self;
+            [center deliverNotification:notification];
+        }
+    });
+}
+
+#pragma mark - Connection delegate
+
+- (void)URLSession:(NSURLSession *)session downloadTask:(NSURLSessionDownloadTask *)downloadTask didWriteData:(int64_t)bytesWritten totalBytesWritten:(int64_t)totalBytesWritten totalBytesExpectedToWrite:(int64_t)totalBytesExpectedToWrite {
+    dispatch_sync(dispatch_get_main_queue(), ^{
+        self.progress.maxValue = totalBytesExpectedToWrite;
+        self.progress.doubleValue = totalBytesWritten;
+    });
+}
+
+- (void)URLSession:(NSURLSession *)session downloadTask:(NSURLSessionDownloadTask *)downloadTask didFinishDownloadingToURL:(NSURL *)location {
+    [self.progress stopAnimation:self];
+    [timer invalidate];
+    timer = nil;
+    NSString *tmp = [NSString stringWithFormat:@"%@/%@", NSTemporaryDirectory(), filename.lastPathComponent];
+    [NSFileManager.defaultManager removeItemAtPath:tmp error:nil];
+    [NSFileManager.defaultManager moveItemAtPath:location.path toPath:tmp error:nil];
+
+    NSString *volumePath = @"/Volumes/Open-EID";
+    NSArray *args = @[@"attach", @"-verify", @"-mountpoint", volumePath, tmp];
+    NSTask *task = [NSTask launchedTaskWithLaunchPath:@"/usr/bin/hdiutil" arguments:args];
+    [task waitUntilExit];
+    if (task.terminationStatus != 0) {
+        self.infoLabel.stringValue = [NSString stringWithFormat:@"Verify failed, status: %i", task.terminationStatus];
+        return;
+    }
+
+    NSArray *paths = [NSFileManager.defaultManager subpathsAtPath:volumePath];
+    NSPredicate *predicate = [NSPredicate predicateWithFormat:@"SELF contains[cd] %@", @".pkg"];
+    NSString *path = [NSString stringWithFormat:@"%@/%@", volumePath,
+                      [paths filteredArrayUsingPredicate:predicate].lastObject];
+
+    xar_t xar = xar_open(path.UTF8String, 0);
+    if (!xar) {
+        self.infoLabel.stringValue = [NSString stringWithFormat:NSLocalizedString(@"Failed to open xar archive: %@", nil), path];
+        return;
+    }
+
+    NSData *certData;
+    xar_signature_t sig = xar_signature_first(xar);
+    xar_signature_t next = xar_signature_next(sig);
+    if(next && strcmp("CMS", xar_signature_type(next)) == 0)
+        sig = next;
+    NSString *signatureType = @(xar_signature_type(sig));
+    NSLog(@"Signature type %@", signatureType);
+    for (int32_t i = 0, count = xar_signature_get_x509certificate_count(sig); i < count; ++i) {
+        uint32_t size = 0;
+        const uint8_t *data = nil;
+        if (xar_signature_get_x509certificate_data(sig, i, &data, &size))
+            continue;
+
+        NSData *der = [NSData dataWithBytesNoCopy:(uint8_t*)data length:size freeWhenDone:NO];
+        if ([update.cert_bundle containsObject:der])
+            certData = [NSData dataWithBytes:(uint8_t*)data length:size]; // Make copy of memory will be lost after xar_close
+    }
+
+    if (!certData) {
+        self.infoLabel.stringValue = NSLocalizedString(@"No matching certificate", nil);
+        xar_close(xar);
+        return;
+    }
+
+    uint8_t *signedData = nil, *signatureData = nil;
+    uint32_t signedDataSize = 0, signatureDataSize = 0;
+    off_t offset = 0;
+    uint8_t err = xar_signature_copy_signed_data(sig, &signedData, &signedDataSize, &signatureData, &signatureDataSize, &offset);
+    NSData *signature = [NSData dataWithBytesNoCopy:signatureData length:signatureDataSize];
+    NSData *data = [NSData dataWithBytesNoCopy:signedData length:signedDataSize];
+    xar_close(xar);
+    if (err) {
+        self.infoLabel.stringValue = NSLocalizedString(@"Failed to copy signature", nil);
+        return;
+    }
+
+    if([signatureType isEqualToString:@"CMS"]) {
+        if ([update verifyCMSSignature:signature data:data cert:certData])
+            [NSTask launchedTaskWithLaunchPath:@"/usr/bin/open" arguments:@[path]];
+        else
+        {
+            NSLog(@"CMS Verify error");
+            self.infoLabel.stringValue = NSLocalizedString(@"Failed to verify signature", nil);
+        }
+        return;
+    }
+
+    SecCertificateRef certref = SecCertificateCreateWithData(0, (__bridge CFDataRef)certData);
+    SecKeyRef publickey = SecCertificateCopyKey(certref);
+    CFRelease(certref);
+    if (publickey == nil) {
+        self.infoLabel.stringValue = NSLocalizedString(@"Failed to copy public key", nil);
+        return;
+    }
+
+    CFErrorRef error = nil;
+    bool isValid = SecKeyVerifySignature(publickey, kSecKeyAlgorithmRSASignatureDigestPKCS1v15SHA1,
+                                         (__bridge CFDataRef)data, (__bridge CFDataRef)signature, &error);
+    CFRelease(publickey);
+    if (isValid)
+        [NSTask launchedTaskWithLaunchPath:@"/usr/bin/open" arguments:@[path]];
+    else
+    {
+        NSLog(@"Verify error: %@", CFBridgingRelease(error));
+        self.infoLabel.stringValue = NSLocalizedString(@"Failed to verify signature", nil);
+    }
+}
+
+#pragma mark - base implementation
+
+- (IBAction)schedule:(id)sender {
+    NSString *arg = self.autoUpdate.state ? @"-weekly" : @"-remove";
+    [[NSTask launchedTaskWithLaunchPath:[self.bundle pathForResource:@"id-updater-helper" ofType:nil] arguments:@[arg]] waitUntilExit];
+}
+
+- (IBAction)help:(id)sender {
+    [NSWorkspace.sharedWorkspace openURL:[NSURL URLWithString:NSLocalizedString(@"https://www.id.ee", nil)]];
+}
+
+- (IBAction)installUpdate:(id)sender {
+    self.progress.hidden = NO;
+    self.progress.indeterminate = NO;
+    self.progress.doubleValue = 0;
+    [self.progress startAnimation:self];
+    NSURLSession *defaultSession = [NSURLSession sessionWithConfiguration:NSURLSessionConfiguration.defaultSessionConfiguration delegate:self delegateQueue:nil];
+    NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:[NSURL URLWithString:filename]];
+    [request addValue:[update userAgent:YES] forHTTPHeaderField:@"User-Agent"];
+    [[defaultSession downloadTaskWithRequest:request] resume];
+    lastRecvd = 0;
+    timer = [NSTimer scheduledTimerWithTimeInterval:1.0 target:self selector:@selector(timer:) userInfo:nil repeats:YES];
+}
+
+- (void)timer:(NSTimer*)timer {
+    self.infoLabel.stringValue = [NSString stringWithFormat:@"%.2f KB/s", (self.progress.doubleValue - lastRecvd)/1000];
+    lastRecvd = self.progress.doubleValue;
+}
+
+- (IBAction)diagnostics:(id)sender {
     NSDictionary *versions = @{
         NSLocalizedString(@"DigiDoc3 Client", nil): update.clientversion,
-        NSLocalizedString(@"DigiDoc4", nil): update.digidoc4,
+        @"DigiDoc4": update.digidoc4,
         NSLocalizedString(@"ID-Card Utility", nil): update.utilityversion,
         @"Open-EID": update.baseversion,
         @"ID-Updater": [update versionInfo:@"ee.ria.ID-updater"],
@@ -121,223 +361,8 @@
         if (object != nil && ((NSString*)object).length != 0)
             [list addObject:[NSString stringWithFormat:@"%@ (%@)", key, object]];
     }];
-    info.stringValue = [list componentsJoinedByString:@"\n"];
-    [update request];
-}
-
-#pragma mark - UserNotificationCenter Delegate
-
-- (void)userNotificationCenter:(NSUserNotificationCenter *)center didActivateNotification:(NSUserNotification *)notification {
-    [center removeAllDeliveredNotifications];
-}
-
-#pragma mark - Update delegate
-
-- (void)didFinish:(NSError *)error {
-    dispatch_sync(dispatch_get_main_queue(), ^{
-        if (error) {
-            switch (error.code) {
-                case InvalidSignature:
-                    status.stringValue = NSLocalizedString(@"The configuration file located on the server cannot be validated.", nil);
-                    break;
-
-                case FileNotFound:
-                    status.stringValue = NSLocalizedString(@"File not found", nil);
-                    break;
-
-                default:
-                    status.stringValue = error.localizedDescription;
-                    break;
-            }
-        }
-    });
-}
-
-- (void)message:(NSString *)message {
-    dispatch_sync(dispatch_get_main_queue(), ^{
-        serverMessage.stringValue = message;
-        NSUserNotificationCenter *center = [NSUserNotificationCenter defaultUserNotificationCenter];
-        if (center) {
-            NSUserNotification *notification = [NSUserNotification new];
-            notification.title = NSLocalizedString(@"Update message", nil);
-            notification.informativeText = message;
-            notification.soundName = NSUserNotificationDefaultSoundName;
-            center.delegate = self;
-            [center deliverNotification:notification];
-        }
-    });
-}
-
-- (void)updateAvailable:(NSString *)_available filename:(NSString *)_filename {
-    dispatch_sync(dispatch_get_main_queue(), ^{
-        availableLabel.hidden = NO;
-        available.hidden = NO;
-        install.hidden = NO;
-        available.stringValue = _available;
-        filename = _filename;
-
-        NSUserNotificationCenter *center = [NSUserNotificationCenter defaultUserNotificationCenter];
-        if (center) {
-            NSUserNotification *notification = [NSUserNotification new];
-            notification.title = NSLocalizedString(@"Update available", nil);
-            notification.subtitle = [NSString stringWithFormat: @"%@ %@",
-                                     NSLocalizedString(@"ID-software", nil), _available];
-            notification.informativeText = NSLocalizedString(@"https://www.id.ee/en/article/id-software-versions-info-release-notes/", nil);
-            notification.soundName = NSUserNotificationDefaultSoundName;
-            center.delegate = self;
-            [center deliverNotification:notification];
-        }
-    });
-}
-
-#pragma mark - Connection delegate
-
-- (void)URLSession:(NSURLSession *)session didReceiveChallenge:(NSURLAuthenticationChallenge *)challenge
-        completionHandler:(void (^)(NSURLSessionAuthChallengeDisposition, NSURLCredential *))completionHandler {
-    if([challenge.protectionSpace.authenticationMethod isEqualToString:NSURLAuthenticationMethodServerTrust]) {
-        if ([update checkCertificatePinning:challenge]) {
-            completionHandler(NSURLSessionAuthChallengeUseCredential,
-                              [NSURLCredential credentialForTrust:challenge.protectionSpace.serverTrust]);
-        } else {
-            completionHandler(NSURLSessionAuthChallengeCancelAuthenticationChallenge, nil);
-        }
-    }
-}
-
-- (void)URLSession:(NSURLSession *)session downloadTask:(NSURLSessionDownloadTask *)downloadTask didWriteData:(int64_t)bytesWritten totalBytesWritten:(int64_t)totalBytesWritten totalBytesExpectedToWrite:(int64_t)totalBytesExpectedToWrite {
-    dispatch_sync(dispatch_get_main_queue(), ^{
-        self->progress.maxValue = totalBytesExpectedToWrite;
-        self->progress.doubleValue = totalBytesWritten;
-    });
-}
-
-- (void)URLSession:(NSURLSession *)session downloadTask:(NSURLSessionDownloadTask *)downloadTask didFinishDownloadingToURL:(NSURL *)location {
-    [progress stopAnimation:self];
-    [timer invalidate];
-    timer = nil;
-    NSString *tmp = [NSString stringWithFormat:@"%@/%@", NSTemporaryDirectory(), filename.lastPathComponent];
-    [NSFileManager.defaultManager removeItemAtPath:tmp error:nil];
-    [NSFileManager.defaultManager moveItemAtPath:location.path toPath:tmp error:nil];
-
-    NSString *volumePath = @"/Volumes/Open-EID";
-    NSArray *args = @[@"attach", @"-verify", @"-mountpoint", volumePath, tmp];
-    NSTask *task = [NSTask launchedTaskWithLaunchPath:@"/usr/bin/hdiutil" arguments:args];
-    [task waitUntilExit];
-    if (task.terminationStatus != 0) {
-        status.stringValue = [NSString stringWithFormat:@"Verify failed, status: %i", task.terminationStatus];
-        return;
-    }
-
-    NSArray *paths = [NSFileManager.defaultManager subpathsAtPath:volumePath];
-    NSPredicate *predicate = [NSPredicate predicateWithFormat:@"SELF contains[cd] %@", @".pkg"];
-    NSString *path = [NSString stringWithFormat:@"%@/%@", volumePath,
-                      [paths filteredArrayUsingPredicate:predicate].lastObject];
-
-    xar_t xar = xar_open(path.UTF8String, 0);
-    if (!xar) {
-        status.stringValue = [NSString stringWithFormat:NSLocalizedString(@"Failed to open xar archive: %@", nil), path];
-        return;
-    }
-
-    NSData *certData;
-    xar_signature_t sig = xar_signature_first(xar);
-    xar_signature_t next = xar_signature_next(sig);
-    if(next && strcmp("CMS", xar_signature_type(next)) == 0)
-        sig = next;
-    NSString *signatureType = @(xar_signature_type(sig));
-    NSLog(@"Signature type %@", signatureType);
-    for (int32_t i = 0, count = xar_signature_get_x509certificate_count(sig); i < count; ++i) {
-        uint32_t size = 0;
-        const uint8_t *data = nil;
-        if (xar_signature_get_x509certificate_data(sig, i, &data, &size))
-            continue;
-
-        NSData *der = [NSData dataWithBytesNoCopy:(uint8_t*)data length:size freeWhenDone:NO];
-        if ([update.cert_bundle containsObject:der])
-            certData = [NSData dataWithBytes:(uint8_t*)data length:size]; // Make copy of memory will be lost after xar_close
-    }
-
-    if (!certData) {
-        status.stringValue = NSLocalizedString(@"No matching certificate", nil);
-        xar_close(xar);
-        return;
-    }
-
-    uint8_t *signedData = nil, *signatureData = nil;
-    uint32_t signedDataSize = 0, signatureDataSize = 0;
-    off_t offset = 0;
-    uint8_t err = xar_signature_copy_signed_data(sig, &signedData, &signedDataSize, &signatureData, &signatureDataSize, &offset);
-    NSData *signature = [NSData dataWithBytesNoCopy:signatureData length:signatureDataSize];
-    NSData *data = [NSData dataWithBytesNoCopy:signedData length:signedDataSize];
-    xar_close(xar);
-    if (err) {
-        status.stringValue = NSLocalizedString(@"Failed to copy signature", nil);
-        return;
-    }
-
-    if([signatureType isEqualToString:@"CMS"]) {
-        if ([update verifyCMSSignature:signature data:data cert:certData])
-            [NSTask launchedTaskWithLaunchPath:@"/usr/bin/open" arguments:@[path]];
-        else
-        {
-            NSLog(@"CMS Verify error");
-            status.stringValue = NSLocalizedString(@"Failed to verify signature", nil);
-        }
-        return;
-    }
-
-    SecCertificateRef certref = SecCertificateCreateWithData(0, (__bridge CFDataRef)certData);
-    SecKeyRef publickey = SecCertificateCopyKey(certref);
-    CFRelease(certref);
-    if (publickey == nil) {
-        status.stringValue = NSLocalizedString(@"Failed to copy public key", nil);
-        return;
-    }
-
-    CFErrorRef error = nil;
-    bool isValid = SecKeyVerifySignature(publickey, kSecKeyAlgorithmRSASignatureDigestPKCS1v15SHA1,
-                                         (__bridge CFDataRef)data, (__bridge CFDataRef)signature, &error);
-    CFRelease(publickey);
-    if (isValid)
-        [NSTask launchedTaskWithLaunchPath:@"/usr/bin/open" arguments:@[path]];
-    else
-    {
-        NSLog(@"Verify error: %@", CFBridgingRelease(error));
-        status.stringValue = NSLocalizedString(@"Failed to verify signature", nil);
-    }
-}
-
-#pragma mark - base implementation
-
-- (IBAction)schedule:(id)sender {
-    NSString *arg;
-    switch (changeSchedule.indexOfSelectedItem) {
-        case 0: arg = @"-daily"; break;
-        case 1: arg = @"-weekly"; break;
-        case 2: arg = @"-monthly"; break;
-        case 3: arg = @"-remove"; break;
-        default: break;
-    }
-    [[NSTask launchedTaskWithLaunchPath:[self.bundle pathForResource:@"id-updater-helper" ofType:nil] arguments:@[arg]] waitUntilExit];
-}
-
-- (IBAction)installUpdate:(id)sender {
-    speed.hidden = NO;
-    progress.hidden = NO;
-    progress.indeterminate = NO;
-    progress.doubleValue = 0;
-    [progress startAnimation:self];
-    NSURLSession *defaultSession = [NSURLSession sessionWithConfiguration:NSURLSessionConfiguration.defaultSessionConfiguration delegate:self delegateQueue:nil];
-    NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:[NSURL URLWithString:filename]];
-    [request addValue:[update userAgent:YES] forHTTPHeaderField:@"User-Agent"];
-    [[defaultSession downloadTaskWithRequest:request] resume];
-    lastRecvd = 0;
-    timer = [NSTimer scheduledTimerWithTimeInterval:1.0 target:self selector:@selector(timer:) userInfo:nil repeats:YES];
-}
-
-- (void)timer:(NSTimer*)timer {
-    speed.stringValue = [NSString stringWithFormat:@"%.2f KB/s", (progress.doubleValue - lastRecvd)/1000];
-    lastRecvd = progress.doubleValue;
+    self.advancedViewController = [[AdvancedWindowController alloc] initWithText:[list componentsJoinedByString:@"\n"]];
+    [self.mainView.window beginSheet:self.advancedViewController.window completionHandler:nil];
 }
 
 @end

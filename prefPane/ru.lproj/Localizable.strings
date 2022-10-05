@@ -1,49 +1,3 @@
-
-/* Class = "NSWindow"; title = "ID-updater"; ObjectID = "12"; */
-"ID-updater" = "Проверка обновлений программного обеспечения ID-карты";
-
-/* Class = "NSMenuItem"; title = "Remove"; ObjectID = "3bN-hp-rYM"; */
-"Remove" = "Удалить";
-
-/* Class = "NSMenuItem"; title = "Once a day"; ObjectID = "47t-6c-CcN"; */
-"Once a day" = "Раз в день";
-
-/* Class = "NSTextFieldCell"; title = "Ready"; ObjectID = "93X-h4-Pxn"; */
-"Ready" = "Готов";
-
-/* Class = "NSMenuItem"; title = "Once a month"; ObjectID = "DGb-lH-Nqo"; */
-"Once a month" = "Раз в месяц";
-
-/* Class = "NSMenu"; title = "OtherViews"; ObjectID = "Kq2-Mx-1ek"; */
-"Kq2-Mx-1ek.title" = "OtherViews";
-
-/* Class = "NSTextFieldCell"; title = "Changelog:"; ObjectID = "MH3-Hn-7hU"; */
-"Changelog:" = "История обновлений:";
-
-/* Class = "NSButtonCell"; title = "Download update"; ObjectID = "OBO-RW-cVT"; */
-"Download update" = "Начать установку";
-
-/* Class = "NSTextFieldCell"; title = "0 KB/s"; ObjectID = "PII-Zr-eT8"; */
-"PII-Zr-eT8.title" = "0 KB/s";
-
-/* Class = "NSTabViewItem"; label = "Updates"; ObjectID = "XOS-WI-hKa"; */
-"Updates" = "Обновления";
-
-/* Class = "NSTextFieldCell"; title = "Currently installed version:"; ObjectID = "Xr7-Ls-jOQ"; */
-"Currently installed version:" = "На Вашем компьютере установлена версия:";
-
-/* Class = "NSTextFieldCell"; title = "Available:"; ObjectID = "ZgI-Qu-BYN"; */
-"Available:" = "Обновлённая версия:";
-
-/* Class = "NSTextFieldCell"; title = "Update check interval"; ObjectID = "dPb-83-7q8"; */
-"Update check interval" = "Проверить на обновления";
-
-/* Class = "NSTabViewItem"; label = "Version info"; ObjectID = "hng-hr-Q6P"; */
-"Version info" = "Информация о версии";
-
-/* Class = "NSMenuItem"; title = "Once a week"; ObjectID = "wj9-Or-Pru"; */
-"Once a week" = "Раз в неделю";
-
 /* No comment provided by engineer. */
 "Chrome browser extension (Web-eID)" = "Chrome browser extension (Web-eID)";
 
@@ -61,9 +15,6 @@
 
 /* No comment provided by engineer. */
 "DigiDoc3 Client" = "DigiDoc3 Client";
-
-/* No comment provided by engineer. */
-"DigiDoc4" = "DigiDoc4";
 
 /* No comment provided by engineer. */
 "Failed to copy public key" = "Failed to copy public key";
@@ -87,6 +38,9 @@
 "Firefox browser plugin" = "Firefox browser plugin";
 
 /* No comment provided by engineer. */
+"https://www.id.ee" = "https://www.id.ee";
+
+/* No comment provided by engineer. */
 "https://www.id.ee/en/article/id-software-versions-info-release-notes/" = "https://www.id.ee/ru/artikkel/informacziya-o-versiyah-programmnogo-obespecheniya-id-karty-release-notes-2/";
 
 /* No comment provided by engineer. */
@@ -97,6 +51,9 @@
 
 /* No comment provided by engineer. */
 "IDEMIA PKCS11 loader" = "IDEMIA PKCS11 loader";
+
+/* No comment provided by engineer. */
+"Last checked:" = "Последняя проверка:";
 
 /* No comment provided by engineer. */
 "No matching certificate" = "No matching certificate";
@@ -121,6 +78,7 @@
 
 /* No comment provided by engineer. */
 "Update message" = "Сообщение об обновлении";
+
 /* No comment provided by engineer. */
 "Web-eID native component" = "Web-eID native component";
 

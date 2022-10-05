@@ -17,9 +17,6 @@
 "DigiDoc3 Client" = "DigiDoc3 Client";
 
 /* No comment provided by engineer. */
-"DigiDoc4" = "DigiDoc4";
-
-/* No comment provided by engineer. */
 "Failed to copy public key" = "Failed to copy public key";
 
 /* No comment provided by engineer. */
@@ -39,6 +36,9 @@
 
 /* No comment provided by engineer. */
 "Firefox browser plugin" = "Firefox browser plugin";
+
+/* No comment provided by engineer. */
+"https://www.id.ee" = "https://www.id.ee";
 
 /* No comment provided by engineer. */
 "https://www.id.ee/en/article/id-software-versions-info-release-notes/" = "https://www.id.ee/en/article/id-software-versions-info-release-notes/";
