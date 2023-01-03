@@ -35,6 +35,7 @@
 #include <QScopedPointer>
 #include <QSslCertificate>
 #include <QUrl>
+#include <QVersionNumber>
 
 #include <qt_windows.h>
 #include <Msi.h>
@@ -152,18 +153,19 @@ void idupdater::finished(bool /*changed*/, const QString &err)
 
 	emit status(tr("Check completed"));
 
-	QSslConfiguration ssl = QSslConfiguration::defaultConfiguration();
-	ssl.setCaCertificates({});
-	request.setSslConfiguration(ssl);
-	trusted.clear();
-	for(const QJsonValue c: conf->object().value(QStringLiteral("CERT-BUNDLE")).toArray())
-		trusted << QSslCertificate(QByteArray::fromBase64(c.toString().toLatin1()), QSsl::Der);
-
 	QJsonObject obj = conf->object();
 	if(obj.contains(QStringLiteral("UPDATER-MESSAGE-URL")))
 	{
-		request.setUrl(obj.value(QStringLiteral("UPDATER-MESSAGE-URL")).toString());
-		QNetworkReply *reply = get(request);
+		auto copy = request;
+		QSslConfiguration ssl = QSslConfiguration::defaultConfiguration();
+		ssl.setCaCertificates({});
+		copy.setSslConfiguration(ssl);
+		trusted.clear();
+		for(const QJsonValue c: conf->object().value(QStringLiteral("CERT-BUNDLE")).toArray())
+			trusted << QSslCertificate(QByteArray::fromBase64(c.toString().toLatin1()), QSsl::Der);
+
+		copy.setUrl(obj.value(QStringLiteral("UPDATER-MESSAGE-URL")).toString());
+		QNetworkReply *reply = get(copy);
 		connect(reply, &QNetworkReply::finished, this, [this, reply]{
 			if(reply->error() == QNetworkReply::NoError)
 				emit message(reply->readAll());
@@ -223,26 +225,7 @@ QString idupdater::installedVersion(const QString &upgradeCode) const
 
 bool idupdater::lessThanVersion(const QString &current, const QString &available)
 {
-	QStringList curList = current.split('.');
-	QStringList avaList = available.split('.');
-	for(int i = 0; i < std::max<int>(curList.size(), avaList.size()); ++i)
-	{
-		bool curconv = false, avaconv = false;
-		unsigned int cur = curList.value(i).toUInt(&curconv);
-		unsigned int ava = avaList.value(i).toUInt(&avaconv);
-		if(curconv && avaconv)
-		{
-			if(cur != ava)
-				return cur < ava;
-		}
-		else
-		{
-			int status = QString::localeAwareCompare(curList.value(i), avaList.value(i));
-			if(status != 0)
-				return status < 0;
-		}
-	}
-	return false;
+	return QVersionNumber::fromString(current) < QVersionNumber::fromString(available);
 }
 
 void idupdater::startInstall()
