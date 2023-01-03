@@ -60,10 +60,10 @@ if( APPLE )
 		MACOSX_BUNDLE_GUI_IDENTIFIER "ee.ria.${PROJECT_NAME}"
 		XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER "ee.ria.${PROJECT_NAME}"
 	)
-    target_link_libraries(${PROJECT_NAME} ${XAR}
+	target_link_libraries(${PROJECT_NAME} ${XAR}
 		"-framework Cocoa -framework PreferencePanes -framework CryptoTokenKit -framework Security"
 	)
-    add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+	add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
 		COMMAND cp $<TARGET_FILE:id-updater-helper> $<TARGET_BUNDLE_CONTENT_DIR:${PROJECT_NAME}>/Resources )
 	install( TARGETS ${PROJECT_NAME} DESTINATION /Library/PreferencePanes )
 
@@ -71,7 +71,7 @@ if( APPLE )
 	if(SIGNCERT)
 		add_custom_command( TARGET signhelper POST_BUILD
 			COMMAND codesign -f --options=runtime -s "Developer ID Application: ${SIGNCERT}"
-			    $<TARGET_BUNDLE_CONTENT_DIR:${PROJECT_NAME}>/Resources/id-updater-helper
+				$<TARGET_BUNDLE_CONTENT_DIR:${PROJECT_NAME}>/Resources/id-updater-helper
 				$<TARGET_BUNDLE_DIR:${PROJECT_NAME}>
 		)
 	endif()
@@ -81,7 +81,7 @@ if( APPLE )
 		COMMAND pkgbuild --root install "$<$<BOOL:${SIGNCERT}>:--sign;${SIGNCERT}>" updater_${VERSION}$ENV{VER_SUFFIX}.pkg
 		COMMAND_EXPAND_LISTS
 	)
-    add_custom_target(zipdebug DEPENDS ${PROJECT_NAME}
+	add_custom_target(zipdebug DEPENDS ${PROJECT_NAME}
 		COMMAND dsymutil -o ${PROJECT_NAME}.dSYM $<TARGET_FILE:${PROJECT_NAME}>
 		COMMAND dsymutil -o ${PROJECT_NAME}.dSYM $<TARGET_FILE:id-updater-helper>
 		COMMAND zip -r updater-dbg_${VERSION}$ENV{VER_SUFFIX}.zip ${PROJECT_NAME}.dSYM
@@ -102,7 +102,6 @@ else()
 	endif()
 
 	include_directories( ${CMAKE_CURRENT_BINARY_DIR} common/qtsingleapplication/src )
-	add_subdirectory( common/qtsingleapplication )
 
 	configure_file( translations.qrc translations.qrc COPYONLY )
 	qt_add_translation(SOURCES idupdater_et.ts idupdater_ru.ts
@@ -110,7 +109,7 @@ else()
 		common/translations/common_et.ts common/translations/common_ru.ts
 	)
 
-    add_executable(${PROJECT_NAME} WIN32
+	add_executable(${PROJECT_NAME} WIN32
 		${SOURCES}
 		Application.cpp
 		idupdater.qrc
@@ -123,8 +122,10 @@ else()
 		common/Common.cpp
 		common/Configuration.cpp
 		common/QPCSC.cpp
+		common/qtsingleapplication/src/qtlocalpeer.cpp
+		common/qtsingleapplication/src/qtsingleapplication.cpp
 	)
-    set_target_properties(${PROJECT_NAME} PROPERTIES
+	set_target_properties(${PROJECT_NAME} PROPERTIES
 		AUTOMOC TRUE
 		AUTORCC TRUE
 		AUTOUIC TRUE
@@ -133,8 +134,8 @@ else()
 		INTERPROCEDURAL_OPTIMIZATION YES
 		INTERPROCEDURAL_OPTIMIZATION_DEBUG NO
 	)
-    target_compile_definitions(${PROJECT_NAME} PRIVATE WIN32_LEAN_AND_MEAN UNICODE CONFIG_URL="${CONFIG_URL}" COMMON_STATIC NO_CACHE)
-	target_link_libraries(${PROJECT_NAME} Qt${QT_VERSION_MAJOR}::Widgets Qt${QT_VERSION_MAJOR}::Network qtsingleapplication OpenSSL::Crypto
+	target_compile_definitions(${PROJECT_NAME} PRIVATE WIN32_LEAN_AND_MEAN UNICODE CONFIG_URL="${CONFIG_URL}" COMMON_STATIC NO_CACHE)
+	target_link_libraries(${PROJECT_NAME} Qt${QT_VERSION_MAJOR}::Widgets Qt${QT_VERSION_MAJOR}::Network OpenSSL::Crypto
 		msi Mstask Userenv wintrust Crypt32 taskschd comsupp ws2_32 Setupapi winscard Wtsapi32
 	)
 

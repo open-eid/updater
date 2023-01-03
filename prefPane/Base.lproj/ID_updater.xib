@@ -36,7 +36,7 @@
                             <subviews>
                                 <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="PvE-E0-0Fl">
                                     <rect key="frame" x="38" y="155" width="197" height="16"/>
-                                    <textFieldCell key="cell" lineBreakMode="clipping" title="Your ID-software is up to date" id="Kje-PT-lDq">
+                                    <textFieldCell key="cell" lineBreakMode="clipping" title="Your ID-software is up to date - version" id="Kje-PT-lDq">
                                         <font key="font" textStyle="headline" name=".SFNS-Bold"/>
                                         <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
                                         <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>

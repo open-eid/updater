@@ -115,6 +115,7 @@
     [self setLastUpdateCheck:NO];
 
     update = [[Update alloc] initWithDelegate:self];
+    self.mainLabel.stringValue = [NSString stringWithFormat:@"%@ %@", self.mainLabel.stringValue, update.baseversion];
     [update request];
 }
 
@@ -181,7 +182,8 @@
     dispatch_sync(dispatch_get_main_queue(), ^{
         self.install.hidden = NO;
         filename = _filename;
-        self.mainLabel.stringValue = NSLocalizedString(@"Update available", nil);
+        self.mainLabel.stringValue = [NSString stringWithFormat: @"%@ %@",
+                                      NSLocalizedString(@"Update available", nil), _available];
         NSUserNotificationCenter *center = [NSUserNotificationCenter defaultUserNotificationCenter];
         if (center) {
             NSUserNotification *notification = [NSUserNotification new];
@@ -190,6 +192,8 @@
                                      NSLocalizedString(@"ID-software", nil), _available];
             notification.informativeText = NSLocalizedString(@"https://www.id.ee/en/article/id-software-versions-info-release-notes/", nil);
             notification.soundName = NSUserNotificationDefaultSoundName;
+            notification.contentImage = [[NSImage alloc] initWithContentsOfFile:
+                                         [self.bundle pathForResource:@"Icon" ofType:@"icns"]];
             center.delegate = self;
             [center deliverNotification:notification];
         }
