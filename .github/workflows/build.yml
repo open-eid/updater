@@ -30,7 +30,7 @@ jobs:
       matrix:
         vcver: [142, 143]
         arch: [x64]
-        qtver: [6.3.2]
+        qtver: [6.4.1]
         qt: [win64_msvc2019_64]
         qtmodules: [qt5compat]
         include:
@@ -39,7 +39,7 @@ jobs:
           toolset: 14.29
         - vcver: 143
           image: windows-2022
-          toolset: 14.33
+          toolset: 14.34
         - vcver: 141
           arch: x86
           qtver: 5.12.12

@@ -1,3 +1,11 @@
+Id-updater version [3.13.5](https://github.com/open-eid/updater/releases/tag/v3.13.5) release notes
+--------------------------------------
+- macOS updated UI (#72)
+- Windows fixed hanging process (#73)
+- New notification API (#68)
+
+[Full Changelog](https://github.com/open-eid/updater/compare/v3.13.4...v3.13.5)
+
 Id-updater version [3.13.4](https://github.com/open-eid/updater/releases/tag/v3.13.4) release notes
 --------------------------------------
 - Support MSVS 2022 toolchain (#67)
