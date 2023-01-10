@@ -2,12 +2,11 @@ cmake_minimum_required(VERSION 3.16)
 if(POLICY CMP0074)
 	cmake_policy(SET CMP0074 NEW)
 endif()
-project(id-updater VERSION 3.14.0)
+project(ID-updater VERSION 3.14.0)
 
 set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake/modules)
 
 include( VersionInfo )
-set_app_name( PROGNAME ID-updater )
 
 set_env( CONFIG_URL "https://id.eesti.ee/config.json" CACHE STRING "Set Config URL" )
 set_env( SIGNCERT "" CACHE STRING "Common name of certificate to used sign binaries, empty skip signing" )
@@ -34,7 +33,7 @@ if( APPLE )
 	set(RU_RESOURCES prefPane/ru.lproj/InfoPlist.strings prefPane/ru.lproj/ID_updater.strings prefPane/ru.lproj/Localizable.strings)
 
 	find_library( XAR xar )
-	add_library( ${PROGNAME} MODULE
+	add_library(${PROJECT_NAME} MODULE
 		ID_updater.nib
 		config.h
 		prefPane/Base.lproj/ID_updater.xib
@@ -50,28 +49,30 @@ if( APPLE )
 	set_source_files_properties(${EN_RESOURCES} PROPERTIES MACOSX_PACKAGE_LOCATION Resources/en.lproj)
 	set_source_files_properties(${ET_RESOURCES} PROPERTIES MACOSX_PACKAGE_LOCATION Resources/et.lproj)
 	set_source_files_properties(${RU_RESOURCES} PROPERTIES MACOSX_PACKAGE_LOCATION Resources/ru.lproj)
-	set_target_properties( ${PROGNAME} PROPERTIES
+	set_target_properties(${PROJECT_NAME} PROPERTIES
 		BUNDLE YES
 		BUNDLE_EXTENSION prefPane
 		RESOURCES prefPane/Icon.icns
 		COMPILE_FLAGS "-Wno-unused-parameter -fobjc-arc"
 		XCODE_ATTRIBUTE_WRAPPER_EXTENSION prefPane
 		MACOSX_BUNDLE_INFO_PLIST ${CMAKE_CURRENT_SOURCE_DIR}/prefPane/Info.plist.cmake
-		XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER "ee.ria.${PROGNAME}"
+		MACOSX_BUNDLE_BUNDLE_NAME ${PROJECT_NAME}
+		MACOSX_BUNDLE_GUI_IDENTIFIER "ee.ria.${PROJECT_NAME}"
+		XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER "ee.ria.${PROJECT_NAME}"
 	)
-	target_link_libraries(${PROGNAME} ${XAR}
+    target_link_libraries(${PROJECT_NAME} ${XAR}
 		"-framework Cocoa -framework PreferencePanes -framework CryptoTokenKit -framework Security"
 	)
-	add_custom_command( TARGET ${PROGNAME} POST_BUILD
-		COMMAND cp $<TARGET_FILE:id-updater-helper> $<TARGET_BUNDLE_CONTENT_DIR:${PROGNAME}>/Resources )
-	install( TARGETS ${PROGNAME} DESTINATION /Library/PreferencePanes )
+    add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+		COMMAND cp $<TARGET_FILE:id-updater-helper> $<TARGET_BUNDLE_CONTENT_DIR:${PROJECT_NAME}>/Resources )
+	install( TARGETS ${PROJECT_NAME} DESTINATION /Library/PreferencePanes )
 
-	add_custom_target( signhelper DEPENDS ${PROGNAME} )
+	add_custom_target(signhelper DEPENDS ${PROJECT_NAME})
 	if(SIGNCERT)
 		add_custom_command( TARGET signhelper POST_BUILD
 			COMMAND codesign -f --options=runtime -s "Developer ID Application: ${SIGNCERT}"
-				$<TARGET_BUNDLE_CONTENT_DIR:${PROGNAME}>/Resources/id-updater-helper
-				$<TARGET_BUNDLE_DIR:${PROGNAME}>
+			    $<TARGET_BUNDLE_CONTENT_DIR:${PROJECT_NAME}>/Resources/id-updater-helper
+				$<TARGET_BUNDLE_DIR:${PROJECT_NAME}>
 		)
 	endif()
 	add_custom_target( pkgbuild DEPENDS signhelper
@@ -80,10 +81,10 @@ if( APPLE )
 		COMMAND pkgbuild --root install "$<$<BOOL:${SIGNCERT}>:--sign;${SIGNCERT}>" updater_${VERSION}$ENV{VER_SUFFIX}.pkg
 		COMMAND_EXPAND_LISTS
 	)
-	add_custom_target( zipdebug DEPENDS ${PROGNAME}
-		COMMAND dsymutil -o ${PROGNAME}.dSYM $<TARGET_FILE:${PROGNAME}>
-		COMMAND dsymutil -o ${PROGNAME}.dSYM $<TARGET_FILE:id-updater-helper>
-		COMMAND zip -r updater-dbg_${VERSION}$ENV{VER_SUFFIX}.zip ${PROGNAME}.dSYM
+    add_custom_target(zipdebug DEPENDS ${PROJECT_NAME}
+		COMMAND dsymutil -o ${PROJECT_NAME}.dSYM $<TARGET_FILE:${PROJECT_NAME}>
+		COMMAND dsymutil -o ${PROJECT_NAME}.dSYM $<TARGET_FILE:id-updater-helper>
+		COMMAND zip -r updater-dbg_${VERSION}$ENV{VER_SUFFIX}.zip ${PROJECT_NAME}.dSYM
 	)
 else()
 	file( DOWNLOAD ${CONFIG_URL} ${CMAKE_CURRENT_BINARY_DIR}/config.json )
@@ -109,7 +110,7 @@ else()
 		common/translations/common_et.ts common/translations/common_ru.ts
 	)
 
-	add_executable( ${PROGNAME} WIN32
+    add_executable(${PROJECT_NAME} WIN32
 		${SOURCES}
 		Application.cpp
 		idupdater.qrc
@@ -123,7 +124,7 @@ else()
 		common/Configuration.cpp
 		common/QPCSC.cpp
 	)
-	set_target_properties( ${PROGNAME} PROPERTIES
+    set_target_properties(${PROJECT_NAME} PROPERTIES
 		AUTOMOC TRUE
 		AUTORCC TRUE
 		AUTOUIC TRUE
@@ -132,8 +133,8 @@ else()
 		INTERPROCEDURAL_OPTIMIZATION YES
 		INTERPROCEDURAL_OPTIMIZATION_DEBUG NO
 	)
-	target_compile_definitions(${PROGNAME} PRIVATE WIN32_LEAN_AND_MEAN UNICODE CONFIG_URL="${CONFIG_URL}" COMMON_STATIC NO_CACHE)
-	target_link_libraries( ${PROGNAME} Qt${QT_VERSION_MAJOR}::Widgets Qt${QT_VERSION_MAJOR}::Network qtsingleapplication OpenSSL::Crypto
+    target_compile_definitions(${PROJECT_NAME} PRIVATE WIN32_LEAN_AND_MEAN UNICODE CONFIG_URL="${CONFIG_URL}" COMMON_STATIC NO_CACHE)
+	target_link_libraries(${PROJECT_NAME} Qt${QT_VERSION_MAJOR}::Widgets Qt${QT_VERSION_MAJOR}::Network qtsingleapplication OpenSSL::Crypto
 		msi Mstask Userenv wintrust Crypt32 taskschd comsupp ws2_32 Setupapi winscard Wtsapi32
 	)
 
@@ -151,11 +152,11 @@ else()
 	set(MSI_FILE "ID-Updater-${VERSION}$ENV{VER_SUFFIX}.${PLATFORM}")
 	get_target_property(qtCore_install_prefix Qt${QT_VERSION_MAJOR}::qmake IMPORTED_LOCATION)
 	get_filename_component(qtCore_install_prefix ${qtCore_install_prefix} DIRECTORY)
-	add_custom_target(installer DEPENDS ${PROGNAME}
+	add_custom_target(installer DEPENDS ${PROJECT_NAME}
 		COMMAND "$ENV{WIX}bin\\candle.exe" -nologo -arch ${PLATFORM} -dPlatform=${PLATFORM}
 			-dMSI_VERSION=${VERSION} -dqt_path=${qtCore_install_prefix} -dqt_ver_major=${QT_VERSION_MAJOR}
 			-dqt_suffix=$<$<CONFIG:Debug>:d> -dqtconf=${CMAKE_SOURCE_DIR}/qt.conf -dlibs_path="${SSL_PATH}"
-			-dupdater_path=$<TARGET_FILE:${PROGNAME}> ${CMAKE_SOURCE_DIR}/idupdater.wxs
+			-dupdater_path=$<TARGET_FILE:${PROJECT_NAME}> ${CMAKE_SOURCE_DIR}/idupdater.wxs
 			${CMAKE_SOURCE_DIR}/cmake/modules/WelcomeDlg2.wxs ${CMAKE_SOURCE_DIR}/cmake/modules/WixUI_Minimal2.wxs
 		COMMAND "$ENV{WIX}bin\\light.exe" -nologo -o "${MSI_FILE}.msi" -ext WixUIExtension
 			idupdater.wixobj  WelcomeDlg2.wixobj WixUI_Minimal2.wixobj
@@ -164,12 +165,12 @@ else()
 	)
 	if(SIGNCERT)
 		if(CROSSSIGNCERT)
-			target_link_options(${PROGNAME} PRIVATE "/INTEGRITYCHECK")
+			target_link_options(${PROJECT_NAME} PRIVATE "/INTEGRITYCHECK")
 		endif()
 		list(APPEND SIGNCMD signtool.exe sign /a /v /s MY /n "${SIGNCERT}" /fd SHA256
 			/du http://installer.id.ee /tr http://sha256timestamp.ws.symantec.com/sha256/timestamp /td SHA256)
-		add_custom_command(TARGET ${PROGNAME} POST_BUILD
-			COMMAND ${SIGNCMD} "$<$<BOOL:${CROSSSIGNCERT}>:/ph;/ac;${CROSSSIGNCERT}>" $<TARGET_FILE:${PROGNAME}>
+		add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+			COMMAND ${SIGNCMD} "$<$<BOOL:${CROSSSIGNCERT}>:/ph;/ac;${CROSSSIGNCERT}>" $<TARGET_FILE:${PROJECT_NAME}>
 			COMMAND_EXPAND_LISTS
 		)
 		add_custom_command(TARGET installer POST_BUILD
