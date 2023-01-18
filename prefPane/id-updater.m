@@ -141,21 +141,23 @@
 #pragma mark - Update delegate
 
 - (void)didFinish:(NSError *)error {
+    [self setLastUpdateCheck:YES];
+    if (error == nil) {
+        return;
+    }
     dispatch_sync(dispatch_get_main_queue(), ^{
-        if (error) {
-            switch (error.code) {
-                case InvalidSignature:
-                    self.infoLabel.stringValue = NSLocalizedString(@"The configuration file located on the server cannot be validated.", nil);
-                    break;
+        switch (error.code) {
+            case InvalidSignature:
+                self.infoLabel.stringValue = NSLocalizedString(@"The configuration file located on the server cannot be validated.", nil);
+                break;
 
-                case FileNotFound:
-                    self.infoLabel.stringValue = NSLocalizedString(@"File not found", nil);
-                    break;
+            case FileNotFound:
+                self.infoLabel.stringValue = NSLocalizedString(@"File not found", nil);
+                break;
 
-                default:
-                    self.infoLabel.stringValue = error.localizedDescription;
-                    break;
-            }
+            default:
+                self.infoLabel.stringValue = error.localizedDescription;
+                break;
         }
     });
 }
@@ -163,7 +165,6 @@
 - (void)message:(NSString *)message {
     dispatch_sync(dispatch_get_main_queue(), ^{
         self.infoLabel.stringValue = message;
-        [self setLastUpdateCheck:YES];
         NSUserNotificationCenter *center = [NSUserNotificationCenter defaultUserNotificationCenter];
         if (center) {
             NSUserNotification *notification = [NSUserNotification new];
@@ -181,7 +182,6 @@
         self.install.hidden = NO;
         filename = _filename;
         self.mainLabel.stringValue = NSLocalizedString(@"Update available", nil);
-        [self setLastUpdateCheck:YES];
         NSUserNotificationCenter *center = [NSUserNotificationCenter defaultUserNotificationCenter];
         if (center) {
             NSUserNotification *notification = [NSUserNotification new];
