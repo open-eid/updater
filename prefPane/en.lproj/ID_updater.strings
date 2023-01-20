@@ -2,8 +2,8 @@
 /* Class = "NSWindow"; title = "ID-updater"; ObjectID = "12"; */
 "12.title" = "ID-updater";
 
-/* Class = "NSTextFieldCell"; title = "Your ID-software is up to date"; ObjectID = "Kje-PT-lDq"; */
-"Kje-PT-lDq.title" = "Your ID-software is up to date";
+/* Class = "NSTextFieldCell"; title = "Your ID-software is up to date - version"; ObjectID = "Kje-PT-lDq"; */
+"Kje-PT-lDq.title" = "Your ID-software is up to date - version";
 
 /* Class = "NSButtonCell"; title = "Update now"; ObjectID = "Tk7-kF-JTm"; */
 "Tk7-kF-JTm.title" = "Update now";

@@ -4,8 +4,8 @@
 /* Class = "NSImageView"; ibExternalAccessibilityDescription = "ID-updater"; ObjectID = "cBX-F9-CcO"; */
 "cBX-F9-CcO.ibExternalAccessibilityDescription" = "ID-updater";
 
-/* Class = "NSTextFieldCell"; title = "Your ID-software is up to date"; ObjectID = "Kje-PT-lDq"; */
-"Kje-PT-lDq.title" = "Sinu ID-tarkvara on ajakohane";
+/* Class = "NSTextFieldCell"; title = "Your ID-software is up to date - version"; ObjectID = "Kje-PT-lDq"; */
+"Kje-PT-lDq.title" = "Sinu ID-tarkvara on ajakohane - versioon";
 
 /* Class = "NSTextFieldCell"; title = "Last checked:"; ObjectID = "sp4-up-rmr"; */
 "sp4-up-rmr.title" = "Viimati kontrollitud:";
