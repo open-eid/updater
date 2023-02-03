@@ -19,6 +19,7 @@
 
 #include "Application.h"
 
+#include "common/Common.h"
 #include "idupdater.h"
 #include "ScheduledUpdateTask.h"
 
@@ -51,25 +52,19 @@ Application::Application( int &argc, char **argv )
 	if( log.exists() && log.open( QFile::WriteOnly|QFile::Append ) )
 		qInstallMessageHandler( msgHandler );
 
-	QString lang;
-	switch( QLocale().language() )
-	{
-	case QLocale::English: lang = QStringLiteral("en"); break;
-	case QLocale::Russian: lang = QStringLiteral("ru"); break;
-	case QLocale::Estonian:
-	default: lang = QStringLiteral("et"); break;
-	}
-
 	QTranslator *qt = new QTranslator( this );
 	QTranslator *common = new QTranslator( this );
 	QTranslator *t = new QTranslator( this );
+	QString lang = Common::language();
 	void(qt->load(QStringLiteral(":/qtbase_%1.qm").arg(lang)));
 	void(common->load(QStringLiteral(":/common_%1.qm").arg(lang)));
 	void(t->load(QStringLiteral(":/idupdater_%1.qm").arg(lang)));
 	installTranslator( qt );
 	installTranslator( common );
 	installTranslator( t );
+#ifdef NDEBUG
 	setLibraryPaths({ applicationDirPath() });
+#endif
 	setWindowIcon(QIcon(QStringLiteral(":/appicon.png")));
 	setApplicationName(QStringLiteral("id-updater"));
 	setApplicationVersion(QStringLiteral( "%1.%2.%3.%4" )
@@ -147,12 +142,11 @@ bool Application::execute(const QStringList &arguments)
 	qDebug() << "CreateEnvironmentBlock" << environment << ret <<  GetLastError();
 
 	qDebug() << "creating as user";
-	STARTUPINFO StartupInfo {};
-	StartupInfo.cb = sizeof(StartupInfo);
-	PROCESS_INFORMATION processInfo;
-	ret = CreateProcessAsUserW(primaryToken, 0, LPWSTR(command.utf16()), 0, 0,
-		false, CREATE_NO_WINDOW | CREATE_UNICODE_ENVIRONMENT,
-		environment, 0, &StartupInfo, &processInfo);
+	STARTUPINFO StartupInfo { sizeof(StartupInfo) };
+	PROCESS_INFORMATION processInfo {};
+	ret = CreateProcessAsUserW(primaryToken, nullptr, LPWSTR(command.utf16()),
+		 nullptr, nullptr, false, CREATE_NO_WINDOW | CREATE_UNICODE_ENVIRONMENT,
+		environment, nullptr, &StartupInfo, &processInfo);
 	CloseHandle(primaryToken);
 
 	qDebug() << "CreateProcessAsUserW" << ret << "err" << GetLastError();
