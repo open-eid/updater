@@ -103,13 +103,9 @@ idupdater::idupdater( QObject *parent )
 	, version(installedVersion("{f1c4d351-269d-4bee-8cdb-6ea70c968875}"))
 	, conf(new Configuration(this))
 {
-	QLocale::Language language = QLocale::system().language();
-	QString locale = language == QLocale::C ? "English/United States" : QLocale::languageToString( language );
-	CPINFOEX CPInfoEx = {};
-	if( GetCPInfoExW( GetConsoleCP(), 0, &CPInfoEx ) != 0 )
-		locale += QStringLiteral(" / ") + QString::fromWCharArray(CPInfoEx.CodePageName);
-	QString userAgent = QStringLiteral( "%1/%2 (%3) Locale: %4 Devices: %5")
-		.arg(qApp->applicationName(), qApp->applicationVersion(), Common::applicationOs(), locale, QPCSC::instance().drivers().join('/'));
+	QString userAgent = QStringLiteral("%1/%2 (%3) Lang: %4 Devices: %5")
+		.arg(qApp->applicationName(), qApp->applicationVersion(), Common::applicationOs(),
+			Common::language(), QPCSC::instance().drivers().join('/'));
 	qDebug() << "User-Agent:" << userAgent;
 	request.setRawHeader( "User-Agent", userAgent.toUtf8() );
 	connect(conf, &Configuration::finished, this, &idupdater::finished);
@@ -154,17 +150,17 @@ void idupdater::finished(bool /*changed*/, const QString &err)
 	emit status(tr("Check completed"));
 
 	QJsonObject obj = conf->object();
-	if(obj.contains(QStringLiteral("UPDATER-MESSAGE-URL")))
+	if(obj.contains(QLatin1String("UPDATER-MESSAGE-URL")))
 	{
 		auto copy = request;
 		QSslConfiguration ssl = QSslConfiguration::defaultConfiguration();
 		ssl.setCaCertificates({});
 		copy.setSslConfiguration(ssl);
 		trusted.clear();
-		for(const QJsonValue c: conf->object().value(QStringLiteral("CERT-BUNDLE")).toArray())
+		for(const auto &c: conf->object().value(QLatin1String("CERT-BUNDLE")).toArray())
 			trusted << QSslCertificate(QByteArray::fromBase64(c.toString().toLatin1()), QSsl::Der);
 
-		copy.setUrl(obj.value(QStringLiteral("UPDATER-MESSAGE-URL")).toString());
+		copy.setUrl(obj.value(QLatin1String("UPDATER-MESSAGE-URL")).toString());
 		QNetworkReply *reply = get(copy);
 		connect(reply, &QNetworkReply::finished, this, [this, reply]{
 			if(reply->error() == QNetworkReply::NoError)
@@ -172,13 +168,13 @@ void idupdater::finished(bool /*changed*/, const QString &err)
 			reply->deleteLater();
 		});
 	}
-	else if(obj.contains(QStringLiteral("WIN-MESSAGE")))
-		emit message(obj.value(QStringLiteral("WIN-MESSAGE")).toString());
+	else if(obj.contains(QLatin1String("WIN-MESSAGE")))
+		emit message(obj.value(QLatin1String("WIN-MESSAGE")).toString());
 
-	if(obj.contains(QStringLiteral("WIN-UPGRADECODE")))
-		version = installedVersion(obj.value(QStringLiteral("WIN-UPGRADECODE")).toString());
-	QString available = obj.value(QStringLiteral("WIN-LATEST")).toString();
-	request.setUrl(obj.value(QStringLiteral("WIN-DOWNLOAD")).toString());
+	if(obj.contains(QLatin1String("WIN-UPGRADECODE")))
+		version = installedVersion(obj.value(QLatin1String("WIN-UPGRADECODE")).toString());
+	QString available = obj.value(QLatin1String("WIN-LATEST")).toString();
+	request.setUrl(obj.value(QLatin1String("WIN-DOWNLOAD")).toString());
 	qDebug() << "Installed version" << version << "available version" << available;
 
 	if(!lessThanVersion(version, available))
