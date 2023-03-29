@@ -29,24 +29,11 @@ jobs:
     strategy:
       matrix:
         vcver: [142, 143]
-        arch: [x64]
-        qtver: [6.4.2]
-        qt: [win64_msvc2019_64]
-        qtmodules: [qt5compat]
         include:
         - vcver: 142
           image: windows-2019
-          toolset: 14.29
         - vcver: 143
           image: windows-2022
-          toolset: 14.34
-        - vcver: 141
-          arch: x86
-          qtver: 5.12.12
-          qt: win32_msvc2017
-          qtmodules:
-          image: windows-2019
-          toolset: 14.16
     env:
       VER_SUFFIX: .VS${{ matrix.vcver }}
     steps:
@@ -60,18 +47,17 @@ jobs:
       with:
         vcpkgArguments: openssl
         vcpkgGitCommitId: 89295c9fe22e97ca9e380a6c771ccf2ff09dca95
-        vcpkgTriplet: ${{ matrix.arch }}-windows
+        vcpkgTriplet: x64-windows
     - name: Install Qt
       uses: jurplel/install-qt-action@v2
       with:
-        version: ${{ matrix.qtver }}
-        arch: ${{ matrix.qt }}
-        modules: ${{ matrix.qtmodules }}
+        version: 6.4.3
+        arch: win64_msvc2019_64
+        modules: qt5compat
     - name: Setup dev env
       uses: ilammy/msvc-dev-cmd@v1
       with:
-        arch: ${{ matrix.arch }}
-        toolset: ${{ matrix.toolset }}
+        arch: x64
     - name: Build
       run: |
         cmake "-GNMake Makefiles" `
