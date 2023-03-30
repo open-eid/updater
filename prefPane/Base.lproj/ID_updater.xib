@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="21225" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES">
+<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="21701" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" customObjectInstantitationMethod="direct">
     <dependencies>
-        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="21225"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="21701"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
     <objects>
@@ -21,21 +21,20 @@
         <window title="ID-updater" allowsToolTipsWhenApplicationIsInactive="NO" autorecalculatesKeyViewLoop="NO" deferred="NO" releasedWhenClosed="NO" visibleAtLaunch="NO" animationBehavior="default" id="12" userLabel="PrefPane">
             <windowStyleMask key="styleMask" titled="YES" closable="YES" miniaturizable="YES"/>
             <windowPositionMask key="initialPositionMask" leftStrut="YES" rightStrut="YES" topStrut="YES" bottomStrut="YES"/>
-            <rect key="contentRect" x="176" y="715" width="688" height="196"/>
+            <rect key="contentRect" x="176" y="715" width="668" height="196"/>
             <rect key="screenRect" x="0.0" y="0.0" width="2560" height="1415"/>
-            <value key="minSize" type="size" width="224.66399999999999" height="10"/>
             <view key="contentView" id="6">
-                <rect key="frame" x="0.0" y="0.0" width="688" height="196"/>
+                <rect key="frame" x="0.0" y="0.0" width="668" height="196"/>
                 <autoresizingMask key="autoresizingMask"/>
                 <subviews>
                     <box titlePosition="noTitle" translatesAutoresizingMaskIntoConstraints="NO" id="Axo-ro-Nbo">
-                        <rect key="frame" x="185" y="-4" width="506" height="202"/>
+                        <rect key="frame" x="91" y="-4" width="580" height="202"/>
                         <view key="contentView" id="cjG-UL-IZ2">
-                            <rect key="frame" x="3" y="3" width="500" height="196"/>
+                            <rect key="frame" x="4" y="5" width="572" height="194"/>
                             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                             <subviews>
                                 <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="PvE-E0-0Fl">
-                                    <rect key="frame" x="38" y="155" width="197" height="16"/>
+                                    <rect key="frame" x="38" y="153" width="257" height="16"/>
                                     <textFieldCell key="cell" lineBreakMode="clipping" title="Your ID-software is up to date - version" id="Kje-PT-lDq">
                                         <font key="font" textStyle="headline" name=".SFNS-Bold"/>
                                         <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -43,7 +42,7 @@
                                     </textFieldCell>
                                 </textField>
                                 <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="khI-jS-LQ9">
-                                    <rect key="frame" x="38" y="133" width="444" height="14"/>
+                                    <rect key="frame" x="38" y="131" width="516" height="14"/>
                                     <textFieldCell key="cell" lineBreakMode="clipping" title="Last checked:" id="sp4-up-rmr">
                                         <font key="font" textStyle="subheadline" name=".SFNS-Regular"/>
                                         <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -51,7 +50,7 @@
                                     </textFieldCell>
                                 </textField>
                                 <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="oSc-LX-kzf">
-                                    <rect key="frame" x="457" y="16" width="25" height="25"/>
+                                    <rect key="frame" x="529" y="16" width="25" height="25"/>
                                     <buttonCell key="cell" type="help" bezelStyle="helpButton" imagePosition="only" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="CYU-l6-4sk">
                                         <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                                         <font key="font" metaFont="system"/>
@@ -61,7 +60,7 @@
                                     </connections>
                                 </button>
                                 <button hidden="YES" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="Fis-tr-jzS">
-                                    <rect key="frame" x="379" y="144" width="108" height="32"/>
+                                    <rect key="frame" x="451" y="142" width="108" height="32"/>
                                     <buttonCell key="cell" type="push" title="Update now" bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="Tk7-kF-JTm">
                                         <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                                         <font key="font" metaFont="system"/>
@@ -71,7 +70,7 @@
                                     </connections>
                                 </button>
                                 <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="1MG-Ph-hjP">
-                                    <rect key="frame" x="349" y="13" width="106" height="32"/>
+                                    <rect key="frame" x="421" y="13" width="106" height="32"/>
                                     <buttonCell key="cell" type="push" title="Version info" bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="UwB-jw-hW4">
                                         <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                                         <font key="font" metaFont="system"/>
@@ -91,7 +90,7 @@
                                     </connections>
                                 </button>
                                 <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" setsMaxLayoutWidthAtFirstLayout="YES" translatesAutoresizingMaskIntoConstraints="NO" id="eBJ-wK-Zcp">
-                                    <rect key="frame" x="38" y="83" width="444" height="16"/>
+                                    <rect key="frame" x="38" y="81" width="516" height="16"/>
                                     <textFieldCell key="cell" id="5Ri-FK-fad">
                                         <font key="font" metaFont="system"/>
                                         <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -99,7 +98,7 @@
                                     </textFieldCell>
                                 </textField>
                                 <progressIndicator hidden="YES" maxValue="100" doubleValue="50" style="bar" translatesAutoresizingMaskIntoConstraints="NO" id="MJV-Px-vMt">
-                                    <rect key="frame" x="40" y="106" width="440" height="20"/>
+                                    <rect key="frame" x="40" y="104" width="512" height="20"/>
                                 </progressIndicator>
                             </subviews>
                             <constraints>
@@ -128,9 +127,10 @@
                         </view>
                     </box>
                     <imageView horizontalHuggingPriority="251" verticalHuggingPriority="252" translatesAutoresizingMaskIntoConstraints="NO" id="cBX-F9-CcO">
-                        <rect key="frame" x="30" y="34" width="128" height="128"/>
+                        <rect key="frame" x="15" y="66" width="64" height="64"/>
                         <constraints>
-                            <constraint firstAttribute="width" secondItem="cBX-F9-CcO" secondAttribute="height" multiplier="1:1" id="g7U-LT-OfO"/>
+                            <constraint firstAttribute="width" constant="64" id="Inv-Pb-BWL"/>
+                            <constraint firstAttribute="height" constant="64" id="n4H-DO-kVX"/>
                         </constraints>
                         <imageCell key="cell" refusesFirstResponder="YES" alignment="left" imageScaling="proportionallyDown" image="Icon.icns" id="VDI-Sw-Ka2"/>
                         <accessibility description="ID-updater"/>
@@ -138,9 +138,9 @@
                 </subviews>
                 <constraints>
                     <constraint firstItem="cBX-F9-CcO" firstAttribute="centerY" secondItem="6" secondAttribute="centerY" id="3xr-TO-FCD"/>
-                    <constraint firstItem="Axo-ro-Nbo" firstAttribute="leading" secondItem="cBX-F9-CcO" secondAttribute="trailing" constant="30" id="56a-lj-h9N"/>
+                    <constraint firstItem="Axo-ro-Nbo" firstAttribute="leading" secondItem="cBX-F9-CcO" secondAttribute="trailing" constant="15" id="56a-lj-h9N"/>
                     <constraint firstItem="Axo-ro-Nbo" firstAttribute="top" secondItem="6" secondAttribute="top" id="EUv-qL-h7n"/>
-                    <constraint firstItem="cBX-F9-CcO" firstAttribute="leading" secondItem="6" secondAttribute="leading" constant="30" id="Tsf-lL-vDL"/>
+                    <constraint firstItem="cBX-F9-CcO" firstAttribute="leading" secondItem="6" secondAttribute="leading" constant="15" id="Tsf-lL-vDL"/>
                     <constraint firstAttribute="bottom" secondItem="Axo-ro-Nbo" secondAttribute="bottom" id="UbX-p8-OS8"/>
                     <constraint firstAttribute="trailing" secondItem="Axo-ro-Nbo" secondAttribute="trailing" id="aPn-Xp-oQd"/>
                 </constraints>
@@ -149,6 +149,6 @@
         </window>
     </objects>
     <resources>
-        <image name="Icon.icns" width="128" height="128"/>
+        <image name="Icon.icns" width="64" height="64"/>
     </resources>
 </document>
