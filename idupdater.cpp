@@ -150,16 +150,15 @@ void idupdater::finished(bool /*changed*/, const QString &err)
 	emit status(tr("Check completed"));
 
 	QJsonObject obj = conf->object();
+	trusted.clear();
+	for(const auto &c: conf->object().value(QLatin1String("CERT-BUNDLE")).toArray())
+		trusted.append(QSslCertificate(QByteArray::fromBase64(c.toString().toLatin1()), QSsl::Der));
 	if(obj.contains(QLatin1String("UPDATER-MESSAGE-URL")))
 	{
-		auto copy = request;
 		QSslConfiguration ssl = QSslConfiguration::defaultConfiguration();
 		ssl.setCaCertificates({});
+		auto copy = request;
 		copy.setSslConfiguration(ssl);
-		trusted.clear();
-		for(const auto &c: conf->object().value(QLatin1String("CERT-BUNDLE")).toArray())
-			trusted << QSslCertificate(QByteArray::fromBase64(c.toString().toLatin1()), QSsl::Der);
-
 		copy.setUrl(obj.value(QLatin1String("UPDATER-MESSAGE-URL")).toString());
 		QNetworkReply *reply = get(copy);
 		connect(reply, &QNetworkReply::finished, this, [this, reply]{
