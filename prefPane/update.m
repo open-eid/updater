@@ -48,7 +48,10 @@
 - (BOOL)checkCertificatePinning:(NSURLAuthenticationChallenge *)challenge {
     SecTrustRef serverTrust = challenge.protectionSpace.serverTrust;
     SecTrustResultType trustResult;
-    SecTrustEvaluate(serverTrust, &trustResult);
+    if (!SecTrustEvaluateWithError(serverTrust, nil)) {
+        return NO;
+    }
+    SecTrustGetTrustResult(serverTrust, &trustResult);
     if ((trustResult == kSecTrustResultUnspecified ||
          trustResult == kSecTrustResultProceed) &&
         SecTrustGetCertificateCount(serverTrust) > 0) {
@@ -215,10 +218,10 @@
         NSString *message_url = json[@"UPDATER-MESSAGE-URL"];
         if (message_url) {
             NSURLSession *session = [NSURLSession sessionWithConfiguration:NSURLSessionConfiguration.defaultSessionConfiguration delegate:self delegateQueue:Nil];
-            NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:[NSURL URLWithString:message_url]
+            NSMutableURLRequest *urlRequest = [NSMutableURLRequest requestWithURL:[NSURL URLWithString:message_url]
                 cachePolicy:NSURLRequestReloadIgnoringLocalCacheData timeoutInterval:10];
-            [request addValue:[self userAgent:NO] forHTTPHeaderField:@"User-Agent"];
-            [[session dataTaskWithRequest:request completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
+            [urlRequest addValue:[self userAgent:NO] forHTTPHeaderField:@"User-Agent"];
+            [[session dataTaskWithRequest:urlRequest completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
                 NSHTTPURLResponse *http = (NSHTTPURLResponse*)response;
                 if (http.statusCode != 200) {
                     [self.delegate didFinish:nil];

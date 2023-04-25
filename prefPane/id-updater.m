@@ -326,12 +326,10 @@
     [request addValue:[update userAgent:YES] forHTTPHeaderField:@"User-Agent"];
     [[defaultSession downloadTaskWithRequest:request] resume];
     lastRecvd = 0;
-    timer = [NSTimer scheduledTimerWithTimeInterval:1.0 target:self selector:@selector(timer:) userInfo:nil repeats:YES];
-}
-
-- (void)timer:(NSTimer*)timer {
-    self.infoLabel.stringValue = [NSString stringWithFormat:@"%.2f KB/s", (self.progress.doubleValue - lastRecvd)/1000];
-    lastRecvd = self.progress.doubleValue;
+    timer = [NSTimer scheduledTimerWithTimeInterval:1.0 repeats:YES block:^(NSTimer *timer) {
+        self.infoLabel.stringValue = [NSString stringWithFormat:@"%.2f KB/s", (self.progress.doubleValue - self->lastRecvd)/1000];
+        self->lastRecvd = self.progress.doubleValue;
+    }];
 }
 
 - (IBAction)diagnostics:(id)sender {
