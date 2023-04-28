@@ -34,7 +34,7 @@
                             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                             <subviews>
                                 <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="PvE-E0-0Fl">
-                                    <rect key="frame" x="38" y="153" width="257" height="16"/>
+                                    <rect key="frame" x="18" y="153" width="257" height="16"/>
                                     <textFieldCell key="cell" lineBreakMode="clipping" title="Your ID-software is up to date - version" id="Kje-PT-lDq">
                                         <font key="font" textStyle="headline" name=".SFNS-Bold"/>
                                         <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -42,7 +42,7 @@
                                     </textFieldCell>
                                 </textField>
                                 <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="khI-jS-LQ9">
-                                    <rect key="frame" x="38" y="131" width="516" height="14"/>
+                                    <rect key="frame" x="18" y="131" width="536" height="14"/>
                                     <textFieldCell key="cell" lineBreakMode="clipping" title="Last checked:" id="sp4-up-rmr">
                                         <font key="font" textStyle="subheadline" name=".SFNS-Regular"/>
                                         <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -60,7 +60,7 @@
                                     </connections>
                                 </button>
                                 <button hidden="YES" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="Fis-tr-jzS">
-                                    <rect key="frame" x="451" y="142" width="108" height="32"/>
+                                    <rect key="frame" x="419" y="142" width="108" height="32"/>
                                     <buttonCell key="cell" type="push" title="Update now" bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="Tk7-kF-JTm">
                                         <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                                         <font key="font" metaFont="system"/>
@@ -80,7 +80,7 @@
                                     </connections>
                                 </button>
                                 <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="Dl4-jM-2mf">
-                                    <rect key="frame" x="38" y="19" width="221" height="18"/>
+                                    <rect key="frame" x="18" y="19" width="221" height="18"/>
                                     <buttonCell key="cell" type="check" title="Automatically check for updates" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="tXV-pa-oNo">
                                         <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                                         <font key="font" metaFont="system"/>
@@ -90,7 +90,7 @@
                                     </connections>
                                 </button>
                                 <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" setsMaxLayoutWidthAtFirstLayout="YES" translatesAutoresizingMaskIntoConstraints="NO" id="eBJ-wK-Zcp">
-                                    <rect key="frame" x="38" y="81" width="516" height="16"/>
+                                    <rect key="frame" x="18" y="81" width="536" height="16"/>
                                     <textFieldCell key="cell" id="5Ri-FK-fad">
                                         <font key="font" metaFont="system"/>
                                         <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -98,31 +98,31 @@
                                     </textFieldCell>
                                 </textField>
                                 <progressIndicator hidden="YES" maxValue="100" doubleValue="50" style="bar" translatesAutoresizingMaskIntoConstraints="NO" id="MJV-Px-vMt">
-                                    <rect key="frame" x="40" y="104" width="512" height="20"/>
+                                    <rect key="frame" x="20" y="104" width="532" height="20"/>
                                 </progressIndicator>
                             </subviews>
                             <constraints>
                                 <constraint firstItem="MJV-Px-vMt" firstAttribute="top" secondItem="khI-jS-LQ9" secondAttribute="bottom" constant="8" symbolic="YES" id="0Ky-kA-OIm"/>
                                 <constraint firstItem="Dl4-jM-2mf" firstAttribute="bottom" secondItem="1MG-Ph-hjP" secondAttribute="bottom" id="47Q-Hg-bRN"/>
-                                <constraint firstItem="Fis-tr-jzS" firstAttribute="trailing" secondItem="MJV-Px-vMt" secondAttribute="trailing" id="5kL-yg-HjF"/>
+                                <constraint firstItem="oSc-LX-kzf" firstAttribute="trailing" secondItem="MJV-Px-vMt" secondAttribute="trailing" id="5kL-yg-HjF"/>
                                 <constraint firstItem="Fis-tr-jzS" firstAttribute="top" secondItem="PvE-E0-0Fl" secondAttribute="top" id="7lu-Qv-baR"/>
-                                <constraint firstItem="Fis-tr-jzS" firstAttribute="trailing" secondItem="oSc-LX-kzf" secondAttribute="trailing" id="7wC-Gj-gov"/>
+                                <constraint firstItem="Fis-tr-jzS" firstAttribute="trailing" secondItem="1MG-Ph-hjP" secondAttribute="trailing" id="7wC-Gj-gov"/>
                                 <constraint firstItem="Dl4-jM-2mf" firstAttribute="bottom" secondItem="oSc-LX-kzf" secondAttribute="bottom" id="BD2-Ji-xmd"/>
                                 <constraint firstItem="Fis-tr-jzS" firstAttribute="leading" relation="greaterThanOrEqual" secondItem="PvE-E0-0Fl" secondAttribute="trailing" constant="8" symbolic="YES" id="CoR-OM-fT6"/>
                                 <constraint firstItem="MJV-Px-vMt" firstAttribute="leading" secondItem="PvE-E0-0Fl" secondAttribute="leading" id="IE3-0y-Sno"/>
+                                <constraint firstAttribute="trailing" secondItem="oSc-LX-kzf" secondAttribute="trailing" constant="20" id="IWe-3B-7zH"/>
                                 <constraint firstItem="1MG-Ph-hjP" firstAttribute="leading" relation="greaterThanOrEqual" secondItem="Dl4-jM-2mf" secondAttribute="trailing" constant="8" symbolic="YES" id="KV1-2X-0CR"/>
                                 <constraint firstItem="PvE-E0-0Fl" firstAttribute="top" secondItem="cjG-UL-IZ2" secondAttribute="top" constant="25" id="SYL-Ld-rue"/>
                                 <constraint firstItem="khI-jS-LQ9" firstAttribute="leading" secondItem="PvE-E0-0Fl" secondAttribute="leading" id="Sq2-eC-maY"/>
                                 <constraint firstItem="Dl4-jM-2mf" firstAttribute="leading" secondItem="PvE-E0-0Fl" secondAttribute="leading" id="VDt-cX-ym9"/>
-                                <constraint firstItem="PvE-E0-0Fl" firstAttribute="leading" secondItem="cjG-UL-IZ2" secondAttribute="leading" constant="40" id="YRK-Mc-rbb"/>
-                                <constraint firstItem="eBJ-wK-Zcp" firstAttribute="trailing" secondItem="Fis-tr-jzS" secondAttribute="trailing" id="ZZY-cU-HmG"/>
+                                <constraint firstItem="PvE-E0-0Fl" firstAttribute="leading" secondItem="cjG-UL-IZ2" secondAttribute="leading" constant="20" id="YRK-Mc-rbb"/>
+                                <constraint firstItem="eBJ-wK-Zcp" firstAttribute="trailing" secondItem="oSc-LX-kzf" secondAttribute="trailing" id="ZZY-cU-HmG"/>
                                 <constraint firstItem="khI-jS-LQ9" firstAttribute="top" secondItem="PvE-E0-0Fl" secondAttribute="bottom" constant="8" symbolic="YES" id="aEp-Za-Jjo"/>
                                 <constraint firstItem="eBJ-wK-Zcp" firstAttribute="top" secondItem="MJV-Px-vMt" secondAttribute="bottom" constant="8" symbolic="YES" id="bKH-iC-C99"/>
                                 <constraint firstAttribute="bottom" secondItem="Dl4-jM-2mf" secondAttribute="bottom" constant="20" symbolic="YES" id="fgp-1U-yXg"/>
                                 <constraint firstItem="oSc-LX-kzf" firstAttribute="leading" secondItem="1MG-Ph-hjP" secondAttribute="trailing" constant="12" symbolic="YES" id="nbn-vw-bUV"/>
                                 <constraint firstItem="eBJ-wK-Zcp" firstAttribute="leading" secondItem="PvE-E0-0Fl" secondAttribute="leading" id="qqB-01-9mz"/>
-                                <constraint firstItem="Fis-tr-jzS" firstAttribute="trailing" secondItem="khI-jS-LQ9" secondAttribute="trailing" id="vGm-hW-ySg"/>
-                                <constraint firstAttribute="trailing" secondItem="Fis-tr-jzS" secondAttribute="trailing" constant="20" id="zz1-Wz-2uj"/>
+                                <constraint firstItem="oSc-LX-kzf" firstAttribute="trailing" secondItem="khI-jS-LQ9" secondAttribute="trailing" id="vGm-hW-ySg"/>
                             </constraints>
                         </view>
                     </box>
