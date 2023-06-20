@@ -104,8 +104,8 @@ idupdater::idupdater( QObject *parent )
 	, conf(new Configuration(this))
 {
 	QString userAgent = QStringLiteral("%1/%2 (%3) Lang: %4 Devices: %5")
-		.arg(qApp->applicationName(), qApp->applicationVersion(), Common::applicationOs(),
-			Common::language(), QPCSC::instance().drivers().join('/'));
+		.arg(QApplication::applicationName(), QApplication::applicationVersion(), Common::applicationOs(),
+			QLocale().uiLanguages().first(), QPCSC::instance().drivers().join('/'));
 	qDebug() << "User-Agent:" << userAgent;
 	request.setRawHeader( "User-Agent", userAgent.toUtf8() );
 	connect(conf, &Configuration::finished, this, &idupdater::finished);

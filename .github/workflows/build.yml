@@ -51,7 +51,7 @@ jobs:
     - name: Install Qt
       uses: jurplel/install-qt-action@v3
       with:
-        version: 6.5.0
+        version: 6.5.1
         arch: win64_msvc2019_64
         modules: qt5compat
     - name: Setup dev env
@@ -60,8 +60,8 @@ jobs:
         arch: x64
     - name: Build
       run: |
-        cmake "-GNinja" -S . -B build `
-          -DCMAKE_TOOLCHAIN_FILE=${{ env.VCPKG_ROOT }}/scripts/buildsystems/vcpkg.cmake
+        cmake -S . -B build `
+          -DCMAKE_TOOLCHAIN_FILE=${{ env.RUNVCPKG_VCPKG_ROOT }}/scripts/buildsystems/vcpkg.cmake
         cmake --build build --target installer
     - name: Archive artifacts
       uses: actions/upload-artifact@v3
