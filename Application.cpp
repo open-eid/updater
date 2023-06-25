@@ -55,7 +55,14 @@ Application::Application( int &argc, char **argv )
 	QTranslator *qt = new QTranslator( this );
 	QTranslator *common = new QTranslator( this );
 	QTranslator *t = new QTranslator( this );
-	QString lang = Common::language();
+	QString lang;
+	auto languages = QLocale().uiLanguages().first();
+	if(languages.contains(QLatin1String("et"), Qt::CaseInsensitive))
+		lang = QStringLiteral("et");
+	else if(languages.contains(QLatin1String("ru"), Qt::CaseInsensitive))
+		lang = QStringLiteral("ru");
+	else
+		lang = QStringLiteral("en");
 	void(qt->load(QStringLiteral(":/qtbase_%1.qm").arg(lang)));
 	void(common->load(QStringLiteral(":/common_%1.qm").arg(lang)));
 	void(t->load(QStringLiteral(":/idupdater_%1.qm").arg(lang)));
