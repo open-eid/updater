@@ -92,14 +92,8 @@ else()
 	file( DOWNLOAD ${RSA_URL} ${CMAKE_CURRENT_BINARY_DIR}/config.rsa )
 	configure_file( common/config.qrc config.qrc COPYONLY )
 
-	find_package( OpenSSL REQUIRED )
-	find_package(QT NAMES Qt6 Qt5 COMPONENTS Core REQUIRED)
-	find_package(Qt${QT_VERSION_MAJOR} 5.12.0 REQUIRED COMPONENTS Core Widgets Network LinguistTools)
-	if(${QT_VERSION} VERSION_LESS "5.15.0")
-		macro(qt_add_translation)
-			qt5_add_translation(${ARGN})
-		endmacro()
-	endif()
+	find_package(OpenSSL 3.0.0 REQUIRED)
+	find_package(Qt6 6.0.0 REQUIRED COMPONENTS Core Widgets Network LinguistTools)
 
 	include_directories( ${CMAKE_CURRENT_BINARY_DIR} common/qtsingleapplication/src )
 
@@ -135,7 +129,7 @@ else()
 		INTERPROCEDURAL_OPTIMIZATION_DEBUG NO
 	)
 	target_compile_definitions(${PROJECT_NAME} PRIVATE WIN32_LEAN_AND_MEAN UNICODE CONFIG_URL="${CONFIG_URL}" COMMON_STATIC NO_CACHE)
-	target_link_libraries(${PROJECT_NAME} Qt${QT_VERSION_MAJOR}::Widgets Qt${QT_VERSION_MAJOR}::Network OpenSSL::Crypto
+	target_link_libraries(${PROJECT_NAME} Qt6::Widgets Qt6::Network OpenSSL::Crypto
 		msi Mstask Userenv wintrust Crypt32 taskschd comsupp ws2_32 Setupapi winscard Wtsapi32
 	)
 
@@ -151,10 +145,10 @@ else()
 		get_filename_component(SSL_PATH "${OPENSSL_INCLUDE_DIR}/../bin" ABSOLUTE)
 	endif()
 	set(MSI_FILE "ID-Updater-${VERSION}$ENV{VER_SUFFIX}.${PLATFORM}")
-	get_target_property(qtCore_install_prefix Qt${QT_VERSION_MAJOR}::qmake IMPORTED_LOCATION)
+	get_target_property(qtCore_install_prefix Qt6::qmake IMPORTED_LOCATION)
 	get_filename_component(qtCore_install_prefix ${qtCore_install_prefix} DIRECTORY)
 	add_custom_target(installer DEPENDS ${PROJECT_NAME}
-		COMMAND "$ENV{WIX}bin\\candle.exe" -nologo -arch ${PLATFORM} -dPlatform=${PLATFORM}
+		COMMAND "$ENV{WIX}bin\\candle.exe" -nologo -arch ${PLATFORM}
 			-dMSI_VERSION=${VERSION} -dqt_path=${qtCore_install_prefix}
 			-dqt_suffix=$<$<CONFIG:Debug>:d> -dqtconf=${CMAKE_SOURCE_DIR}/qt.conf -dlibs_path="${SSL_PATH}"
 			-dupdater_path=$<TARGET_FILE:${PROJECT_NAME}> ${CMAKE_SOURCE_DIR}/idupdater.wxs
