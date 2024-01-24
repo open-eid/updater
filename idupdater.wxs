@@ -2,18 +2,14 @@
 
 <!--
 "%WIX%\bin\candle.exe" idupdater.wxs -dMSI_VERSION=3.9.5
- -dqt_path=C:\Qt\5.9.10\msvc2017
- -dlibs_path="C:\OpenSSL-Win32\bin"
+ -dqt_path=C:\Qt\6.6.1\msvc2019
+ -dlibs_path="C:\OpenSSL-Win64\bin"
  -dupdater_path=id-updater.exe
 
 "%WIX%\bin\light.exe" -out idupdater.msi idupdater.wixobj -v -ext WixUIExtension
 -->
 
-<?ifndef Platform ?>
-<?define Platform="x86" ?>
-<?endif ?>
-
-<?if $(var.Platform) = x64 ?>
+<?if $(sys.BUILDARCH) = x64 ?>
   <?define PlatformProgramFilesFolder = "ProgramFiles64Folder" ?>
   <?define OpenSSLSuffix = "-x64" ?>
 <?else ?>
@@ -28,15 +24,15 @@
 <?endif?>
 
 <?if $(var.qt_suffix) = "d" ?>
-<?define VCPATH = "$(env.VCTOOLSREDISTDIR)\Debug_NonRedist\$(var.Platform)\Microsoft.VC$(var.VCVER).DebugCRT" ?>
+<?define VCPATH = "$(env.VCTOOLSREDISTDIR)\Debug_NonRedist\$(sys.BUILDARCH)\Microsoft.VC$(var.VCVER).DebugCRT" ?>
 <?else ?>
-<?define VCPATH = "$(env.VCTOOLSREDISTDIR)\$(var.Platform)\Microsoft.VC$(var.VCVER).CRT" ?>
+<?define VCPATH = "$(env.VCTOOLSREDISTDIR)\$(sys.BUILDARCH)\Microsoft.VC$(var.VCVER).CRT" ?>
 <?endif ?>
 
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
   <Product Name="Open-EID Updater" UpgradeCode="d3aa8bd7-e1e6-46d0-97a6-c9b87d2b830b"
       Id="*" Language="1033" Version="$(var.MSI_VERSION)" Codepage="1251" Manufacturer="RIA">
-    <Package Platform="$(var.Platform)" Keywords="Installer" InstallerVersion="405" Compressed="yes" InstallScope="perMachine"/>
+    <Package Keywords="Installer" InstallerVersion="500" Compressed="yes" InstallScope="perMachine"/>
     <MediaTemplate EmbedCab="yes" CompressionLevel="high"/>
     <Icon Id="idupdater.exe" SourceFile="$(var.updater_path)"/>
     <Property Id="ARPPRODUCTICON" Value="idupdater.exe"/>
@@ -55,14 +51,14 @@
             <File Id="id_updater.exe" Source="$(var.updater_path)" KeyPath='yes'/>
             <RegistryValue Root="HKMU" Key="Software\[Manufacturer]\Open-EID"
                 Name="Installed" Value="[APPLICATIONFOLDER]" Type="string"/>
-<?if $(var.Platform) = x64 ?>
+<?if $(sys.BUILDARCH) = x64 ?>
             <RegistryValue Root="HKMU" Key="Software\Wow6432Node\[Manufacturer]\Open-EID"
                 Name="Installed" Value="[APPLICATIONFOLDER]" Type="string"/>
 <?endif ?>
 <?ifdef var.qt_path ?>
             <File Source="$(var.VCPATH)\msvcp140$(var.qt_suffix).dll"/>
             <File Source="$(var.VCPATH)\vcruntime140$(var.qt_suffix).dll"/>
-<?if $(var.Platform) = x64 AND $(env.VisualStudioVersion) != "15.0" ?>
+<?if $(sys.BUILDARCH) = x64 AND $(env.VisualStudioVersion) != "15.0" ?>
             <File Source="$(var.VCPATH)\msvcp140_1$(var.qt_suffix).dll"/>
             <File Source="$(var.VCPATH)\msvcp140_2$(var.qt_suffix).dll"/>
             <File Source="$(var.VCPATH)\vcruntime140_1$(var.qt_suffix).dll"/>
@@ -77,7 +73,6 @@
             <File Source="$(var.qt_path)\Qt6Widgets$(var.qt_suffix).dll"/>
             <File Source="$(var.qt_path)\D3DCompiler_47.dll"/>
             <File Source="$(var.qt_path)\opengl32sw.dll"/>
-            <File Source="$(var.qt_path)\Qt6Core5Compat$(var.qt_suffix).dll"/>
             <File Source="$(var.qt_path)\Qt6SvgWidgets$(var.qt_suffix).dll"/>
 <?endif?>
           </Component>

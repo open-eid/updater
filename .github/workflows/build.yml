@@ -8,10 +8,10 @@ jobs:
     runs-on: macos-latest
     env:
       MAKEFLAGS: -j3
-      MACOSX_DEPLOYMENT_TARGET: 10.15
+      MACOSX_DEPLOYMENT_TARGET: 11.0
     steps:
     - name: Checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       with:
         submodules: recursive
     - name: Build
@@ -38,7 +38,7 @@ jobs:
       VER_SUFFIX: .VS${{ matrix.vcver }}
     steps:
     - name: Checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       with:
         submodules: recursive
     - name: Prepare vcpkg
@@ -46,14 +46,13 @@ jobs:
       id: runvcpkg
       with:
         vcpkgArguments: openssl
-        vcpkgGitCommitId: 9b9c2758ece1d8ac0de90589730bb5ccf45c0874
+        vcpkgGitCommitId: 8161f655436492669adc8eb6f269dc41392ffa70
         vcpkgTriplet: x64-windows
     - name: Install Qt
       uses: jurplel/install-qt-action@v3
       with:
-        version: 6.5.1
+        version: 6.6.1
         arch: win64_msvc2019_64
-        modules: qt5compat
     - name: Setup dev env
       uses: ilammy/msvc-dev-cmd@v1
       with:
