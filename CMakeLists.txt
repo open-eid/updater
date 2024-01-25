@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.16)
 if(POLICY CMP0074)
 	cmake_policy(SET CMP0074 NEW)
 endif()
-project(ID-updater VERSION 3.15.0)
+project(ID-updater VERSION 3.16.0)
 
 set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake/modules)
 
@@ -150,7 +150,7 @@ else()
 	add_custom_target(installer DEPENDS ${PROJECT_NAME}
 		COMMAND "$ENV{WIX}bin\\candle.exe" -nologo -arch ${PLATFORM}
 			-dMSI_VERSION=${VERSION} -dqt_path=${qtCore_install_prefix}
-			-dqt_suffix=$<$<CONFIG:Debug>:d> -dqtconf=${CMAKE_SOURCE_DIR}/qt.conf -dlibs_path="${SSL_PATH}"
+			-dqt_suffix=$<$<CONFIG:Debug>:d> -dlibs_path="${SSL_PATH}"
 			-dupdater_path=$<TARGET_FILE:${PROJECT_NAME}> ${CMAKE_SOURCE_DIR}/idupdater.wxs
 			${CMAKE_SOURCE_DIR}/cmake/modules/WelcomeDlg2.wxs ${CMAKE_SOURCE_DIR}/cmake/modules/WixUI_Minimal2.wxs
 		COMMAND "$ENV{WIX}bin\\light.exe" -nologo -o "${MSI_FILE}.msi" -ext WixUIExtension
