@@ -148,15 +148,21 @@ else()
 	get_target_property(qtCore_install_prefix Qt6::qmake IMPORTED_LOCATION)
 	get_filename_component(qtCore_install_prefix ${qtCore_install_prefix} DIRECTORY)
 	add_custom_target(installer DEPENDS ${PROJECT_NAME}
-		COMMAND "$ENV{WIX}bin\\candle.exe" -nologo -arch ${PLATFORM}
-			-dMSI_VERSION=${VERSION} -dqt_path=${qtCore_install_prefix}
-			-dqt_suffix=$<$<CONFIG:Debug>:d> -dlibs_path="${SSL_PATH}"
-			-dupdater_path=$<TARGET_FILE:${PROJECT_NAME}> ${CMAKE_SOURCE_DIR}/idupdater.wxs
-			${CMAKE_SOURCE_DIR}/cmake/modules/WelcomeDlg2.wxs ${CMAKE_SOURCE_DIR}/cmake/modules/WixUI_Minimal2.wxs
-		COMMAND "$ENV{WIX}bin\\light.exe" -nologo -o "${MSI_FILE}.msi" -ext WixUIExtension
-			idupdater.wixobj  WelcomeDlg2.wixobj WixUI_Minimal2.wixobj
-			-dWixUIDialogBmp=${CMAKE_SOURCE_DIR}/cmake/modules/dlgbmp.bmp
-			-dWixUIBannerBmp=${CMAKE_SOURCE_DIR}/cmake/modules/banner.bmp
+		COMMAND "wix.exe" build -nologo
+			-arch ${PLATFORM}
+			-ext WixToolset.UI.wixext
+			-bv WixUIDialogBmp=${CMAKE_SOURCE_DIR}/cmake/modules/dlgbmp.bmp
+			-bv WixUIBannerBmp=${CMAKE_SOURCE_DIR}/cmake/modules/banner.bmp
+			-d MSI_VERSION=${VERSION}
+			-d appicon=${CMAKE_SOURCE_DIR}/appicon.ico
+			-d qt_path=${qtCore_install_prefix}
+			-d qt_suffix=$<$<CONFIG:Debug>:d>
+			-d libs_path="${SSL_PATH}"
+			-d updater_path=$<TARGET_FILE:${PROJECT_NAME}>
+			${CMAKE_SOURCE_DIR}/idupdater.wxs
+			${CMAKE_SOURCE_DIR}/cmake/modules/WelcomeDlg.wxs
+			${CMAKE_SOURCE_DIR}/cmake/modules/WixUI_Minimal.wxs
+			-o "${MSI_FILE}.msi"
 	)
 	if(SIGNCERT)
 		if(CROSSSIGNCERT)

@@ -1,21 +1,8 @@
-<?xml version="1.0" encoding="utf-8"?>
-
-<!--
-"%WIX%\bin\candle.exe" idupdater.wxs -dMSI_VERSION=3.9.5
- -dqt_path=C:\Qt\6.6.1\msvc2019
- -dlibs_path="C:\OpenSSL-Win64\bin"
- -dupdater_path=id-updater.exe
-
-"%WIX%\bin\light.exe" -out idupdater.msi idupdater.wixobj -v -ext WixUIExtension
--->
-
-<?if $(sys.BUILDARCH) = x64 ?>
-  <?define PlatformProgramFilesFolder = "ProgramFiles64Folder" ?>
+﻿<?if $(sys.BUILDARCH) = x64 ?>
   <?define OpenSSLSuffix = "-x64" ?>
-<?else ?>
-  <?define PlatformProgramFilesFolder = "ProgramFilesFolder" ?>
+<?else?>
   <?define OpenSSLSuffix = "" ?>
-<?endif ?>
+<?endif?>
 
 <?if $(env.VisualStudioVersion) = "17.0" ?>
 <?define VCVER = "143" ?>
@@ -25,83 +12,79 @@
 
 <?if $(var.qt_suffix) = "d" ?>
 <?define VCPATH = "$(env.VCTOOLSREDISTDIR)\Debug_NonRedist\$(sys.BUILDARCH)\Microsoft.VC$(var.VCVER).DebugCRT" ?>
-<?else ?>
+<?else?>
 <?define VCPATH = "$(env.VCTOOLSREDISTDIR)\$(sys.BUILDARCH)\Microsoft.VC$(var.VCVER).CRT" ?>
-<?endif ?>
+<?endif?>
 
-<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
-  <Product Name="Open-EID Updater" UpgradeCode="d3aa8bd7-e1e6-46d0-97a6-c9b87d2b830b"
-      Id="*" Language="1033" Version="$(var.MSI_VERSION)" Codepage="1251" Manufacturer="RIA">
-    <Package Keywords="Installer" InstallerVersion="500" Compressed="yes" InstallScope="perMachine"/>
-    <MediaTemplate EmbedCab="yes" CompressionLevel="high"/>
-    <Icon Id="idupdater.exe" SourceFile="$(var.updater_path)"/>
-    <Property Id="ARPPRODUCTICON" Value="idupdater.exe"/>
-    <Property Id="AUTO_UPDATE" Value="1"/>
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs"
+     xmlns:ui="http://wixtoolset.org/schemas/v4/wxs/ui">
+  <Package Name="Open-EID Updater" UpgradeCode="d3aa8bd7-e1e6-46d0-97a6-c9b87d2b830b"
+      Language="1033" Version="$(var.MSI_VERSION)" Codepage="1251" Manufacturer="RIA" InstallerVersion="500">
+    <SummaryInformation Keywords="Installer" />
+    <MediaTemplate EmbedCab="yes" CompressionLevel="high" />
+    <Icon Id="appicon.ico" SourceFile="$(var.appicon)" />
+    <Property Id="ARPPRODUCTICON" Value="appicon.ico" />
+    <Property Id="AUTO_UPDATE" Value="1" />
     <MajorUpgrade AllowSameVersionUpgrades="yes" Schedule="afterInstallInitialize" DowngradeErrorMessage=
-      "A newer version of [ProductName] is already installed. If you are trying to downgrade, please uninstall the newer version first."/>
-    <Condition Message="[ProductName] requires Windows 7 or higher.">
-      <![CDATA[Installed OR (VersionNT >= 601)]]>
-    </Condition>
-    <UIRef Id="WixUI_Minimal2" />
+        "A newer version of [ProductName] is already installed. If you are trying to downgrade, please uninstall the newer version first." />
+    <Launch Condition="Installed OR (VersionNT &gt;= 601)" Message="[ProductName] requires Windows 7 or higher." />
+    <ui:WixUI Id="WixUI_Minimal2" />
 
-    <Directory Id="TARGETDIR" Name="SourceDir">
-      <Directory Id='$(var.PlatformProgramFilesFolder)'>
-        <Directory Id="APPLICATIONFOLDER" Name="Open-EID">
-          <Component Id="Application" Guid="ce49ec96-dc54-4b51-adae-8d5dd82b15d1">
-            <File Id="id_updater.exe" Source="$(var.updater_path)" KeyPath='yes'/>
-            <RegistryValue Root="HKMU" Key="Software\[Manufacturer]\Open-EID"
-                Name="Installed" Value="[APPLICATIONFOLDER]" Type="string"/>
+    <StandardDirectory Id="ProgramFiles6432Folder">
+      <Directory Id="APPLICATIONFOLDER" Name="Open-EID" FileSource="$(var.qt_path)">
+        <Component Id="Application" Guid="ce49ec96-dc54-4b51-adae-8d5dd82b15d1">
+          <File Id="id_updater.exe" Source="$(var.updater_path)" KeyPath="yes" />
+          <RegistryValue Root="HKMU" Key="Software\[Manufacturer]\Open-EID"
+            Name="Installed" Value="[APPLICATIONFOLDER]" Type="string" />
 <?if $(sys.BUILDARCH) = x64 ?>
-            <RegistryValue Root="HKMU" Key="Software\Wow6432Node\[Manufacturer]\Open-EID"
-                Name="Installed" Value="[APPLICATIONFOLDER]" Type="string"/>
-<?endif ?>
-<?ifdef var.qt_path ?>
-            <File Source="$(var.VCPATH)\msvcp140$(var.qt_suffix).dll"/>
-            <File Source="$(var.VCPATH)\vcruntime140$(var.qt_suffix).dll"/>
-<?if $(sys.BUILDARCH) = x64 AND $(env.VisualStudioVersion) != "15.0" ?>
-            <File Source="$(var.VCPATH)\msvcp140_1$(var.qt_suffix).dll"/>
-            <File Source="$(var.VCPATH)\msvcp140_2$(var.qt_suffix).dll"/>
-            <File Source="$(var.VCPATH)\vcruntime140_1$(var.qt_suffix).dll"/>
-<?endif ?>
-            <File Source="$(var.libs_path)\libcrypto-3$(var.OpenSSLSuffix).dll"/>
-            <File Source="$(var.libs_path)\libssl-3$(var.OpenSSLSuffix).dll"/>
-            <File Source="$(var.qt_path)\Qt6Core$(var.qt_suffix).dll"/>
-            <File Source="$(var.qt_path)\Qt6Gui$(var.qt_suffix).dll"/>
-            <File Source="$(var.qt_path)\Qt6Network$(var.qt_suffix).dll"/>
-            <File Source="$(var.qt_path)\Qt6PrintSupport$(var.qt_suffix).dll"/>
-            <File Source="$(var.qt_path)\Qt6Svg$(var.qt_suffix).dll"/>
-            <File Source="$(var.qt_path)\Qt6Widgets$(var.qt_suffix).dll"/>
-            <File Source="$(var.qt_path)\D3DCompiler_47.dll"/>
-            <File Source="$(var.qt_path)\opengl32sw.dll"/>
-            <File Source="$(var.qt_path)\Qt6SvgWidgets$(var.qt_suffix).dll"/>
+          <RegistryValue Root="HKMU" Key="Software\Wow6432Node\[Manufacturer]\Open-EID"
+            Name="Installed" Value="[APPLICATIONFOLDER]" Type="string" />
 <?endif?>
+<?ifdef var.qt_path ?>
+          <File Source="$(var.VCPATH)\msvcp140$(var.qt_suffix).dll" />
+          <File Source="$(var.VCPATH)\vcruntime140$(var.qt_suffix).dll" />
+          <File Source="$(var.VCPATH)\msvcp140_1$(var.qt_suffix).dll" />
+          <File Source="$(var.VCPATH)\msvcp140_2$(var.qt_suffix).dll" />
+<?if $(sys.BUILDARCH) != x86 ?>
+          <File Source="$(var.VCPATH)\vcruntime140_1$(var.qt_suffix).dll" />
+<?endif?>
+          <File Source="$(var.libs_path)\libcrypto-3$(var.OpenSSLSuffix).dll" />
+          <File Source="$(var.libs_path)\libssl-3$(var.OpenSSLSuffix).dll" />
+          <File Name="Qt6Core$(var.qt_suffix).dll" />
+          <File Name="Qt6Gui$(var.qt_suffix).dll" />
+          <File Name="Qt6Network$(var.qt_suffix).dll" />
+          <File Name="Qt6PrintSupport$(var.qt_suffix).dll" />
+          <File Name="Qt6Svg$(var.qt_suffix).dll" />
+          <File Name="Qt6Widgets$(var.qt_suffix).dll" />
+          <File Name="D3DCompiler_47.dll" />
+          <File Name="opengl32sw.dll" />
+          <File Name="Qt6SvgWidgets$(var.qt_suffix).dll" />
+<?endif?>
+        </Component>
+<?ifdef var.qt_path ?>
+        <Directory Id="platforms" Name="platforms" FileSource="$(var.qt_path)\..\plugins\platforms">
+          <Component Id="qwindows.dll">
+            <File Name="qwindows$(var.qt_suffix).dll" />
           </Component>
-<?ifdef var.qt_path ?>
-          <Directory Id="platforms" Name="platforms" FileSource="$(var.qt_path)\..\plugins\platforms">
-            <Component Id="qwindows.dll">
-              <File Name="qwindows$(var.qt_suffix).dll"/>
-            </Component>
-          </Directory>
-          <Directory Id="tls" Name="tls" FileSource="$(var.qt_path)\..\plugins\tls">
-            <Component Id="qopensslbackend.dll">
-              <File Name="qopensslbackend$(var.qt_suffix).dll"/>
-            </Component>
-          </Directory>
-          <Directory Id="styles" Name="styles" FileSource="$(var.qt_path)\..\plugins\styles">
-            <Component Id="qwindowsvistastyle.dll">
-              <File Name="qwindowsvistastyle$(var.qt_suffix).dll"/>
-            </Component>
-          </Directory>
-          <Directory Id="imageformats" Name="imageformats" FileSource="$(var.qt_path)\..\plugins\imageformats">
-            <Component Id="imageformats.dll" Guid="4ae32624-e869-4e4c-8a1c-624c31133ce3">
-              <File Name="qjpeg$(var.qt_suffix).dll"/>
-              <File Name="qsvg$(var.qt_suffix).dll"/>
-            </Component>
-          </Directory>
-<?endif?>
         </Directory>
+        <Directory Id="tls" Name="tls" FileSource="$(var.qt_path)\..\plugins\tls">
+          <Component Id="qopensslbackend.dll">
+            <File Name="qopensslbackend$(var.qt_suffix).dll" />
+          </Component>
+        </Directory>
+        <Directory Id="styles" Name="styles" FileSource="$(var.qt_path)\..\plugins\styles">
+          <Component Id="qwindowsvistastyle.dll">
+            <File Name="qwindowsvistastyle$(var.qt_suffix).dll" />
+          </Component>
+        </Directory>
+        <Directory Id="imageformats" Name="imageformats" FileSource="$(var.qt_path)\..\plugins\imageformats">
+          <Component Id="imageformats.dll" Guid="4ae32624-e869-4e4c-8a1c-624c31133ce3">
+            <File Name="qsvg$(var.qt_suffix).dll" />
+          </Component>
+        </Directory>
+<?endif?>
       </Directory>
-    </Directory>
+    </StandardDirectory>
 
     <Feature Id="Install" Title="Open-EID" ConfigurableDirectory="APPLICATIONFOLDER">
       <ComponentRef Id="Application" />
@@ -113,14 +96,14 @@
 <?endif?>
     </Feature>
 
-    <CustomAction Id="ScheduleUpdater" FileKey="id_updater.exe" Impersonate="no" Execute="deferred"
-      ExeCommand="-weekly" Return="ignore"/>
-    <CustomAction Id="UnScheduleUpdater" FileKey="id_updater.exe" Impersonate="no" Execute="deferred"
-      ExeCommand="-remove" Return="ignore"/>
+    <CustomAction Id="ScheduleUpdater" Impersonate="no" Execute="deferred"
+      ExeCommand="-weekly" Return="ignore" FileRef="id_updater.exe" />
+    <CustomAction Id="UnScheduleUpdater" Impersonate="no" Execute="deferred"
+      ExeCommand="-remove" Return="ignore" FileRef="id_updater.exe" />
 
     <InstallExecuteSequence>
-      <Custom Action="ScheduleUpdater" Before="InstallFinalize">(NOT Installed) AND (AUTO_UPDATE = 1)</Custom>
-      <Custom Action="UnScheduleUpdater" After="InstallInitialize">REMOVE="ALL"</Custom>
+      <Custom Action="ScheduleUpdater" Before="InstallFinalize" Condition="(NOT Installed) AND (AUTO_UPDATE = 1)" />
+      <Custom Action="UnScheduleUpdater" After="InstallInitialize" Condition="REMOVE=&quot;ALL&quot;" />
     </InstallExecuteSequence>
-  </Product>
+  </Package>
 </Wix>
