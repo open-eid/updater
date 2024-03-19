@@ -21,7 +21,7 @@ jobs:
     - name: Archive artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: pkg
+        name: macOS
         path: build/*.pkg
   windows:
     name: Build on Windows
@@ -51,7 +51,7 @@ jobs:
     - name: Install Qt
       uses: jurplel/install-qt-action@v3
       with:
-        version: 6.6.1
+        version: 6.6.2
         arch: win64_msvc2019_64
     - name: Setup dev env
       uses: ilammy/msvc-dev-cmd@v1
@@ -60,14 +60,14 @@ jobs:
     - name: Install WiX
       run: |
         dotnet tool install --global wix
-        wix extension -g add WixToolset.UI.wixext
+        wix extension -g add WixToolset.UI.wixext/4.0.4
     - name: Build
       run: |
         cmake -S . -B build `
           -DCMAKE_TOOLCHAIN_FILE=${{ env.RUNVCPKG_VCPKG_ROOT }}/scripts/buildsystems/vcpkg.cmake
         cmake --build build --target installer
     - name: Archive artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
-        name: msi
+        name: msi_${{ matrix.vcver }}_x64
         path: build/*.msi
