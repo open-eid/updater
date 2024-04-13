@@ -20,7 +20,6 @@
      xmlns:ui="http://wixtoolset.org/schemas/v4/wxs/ui">
   <Package Name="Open-EID Updater" UpgradeCode="d3aa8bd7-e1e6-46d0-97a6-c9b87d2b830b"
       Language="1033" Version="$(var.MSI_VERSION)" Codepage="1251" Manufacturer="RIA" InstallerVersion="500">
-    <SummaryInformation Keywords="Installer" />
     <MediaTemplate EmbedCab="yes" CompressionLevel="high" />
     <Icon Id="appicon.ico" SourceFile="$(var.appicon)" />
     <Property Id="ARPPRODUCTICON" Value="appicon.ico" />
@@ -31,70 +30,48 @@
     <ui:WixUI Id="WixUI_Minimal2" />
 
     <StandardDirectory Id="ProgramFiles6432Folder">
-      <Directory Id="APPLICATIONFOLDER" Name="Open-EID" FileSource="$(var.qt_path)">
-        <Component Id="Application" Guid="ce49ec96-dc54-4b51-adae-8d5dd82b15d1">
+      <Directory Id="INSTALLFOLDER" Name="Open-EID" FileSource="$(var.qt_path)">
+        <Component Id="Application">
           <File Id="id_updater.exe" Source="$(var.updater_path)" KeyPath="yes" />
           <RegistryValue Root="HKMU" Key="Software\[Manufacturer]\Open-EID"
-            Name="Installed" Value="[APPLICATIONFOLDER]" Type="string" />
+            Name="Installed" Value="[INSTALLFOLDER]" Type="string" />
 <?if $(sys.BUILDARCH) = x64 ?>
           <RegistryValue Root="HKMU" Key="Software\Wow6432Node\[Manufacturer]\Open-EID"
-            Name="Installed" Value="[APPLICATIONFOLDER]" Type="string" />
-<?endif?>
-<?ifdef var.qt_path ?>
-          <File Source="$(var.VCPATH)\msvcp140$(var.qt_suffix).dll" />
-          <File Source="$(var.VCPATH)\vcruntime140$(var.qt_suffix).dll" />
-          <File Source="$(var.VCPATH)\msvcp140_1$(var.qt_suffix).dll" />
-          <File Source="$(var.VCPATH)\msvcp140_2$(var.qt_suffix).dll" />
-<?if $(sys.BUILDARCH) != x86 ?>
-          <File Source="$(var.VCPATH)\vcruntime140_1$(var.qt_suffix).dll" />
-<?endif?>
-          <File Source="$(var.libs_path)\libcrypto-3$(var.OpenSSLSuffix).dll" />
-          <File Source="$(var.libs_path)\libssl-3$(var.OpenSSLSuffix).dll" />
-          <File Name="Qt6Core$(var.qt_suffix).dll" />
-          <File Name="Qt6Gui$(var.qt_suffix).dll" />
-          <File Name="Qt6Network$(var.qt_suffix).dll" />
-          <File Name="Qt6PrintSupport$(var.qt_suffix).dll" />
-          <File Name="Qt6Svg$(var.qt_suffix).dll" />
-          <File Name="Qt6Widgets$(var.qt_suffix).dll" />
-          <File Name="D3DCompiler_47.dll" />
-          <File Name="opengl32sw.dll" />
-          <File Name="Qt6SvgWidgets$(var.qt_suffix).dll" />
+            Name="Installed" Value="[INSTALLFOLDER]" Type="string" />
 <?endif?>
         </Component>
-<?ifdef var.qt_path ?>
-        <Directory Id="platforms" Name="platforms" FileSource="$(var.qt_path)\..\plugins\platforms">
-          <Component Id="qwindows.dll">
-            <File Name="qwindows$(var.qt_suffix).dll" />
-          </Component>
-        </Directory>
-        <Directory Id="tls" Name="tls" FileSource="$(var.qt_path)\..\plugins\tls">
-          <Component Id="qopensslbackend.dll">
-            <File Name="qopensslbackend$(var.qt_suffix).dll" />
-          </Component>
-        </Directory>
-        <Directory Id="styles" Name="styles" FileSource="$(var.qt_path)\..\plugins\styles">
-          <Component Id="qwindowsvistastyle.dll">
-            <File Name="qwindowsvistastyle$(var.qt_suffix).dll" />
-          </Component>
-        </Directory>
-        <Directory Id="imageformats" Name="imageformats" FileSource="$(var.qt_path)\..\plugins\imageformats">
-          <Component Id="imageformats.dll" Guid="4ae32624-e869-4e4c-8a1c-624c31133ce3">
-            <File Name="qsvg$(var.qt_suffix).dll" />
-          </Component>
-        </Directory>
+        <File Source="$(var.VCPATH)\msvcp140$(var.qt_suffix).dll" />
+        <File Source="$(var.VCPATH)\vcruntime140$(var.qt_suffix).dll" />
+        <File Source="$(var.VCPATH)\msvcp140_1$(var.qt_suffix).dll" />
+        <File Source="$(var.VCPATH)\msvcp140_2$(var.qt_suffix).dll" />
+<?if $(sys.BUILDARCH) != x86 ?>
+        <File Source="$(var.VCPATH)\vcruntime140_1$(var.qt_suffix).dll" />
 <?endif?>
+        <File Source="$(var.libs_path)\libcrypto-3$(var.OpenSSLSuffix).dll" />
+        <File Source="$(var.libs_path)\libssl-3$(var.OpenSSLSuffix).dll" />
+        <File Name="Qt6Core$(var.qt_suffix).dll" />
+        <File Name="Qt6Gui$(var.qt_suffix).dll" />
+        <File Name="Qt6Network$(var.qt_suffix).dll" />
+        <File Name="Qt6PrintSupport$(var.qt_suffix).dll" />
+        <File Name="Qt6Svg$(var.qt_suffix).dll" />
+        <File Name="Qt6Widgets$(var.qt_suffix).dll" />
+        <File Name="D3DCompiler_47.dll" />
+        <File Name="opengl32sw.dll" />
+        <File Name="Qt6SvgWidgets$(var.qt_suffix).dll" />
+        <Directory Id="platforms" Name="platforms">
+          <File Source="$(var.qt_path)\..\plugins\platforms\qwindows$(var.qt_suffix).dll" />
+        </Directory>
+        <Directory Id="tls" Name="tls">
+          <File Source="$(var.qt_path)\..\plugins\tls\qopensslbackend$(var.qt_suffix).dll" />
+        </Directory>
+        <Directory Id="styles" Name="styles">
+          <File Source="$(var.qt_path)\..\plugins\styles\qwindowsvistastyle$(var.qt_suffix).dll" />
+        </Directory>
+        <Directory Id="imageformats" Name="imageformats">
+          <File Source="$(var.qt_path)\..\plugins\imageformats\qsvg$(var.qt_suffix).dll" />
+        </Directory>
       </Directory>
     </StandardDirectory>
-
-    <Feature Id="Install" Title="Open-EID" ConfigurableDirectory="APPLICATIONFOLDER">
-      <ComponentRef Id="Application" />
-<?ifdef var.qt_path ?>
-      <ComponentRef Id="qwindows.dll" />
-      <ComponentRef Id="qwindowsvistastyle.dll" />
-      <ComponentRef Id="qopensslbackend.dll" />
-      <ComponentRef Id="imageformats.dll" />
-<?endif?>
-    </Feature>
 
     <CustomAction Id="ScheduleUpdater" Impersonate="no" Execute="deferred"
       ExeCommand="-weekly" Return="ignore" FileRef="id_updater.exe" />
