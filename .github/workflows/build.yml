@@ -51,7 +51,7 @@ jobs:
     - name: Install Qt
       uses: jurplel/install-qt-action@v3
       with:
-        version: 6.6.2
+        version: 6.6.3
         arch: win64_msvc2019_64
     - name: Setup dev env
       uses: ilammy/msvc-dev-cmd@v1
@@ -59,8 +59,8 @@ jobs:
         arch: x64
     - name: Install WiX
       run: |
-        dotnet tool install --global wix
-        wix extension -g add WixToolset.UI.wixext/4.0.4
+        dotnet tool install -g wix --version 5.0.0
+        wix extension -g add WixToolset.UI.wixext/5.0.0
     - name: Build
       run: |
         cmake -S . -B build `
