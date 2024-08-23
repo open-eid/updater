@@ -64,7 +64,10 @@ if( APPLE )
 		XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER "ee.ria.${PROJECT_NAME}"
 	)
 	target_link_libraries(${PROJECT_NAME} ${XAR}
-		"-framework Cocoa -framework PreferencePanes -framework CryptoTokenKit -framework Security"
+		"-framework Cocoa"
+		"-framework PreferencePanes"
+		"-framework CryptoTokenKit"
+		"-framework Security"
 	)
 	add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
 		COMMAND cp $<TARGET_FILE:id-updater-helper> $<TARGET_BUNDLE_CONTENT_DIR:${PROJECT_NAME}>/Resources )
@@ -131,9 +134,15 @@ else()
 		INTERPROCEDURAL_OPTIMIZATION YES
 		INTERPROCEDURAL_OPTIMIZATION_DEBUG NO
 	)
-	target_compile_definitions(${PROJECT_NAME} PRIVATE WIN32_LEAN_AND_MEAN UNICODE CONFIG_URL="${CONFIG_URL}" COMMON_STATIC NO_CACHE)
+	target_compile_definitions(${PROJECT_NAME} PRIVATE
+		WIN32_LEAN_AND_MEAN
+		UNICODE
+		CONFIG_URL="${CONFIG_URL}"
+		COMMON_STATIC
+		NO_CACHE
+	)
 	target_link_libraries(${PROJECT_NAME} Qt6::Widgets Qt6::Network OpenSSL::Crypto
-		msi Mstask Userenv wintrust Crypt32 taskschd comsupp ws2_32 Setupapi winscard Wtsapi32
+		msi wintrust Crypt32 taskschd comsupp Setupapi winscard Wtsapi32
 	)
 
 	if(CMAKE_SIZEOF_VOID_P EQUAL 8)
@@ -151,7 +160,7 @@ else()
 	get_target_property(qtCore_install_prefix Qt6::qmake IMPORTED_LOCATION)
 	get_filename_component(qtCore_install_prefix ${qtCore_install_prefix} DIRECTORY)
 	add_custom_target(installer DEPENDS ${PROJECT_NAME}
-		COMMAND "wix.exe" build -nologo
+		COMMAND wix.exe build -nologo
 			-arch ${PLATFORM}
 			-ext WixToolset.UI.wixext
 			-bv WixUIDialogBmp=${CMAKE_SOURCE_DIR}/cmake/modules/dlgbmp.bmp
@@ -165,20 +174,20 @@ else()
 			${CMAKE_SOURCE_DIR}/idupdater.wxs
 			${CMAKE_SOURCE_DIR}/cmake/modules/WelcomeDlg.wxs
 			${CMAKE_SOURCE_DIR}/cmake/modules/WixUI_Minimal.wxs
-			-o "${MSI_FILE}.msi"
+			-o ${MSI_FILE}.msi
 	)
 	if(SIGNCERT)
 		if(CROSSSIGNCERT)
 			target_link_options(${PROJECT_NAME} PRIVATE "/INTEGRITYCHECK")
 		endif()
 		list(APPEND SIGNCMD signtool.exe sign /a /v /s MY /n "${SIGNCERT}" /fd SHA256
-			/du http://installer.id.ee /tr http://sha256timestamp.ws.symantec.com/sha256/timestamp /td SHA256)
+			/du http://installer.id.ee /tr http://timestamp.digicert.com /td SHA256)
 		add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
 			COMMAND ${SIGNCMD} "$<$<BOOL:${CROSSSIGNCERT}>:/ph;/ac;${CROSSSIGNCERT}>" $<TARGET_FILE:${PROJECT_NAME}>
 			COMMAND_EXPAND_LISTS
 		)
 		add_custom_command(TARGET installer POST_BUILD
-			COMMAND ${SIGNCMD} "${MSI_FILE}.msi"
+			COMMAND ${SIGNCMD} ${MSI_FILE}.msi
 		)
 	endif()
 endif()
