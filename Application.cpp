@@ -19,7 +19,6 @@
 
 #include "Application.h"
 
-#include "common/Common.h"
 #include "idupdater.h"
 #include "ScheduledUpdateTask.h"
 
@@ -38,6 +37,8 @@
 #include <userenv.h>
 #include <wtsapi32.h>
 
+using namespace Qt::StringLiterals;
+
 int main( int argc, char *argv[] )
 {
 	return Application( argc, argv ).run();
@@ -48,7 +49,7 @@ int main( int argc, char *argv[] )
 Application::Application( int &argc, char **argv )
 :	QtSingleApplication( argc, argv )
 {
-	log.setFileName(QDir::tempPath() + QStringLiteral("/id-updater.log"));
+	log.setFileName(QDir::tempPath() + u"/id-updater.log"_s);
 	if( log.exists() && log.open( QFile::WriteOnly|QFile::Append ) )
 		qInstallMessageHandler( msgHandler );
 
@@ -57,27 +58,28 @@ Application::Application( int &argc, char **argv )
 	QTranslator *t = new QTranslator( this );
 	QString lang;
 	auto languages = QLocale().uiLanguages().first();
-	if(languages.contains(QLatin1String("et"), Qt::CaseInsensitive))
-		lang = QStringLiteral("et");
-	else if(languages.contains(QLatin1String("ru"), Qt::CaseInsensitive))
-		lang = QStringLiteral("ru");
+	if(languages.contains("et"_L1, Qt::CaseInsensitive))
+		lang = u"et"_s;
+	else if(languages.contains("ru"_L1, Qt::CaseInsensitive))
+		lang = u"ru"_s;
 	else
-		lang = QStringLiteral("en");
-	void(qt->load(QStringLiteral(":/qtbase_%1.qm").arg(lang)));
-	void(common->load(QStringLiteral(":/common_%1.qm").arg(lang)));
-	void(t->load(QStringLiteral(":/idupdater_%1.qm").arg(lang)));
+		lang = u"en"_s;
+	void(qt->load(":/qtbase_%1.qm"_L1.arg(lang)));
+	void(common->load(":/common_%1.qm"_L1.arg(lang)));
+	void(t->load(":/idupdater_%1.qm"_L1.arg(lang)));
 	installTranslator( qt );
 	installTranslator( common );
 	installTranslator( t );
 #ifdef NDEBUG
 	setLibraryPaths({ applicationDirPath() });
 #endif
-	setWindowIcon(QIcon(QStringLiteral(":/appicon.png")));
-	setApplicationName(QStringLiteral("id-updater"));
-	setApplicationVersion(QStringLiteral( "%1.%2.%3.%4" )
+	setWindowIcon(QIcon(u":/appicon.png"_s));
+	setApplicationName(u"id-updater"_s);
+	setApplicationVersion(u"%1.%2.%3.%4"_s
 		.arg( MAJOR_VER ).arg( MINOR_VER ).arg( RELEASE_VER ).arg( BUILD_VER ) );
-	setOrganizationDomain(QStringLiteral("ria.ee"));
-	setOrganizationName(QStringLiteral("RIA"));
+	setOrganizationDomain(u"ria.ee"_s);
+	setOrganizationName(u"RIA"_s);
+	setStyle(u"windowsvista"_s);
 	QNetworkProxyFactory::setUseSystemConfiguration(true);
 }
 
@@ -90,15 +92,15 @@ Application::~Application()
 int Application::confTask( const QStringList &args ) const
 {
 	ScheduledUpdateTask task;
-	if(args.contains(QStringLiteral("-status")))
+	if(args.contains("-status"_L1))
 		return task.status();
-	if(args.contains(QStringLiteral("-daily")))
+	if(args.contains("-daily"_L1))
 		return task.configure(ScheduledUpdateTask::DAILY);
-	if(args.contains(QStringLiteral("-weekly")))
+	if(args.contains("-weekly"_L1))
 		return task.configure(ScheduledUpdateTask::WEEKLY);
-	if(args.contains(QStringLiteral("-monthly")))
+	if(args.contains("-monthly"_L1))
 		return task.configure(ScheduledUpdateTask::MONTHLY);
-	if(args.contains(QStringLiteral("-remove")))
+	if(args.contains("-remove"_L1))
 		task.remove();
 	return true;
 }
@@ -107,7 +109,7 @@ bool Application::execute(const QStringList &arguments)
 {
 	// http://www.codeproject.com/KB/vista-security/interaction-in-vista.aspx
 	qDebug() << "ProcessStarter begin";
-	QString command = QDir::toNativeSeparators(applicationFilePath()) + " " + arguments.join(' ');
+	QString command = QDir::toNativeSeparators(applicationFilePath()) + ' ' + arguments.join(' ');
 	qDebug() << "command:" << command;
 
 	PWTS_SESSION_INFOW sessionInfo = 0;
@@ -163,32 +165,32 @@ bool Application::execute(const QStringList &arguments)
 
 void Application::messageReceived( const QString &str )
 {
-	w->checkUpdates(str.contains("-autoupdate"), str.contains("-autoclose"));
+	w->checkUpdates(str.contains("-autoupdate"_L1), str.contains("-autoclose"_L1));
 }
 
 void Application::msgHandler( QtMsgType type, const QMessageLogContext &, const QString &msg )
 {
-	QFile *log = &qobject_cast<Application*>(qApp->instance())->log;
-	log->write(QDateTime::currentDateTime().toString(QStringLiteral("yyyy-MM-dd hh:mm:ss:zzz ")).toUtf8());
+	QFile *log = &qobject_cast<Application*>(qApp)->log;
+	log->write(QDateTime::currentDateTime().toString(u"yyyy-MM-dd hh:mm:ss:zzz "_s).toUtf8());
 	switch( type )
 	{
-	case QtDebugMsg: log->write(QStringLiteral("DBG: %1\n").arg(msg).toUtf8()); break;
-	case QtInfoMsg: log->write(QStringLiteral("INF: %1\n").arg(msg).toUtf8()); break;
-	case QtWarningMsg: log->write(QStringLiteral("WRN: %1\n").arg(msg).toUtf8()); break;
-	case QtCriticalMsg: log->write(QStringLiteral("CRI: %1\n").arg( msg).toUtf8()); break;
-	case QtFatalMsg: log->write(QStringLiteral("FAT: %1\n").arg(msg).toUtf8()); abort();
+	case QtDebugMsg: log->write("DBG: %1\n"_L1.arg(msg).toUtf8()); break;
+	case QtInfoMsg: log->write("INF: %1\n"_L1.arg(msg).toUtf8()); break;
+	case QtWarningMsg: log->write("WRN: %1\n"_L1.arg(msg).toUtf8()); break;
+	case QtCriticalMsg: log->write("CRI: %1\n"_L1.arg( msg).toUtf8()); break;
+	case QtFatalMsg: log->write("FAT: %1\n"_L1.arg(msg).toUtf8()); abort();
 	}
 }
 
 void Application::printHelp()
 {
-	QMessageBox::information(nullptr, QStringLiteral("ID Updater"), QStringLiteral(
+	QMessageBox::information(nullptr, u"ID Updater"_s,
 		"<table><tr><td>-help</td><td>%1</td></tr>"
 		"<tr><td>-autoupdate</td><td>%2</td></tr>"
 		"<tr><td>-autoclose</td><td>%3</td></tr>"
 		"<tr><td>-task</td><td>%4</td></tr>"
 		"<tr><td colspan=\"2\">-daily|-monthly|-weekly|-remove</td></tr>"
-		"<tr><td colspan=\"2\">%6</td></tr></table>").arg(
+		"<tr><td colspan=\"2\">%6</td></tr></table>"_L1.arg(
 		tr("this help"),
 		tr("update automatically"),
 		tr("close automatically when no updates are available"),
@@ -201,36 +203,36 @@ int Application::run()
 	QStringList args = arguments();
 	args.removeFirst();
 	qDebug() << "Starting updater with arguments" << args;
-	if( args.contains("-help") || args.contains("-?") || args.contains("/?") )
+	if(args.contains("-help"_L1) || args.contains("-?"_L1) || args.contains("/?"_L1))
 	{
 		printHelp();
 		return 0;
 	}
-	if( args.contains("-daily") || args.contains("-weekly") || args.contains("-monthly") || args.contains("-remove") )
+	if(args.contains("-daily"_L1) || args.contains("-weekly"_L1) || args.contains("-monthly"_L1) || args.contains("-remove"_L1))
 	{
 		int result = confTask( args );
 		if( !result )
-			QMessageBox::warning( 0, "ID Updater",
+			QMessageBox::warning(nullptr, u"ID Updater"_s,
 				tr("Failed to set schedule, check permissions. Try again with administrator permissions.") );
 		return !result;
 	}
 
-	if(args.contains("-status"))
+	if(args.contains("-status"_L1))
 		return confTask( args );
 
-	if( args.contains("-task") )
+	if( args.contains("-task"_L1) )
 	{
-		args.removeAll( "-task" );
-		args << "-autoclose";
+		args.removeAll("-task"_L1);
+		args.append(u"-autoclose"_s);
 		return !execute(args);
 	}
 
 	if( isRunning() )
-		return !sendMessage( args.join( " " ) );
+		return !sendMessage(args.join(' '));
 	connect( this, &QtSingleApplication::messageReceived, this, &Application::messageReceived );
 
 	w = new idupdater( this );
-	w->checkUpdates(args.contains("-autoupdate"), args.contains("-autoclose"));
+	w->checkUpdates(args.contains("-autoupdate"_L1), args.contains("-autoclose"_L1));
 
 	return exec();
 }
