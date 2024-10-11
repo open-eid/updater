@@ -1,7 +1,4 @@
-cmake_minimum_required(VERSION 3.16)
-if(POLICY CMP0074)
-	cmake_policy(SET CMP0074 NEW)
-endif()
+cmake_minimum_required(VERSION 3.22)
 project(ID-updater VERSION 3.17.0)
 
 macro( SET_ENV NAME DEF )
@@ -99,27 +96,18 @@ else()
 	file( DOWNLOAD ${CONFIG_URL} ${CMAKE_CURRENT_BINARY_DIR}/config.json )
 	string( REPLACE ".json" ".rsa" RSA_URL ${CONFIG_URL} )
 	file( DOWNLOAD ${RSA_URL} ${CMAKE_CURRENT_BINARY_DIR}/config.rsa )
-	configure_file( common/config.qrc config.qrc COPYONLY )
+	set(CONFIG_DIR ${CMAKE_CURRENT_BINARY_DIR})
 
 	find_package(OpenSSL 3.0.0 REQUIRED)
 	find_package(Qt6 6.0.0 REQUIRED COMPONENTS Core Widgets Network LinguistTools)
 
-	configure_file( translations.qrc translations.qrc COPYONLY )
-	qt_add_translation(SOURCES idupdater_et.ts idupdater_ru.ts
-		common/translations/qtbase_et.ts common/translations/qtbase_ru.ts
-		common/translations/common_et.ts common/translations/common_ru.ts
-	)
-
 	add_executable(${PROJECT_NAME} WIN32
 		${SOURCES}
 		Application.cpp
-		idupdater.qrc
 		idupdater.rc
 		idupdater.ui
 		idupdater.cpp
 		ScheduledUpdateTask.cpp
-		${CMAKE_CURRENT_BINARY_DIR}/translations.qrc
-		${CMAKE_CURRENT_BINARY_DIR}/config.qrc
 		common/Common.cpp
 		common/Configuration.cpp
 		common/qtsingleapplication/src/qtlocalpeer.cpp
@@ -144,27 +132,31 @@ else()
 		VERSION="${VERSION}"
 		VERSION_INF=${PROJECT_VERSION_MAJOR},${PROJECT_VERSION_MINOR},${PROJECT_VERSION_PATCH},${BUILD_NUMBER}
 	)
-	target_link_libraries(${PROJECT_NAME} Qt6::Widgets Qt6::Network OpenSSL::Crypto
+	target_link_libraries(${PROJECT_NAME} PRIVATE Qt6::Widgets Qt6::Network OpenSSL::Crypto
 		msi wintrust Crypt32 taskschd comsupp Setupapi winscard Wtsapi32
 	)
+	qt_add_translations(${PROJECT_NAME} TS_FILES idupdater_et.ts idupdater_ru.ts
+		common/translations/common_et.ts common/translations/common_ru.ts
+		common/translations/qtbase_et.ts common/translations/qtbase_ru.ts
+		RESOURCE_PREFIX /
+	)
+	qt_add_resources(${PROJECT_NAME} icon FILES appicon.png)
+	qt_add_resources(${PROJECT_NAME} config BASE ${CONFIG_DIR} PREFIX / FILES
+		${CONFIG_DIR}/config.json ${CONFIG_DIR}/config.rsa ${CONFIG_DIR}/config.pub
+	)
 
-	if(CMAKE_SIZEOF_VOID_P EQUAL 8)
-		set(PLATFORM x64)
-	else()
-		set(PLATFORM x86)
-	endif()
 	if(OPENSSL_ROOT_DIR)
 		set(SSL_PATH "${OPENSSL_ROOT_DIR}/bin")
 	endif()
 	if(NOT EXISTS "${SSL_PATH}")
 		get_filename_component(SSL_PATH "${OPENSSL_INCLUDE_DIR}/../bin" ABSOLUTE)
 	endif()
-	set(MSI_FILE "ID-Updater-${VERSION}$ENV{VER_SUFFIX}.${PLATFORM}")
+	set(MSI_FILE "ID-Updater-${VERSION}$ENV{VER_SUFFIX}.$ENV{PLATFORM}")
 	get_target_property(qtCore_install_prefix Qt6::qmake IMPORTED_LOCATION)
 	get_filename_component(qtCore_install_prefix ${qtCore_install_prefix} DIRECTORY)
 	add_custom_target(installer DEPENDS ${PROJECT_NAME}
 		COMMAND wix.exe build -nologo
-			-arch ${PLATFORM}
+			-arch $ENV{PLATFORM}
 			-ext WixToolset.UI.wixext
 			-bv WixUIDialogBmp=${CMAKE_SOURCE_DIR}/common/dlgbmp.bmp
 			-bv WixUIBannerBmp=${CMAKE_SOURCE_DIR}/common/banner.bmp
