@@ -1,11 +1,8 @@
 #include <winver.h>
 
-#define VER_STR_HELPER(x)	#x
-#define VER_STR(x)		VER_STR_HELPER(x)
-
 VS_VERSION_INFO VERSIONINFO
-  FILEVERSION MAJOR_VER,MINOR_VER,RELEASE_VER,BUILD_VER
-  PRODUCTVERSION MAJOR_VER,MINOR_VER,RELEASE_VER,BUILD_VER
+  FILEVERSION VERSION_INF
+  PRODUCTVERSION VERSION_INF
   FILEFLAGSMASK VS_FFI_FILEFLAGSMASK
 #ifdef _DEBUG
   FILEFLAGS VS_FF_DEBUG
@@ -22,12 +19,12 @@ BEGIN
 		BEGIN
 			VALUE "CompanyName", "RIA"
 			VALUE "FileDescription", "ID Updater Application"
-			VALUE "FileVersion", VER_STR(MAJOR_VER.MINOR_VER.RELEASE_VER.BUILD_VER)
+			VALUE "FileVersion", VERSION
 			VALUE "InternalName", "id-updater"
-			VALUE "LegalCopyright", "Copyright (C) 2009-2024 Estonian Information System Authority"
+			VALUE "LegalCopyright", "Copyright (C) 2009-2025 Estonian Information System Authority"
 			VALUE "OriginalFilename", "id-updater.exe"
 			VALUE "ProductName", "id-updater"
-			VALUE "ProductVersion", VER_STR(MAJOR_VER.MINOR_VER.RELEASE_VER.BUILD_VER)
+			VALUE "ProductVersion", VERSION
 		END
 	END
 	BLOCK "VarFileInfo"
