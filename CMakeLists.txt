@@ -1,16 +1,19 @@
 cmake_minimum_required(VERSION 3.16)
-if(NOT EXISTS ${CMAKE_SOURCE_DIR}/cmake/modules/VersionInfo.cmake)
-	message(FATAL_ERROR "cmake submodule directory empty, did you 'git clone --recursive'?")
-endif()
 if(POLICY CMP0074)
 	cmake_policy(SET CMP0074 NEW)
 endif()
-project(ID-updater VERSION 3.16.0)
+project(ID-updater VERSION 3.17.0)
 
-set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake/modules)
+macro( SET_ENV NAME DEF )
+	if( DEFINED ENV{${NAME}} )
+		set( ${NAME} $ENV{${NAME}} ${ARGN} )
+	else()
+		set( ${NAME} ${DEF} ${ARGN} )
+	endif()
+endmacro()
 
-include( VersionInfo )
-
+set_env(BUILD_NUMBER 0)
+set(VERSION ${PROJECT_VERSION}.${BUILD_NUMBER})
 set_env( CONFIG_URL "https://id.eesti.ee/config.json" CACHE STRING "Set Config URL" )
 set_env( SIGNCERT "" CACHE STRING "Common name of certificate to used sign binaries, empty skip signing" )
 add_definitions( -DCONFIG_URL="${CONFIG_URL}" )
@@ -24,8 +27,7 @@ if( APPLE )
 	)
 	include_directories( ${CMAKE_CURRENT_BINARY_DIR} )
 	add_executable( id-updater-helper prefPane/id-updater-helper.m prefPane/update.m config.h )
-	target_compile_options(id-updater-helper PRIVATE "-Wno-unused-parameter" "-fobjc-arc")
-	target_link_libraries(id-updater-helper "-framework Foundation -framework CryptoTokenKit -framework Security")
+	target_compile_options(id-updater-helper PRIVATE -Wno-unused-parameter -fobjc-arc -fmodules)
 
 	add_custom_command( OUTPUT ID_updater.nib
 		COMMAND ibtool --errors --warnings --notices --output-format human-readable-text
@@ -39,7 +41,6 @@ if( APPLE )
 	add_library(${PROJECT_NAME} MODULE
 		ID_updater.nib
 		config.h
-		prefPane/Base.lproj/ID_updater.xib
 		${EN_RESOURCES}
 		${ET_RESOURCES}
 		${RU_RESOURCES}
@@ -56,43 +57,45 @@ if( APPLE )
 		BUNDLE YES
 		BUNDLE_EXTENSION prefPane
 		RESOURCES prefPane/Icon.icns
-		COMPILE_FLAGS "-Wno-unused-parameter -fobjc-arc"
+		COMPILE_FLAGS "-Wno-unused-parameter -fobjc-arc -fmodules"
 		XCODE_ATTRIBUTE_WRAPPER_EXTENSION prefPane
 		MACOSX_BUNDLE_INFO_PLIST ${CMAKE_CURRENT_SOURCE_DIR}/prefPane/Info.plist.cmake
 		MACOSX_BUNDLE_BUNDLE_NAME ${PROJECT_NAME}
 		MACOSX_BUNDLE_GUI_IDENTIFIER "ee.ria.${PROJECT_NAME}"
+		MACOSX_BUNDLE_COPYRIGHT "(C) 2010-2025 Estonian Information System Authority"
+		MACOSX_BUNDLE_ICON_FILE Icon.icns
+		MACOSX_BUNDLE_SHORT_VERSION_STRING ${PROJECT_VERSION}
+		MACOSX_BUNDLE_BUNDLE_VERSION ${BUILD_NUMBER}
 		XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER "ee.ria.${PROJECT_NAME}"
 	)
-	target_link_libraries(${PROJECT_NAME} ${XAR}
-		"-framework Cocoa"
-		"-framework PreferencePanes"
-		"-framework CryptoTokenKit"
-		"-framework Security"
+	target_link_libraries(${PROJECT_NAME} ${XAR})
+	add_dependencies(${PROJECT_NAME} id-updater-helper)
+	set_target_properties(id-updater-helper PROPERTIES
+		RUNTIME_OUTPUT_DIRECTORY $<TARGET_BUNDLE_CONTENT_DIR:${PROJECT_NAME}>/Resources
 	)
-	add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-		COMMAND cp $<TARGET_FILE:id-updater-helper> $<TARGET_BUNDLE_CONTENT_DIR:${PROJECT_NAME}>/Resources )
 	install( TARGETS ${PROJECT_NAME} DESTINATION /Library/PreferencePanes )
 
-	add_custom_target(signhelper DEPENDS ${PROJECT_NAME})
 	if(SIGNCERT)
-		add_custom_command( TARGET signhelper POST_BUILD
+		add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
 			COMMAND codesign -f --options=runtime -s "Developer ID Application: ${SIGNCERT}"
 				$<TARGET_BUNDLE_CONTENT_DIR:${PROJECT_NAME}>/Resources/id-updater-helper
 				$<TARGET_BUNDLE_DIR:${PROJECT_NAME}>
 		)
 	endif()
-	add_custom_target( pkgbuild DEPENDS signhelper
+	add_custom_target(pkgbuild DEPENDS ${PROJECT_NAME}
 		COMMAND make install DESTDIR=install
 		COMMAND chmod 755 install/Library/PreferencePanes/ID-updater.prefPane/Contents/Resources/id-updater-helper
 		COMMAND pkgbuild --root install "$<$<BOOL:${SIGNCERT}>:--sign;${SIGNCERT}>" updater_${VERSION}$ENV{VER_SUFFIX}.pkg
 		COMMAND_EXPAND_LISTS
 	)
 	add_custom_target(zipdebug DEPENDS ${PROJECT_NAME}
-		COMMAND dsymutil -o ${PROJECT_NAME}.dSYM $<TARGET_FILE:${PROJECT_NAME}>
-		COMMAND dsymutil -o ${PROJECT_NAME}.dSYM $<TARGET_FILE:id-updater-helper>
+		COMMAND dsymutil -o ${PROJECT_NAME}.dSYM $<TARGET_FILE:${PROJECT_NAME}> $<TARGET_FILE:id-updater-helper>
 		COMMAND zip -r updater-dbg_${VERSION}$ENV{VER_SUFFIX}.zip ${PROJECT_NAME}.dSYM
 	)
 else()
+	if(NOT EXISTS ${CMAKE_SOURCE_DIR}/common/CMakeLists.txt)
+		message(FATAL_ERROR "cmake submodule directory empty, did you 'git clone --recursive'?")
+	endif()
 	file( DOWNLOAD ${CONFIG_URL} ${CMAKE_CURRENT_BINARY_DIR}/config.json )
 	string( REPLACE ".json" ".rsa" RSA_URL ${CONFIG_URL} )
 	file( DOWNLOAD ${RSA_URL} ${CMAKE_CURRENT_BINARY_DIR}/config.rsa )
@@ -100,8 +103,6 @@ else()
 
 	find_package(OpenSSL 3.0.0 REQUIRED)
 	find_package(Qt6 6.0.0 REQUIRED COMPONENTS Core Widgets Network LinguistTools)
-
-	include_directories( ${CMAKE_CURRENT_BINARY_DIR} common/qtsingleapplication/src )
 
 	configure_file( translations.qrc translations.qrc COPYONLY )
 	qt_add_translation(SOURCES idupdater_et.ts idupdater_ru.ts
@@ -121,7 +122,6 @@ else()
 		${CMAKE_CURRENT_BINARY_DIR}/config.qrc
 		common/Common.cpp
 		common/Configuration.cpp
-		common/QPCSC.cpp
 		common/qtsingleapplication/src/qtlocalpeer.cpp
 		common/qtsingleapplication/src/qtsingleapplication.cpp
 	)
@@ -134,12 +134,15 @@ else()
 		INTERPROCEDURAL_OPTIMIZATION YES
 		INTERPROCEDURAL_OPTIMIZATION_DEBUG NO
 	)
+	target_include_directories(${PROJECT_NAME} PRIVATE common/qtsingleapplication/src)
+	target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_20)
 	target_compile_definitions(${PROJECT_NAME} PRIVATE
 		WIN32_LEAN_AND_MEAN
 		UNICODE
 		CONFIG_URL="${CONFIG_URL}"
-		COMMON_STATIC
 		NO_CACHE
+		VERSION="${VERSION}"
+		VERSION_INF=${PROJECT_VERSION_MAJOR},${PROJECT_VERSION_MINOR},${PROJECT_VERSION_PATCH},${BUILD_NUMBER}
 	)
 	target_link_libraries(${PROJECT_NAME} Qt6::Widgets Qt6::Network OpenSSL::Crypto
 		msi wintrust Crypt32 taskschd comsupp Setupapi winscard Wtsapi32
@@ -163,17 +166,16 @@ else()
 		COMMAND wix.exe build -nologo
 			-arch ${PLATFORM}
 			-ext WixToolset.UI.wixext
-			-bv WixUIDialogBmp=${CMAKE_SOURCE_DIR}/cmake/modules/dlgbmp.bmp
-			-bv WixUIBannerBmp=${CMAKE_SOURCE_DIR}/cmake/modules/banner.bmp
-			-d MSI_VERSION=${VERSION}
+			-bv WixUIDialogBmp=${CMAKE_SOURCE_DIR}/common/dlgbmp.bmp
+			-bv WixUIBannerBmp=${CMAKE_SOURCE_DIR}/common/banner.bmp
 			-d appicon=${CMAKE_SOURCE_DIR}/appicon.ico
 			-d qt_path=${qtCore_install_prefix}
 			-d qt_suffix=$<$<CONFIG:Debug>:d>
 			-d libs_path="${SSL_PATH}"
 			-d updater_path=$<TARGET_FILE:${PROJECT_NAME}>
 			${CMAKE_SOURCE_DIR}/idupdater.wxs
-			${CMAKE_SOURCE_DIR}/cmake/modules/WelcomeDlg.wxs
-			${CMAKE_SOURCE_DIR}/cmake/modules/WixUI_Minimal.wxs
+			${CMAKE_SOURCE_DIR}/common/WelcomeDlg.wxs
+			${CMAKE_SOURCE_DIR}/common/WixUI_Minimal.wxs
 			-o ${MSI_FILE}.msi
 	)
 	if(SIGNCERT)

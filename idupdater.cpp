@@ -21,7 +21,6 @@
 
 #include "common/Common.h"
 #include "common/Configuration.h"
-#include "common/QPCSC.h"
 
 #include <QDebug>
 #include <QDir>
@@ -40,6 +39,8 @@
 #include <qt_windows.h>
 #include <Msi.h>
 #include <Softpub.h>
+
+using namespace Qt::StringLiterals;
 
 idupdaterui::idupdaterui( const QString &version, idupdater *parent )
 :	QWidget()
@@ -103,13 +104,13 @@ idupdater::idupdater( QObject *parent )
 	, version(installedVersion("{f1c4d351-269d-4bee-8cdb-6ea70c968875}"))
 	, conf(new Configuration(this))
 {
-	QString userAgent = QStringLiteral("%1/%2 (%3) Lang: %4 Devices: %5")
+	QString userAgent = "%1/%2 (%3) Lang: %4 Devices: %5"_L1
 		.arg(QApplication::applicationName(), QApplication::applicationVersion(), Common::applicationOs(),
-			QLocale().uiLanguages().first(), QPCSC::instance().drivers().join('/'));
+			QLocale().uiLanguages().first(), Common::drivers().join('/'));
 	qDebug() << "User-Agent:" << userAgent;
 	request.setRawHeader( "User-Agent", userAgent.toUtf8() );
 	connect(conf, &Configuration::finished, this, &idupdater::finished);
-	connect(this, &QNetworkAccessManager::sslErrors, this, [=](QNetworkReply *reply, const QList<QSslError> &errors){
+	connect(this, &QNetworkAccessManager::sslErrors, this, [](QNetworkReply *reply, const QList<QSslError> &errors) {
 		QList<QSslError> ignore;
 		for(const QSslError &error: errors)
 		{
@@ -118,7 +119,7 @@ idupdater::idupdater( QObject *parent )
 			case QSslError::UnableToGetLocalIssuerCertificate:
 			case QSslError::CertificateUntrusted:
 			case QSslError::SelfSignedCertificateInChain:
-				if(trusted.contains(reply->sslConfiguration().peerCertificate())) {
+				if(reply->sslConfiguration().caCertificates().contains(reply->sslConfiguration().peerCertificate())) {
 					ignore << error;
 					break;
 				}
@@ -151,15 +152,15 @@ void idupdater::finished(bool /*changed*/, const QString &err)
 
 	QJsonObject obj = conf->object();
 	trusted.clear();
-	for(const auto &c: conf->object().value(QLatin1String("CERT-BUNDLE")).toArray())
+	for(const auto array = conf->object().value("CERT-BUNDLE"_L1).toArray(); const auto &c: array)
 		trusted.append(QSslCertificate(QByteArray::fromBase64(c.toString().toLatin1()), QSsl::Der));
-	if(obj.contains(QLatin1String("UPDATER-MESSAGE-URL")))
+	if(obj.contains("UPDATER-MESSAGE-URL"_L1))
 	{
 		QSslConfiguration ssl = QSslConfiguration::defaultConfiguration();
-		ssl.setCaCertificates({});
+		ssl.setCaCertificates(trusted);
 		auto copy = request;
 		copy.setSslConfiguration(ssl);
-		copy.setUrl(obj.value(QLatin1String("UPDATER-MESSAGE-URL")).toString());
+		copy.setUrl(obj.value("UPDATER-MESSAGE-URL"_L1).toString());
 		QNetworkReply *reply = get(copy);
 		connect(reply, &QNetworkReply::finished, this, [this, reply]{
 			if(reply->error() == QNetworkReply::NoError)
@@ -167,13 +168,13 @@ void idupdater::finished(bool /*changed*/, const QString &err)
 			reply->deleteLater();
 		});
 	}
-	else if(obj.contains(QLatin1String("WIN-MESSAGE")))
-		emit message(obj.value(QLatin1String("WIN-MESSAGE")).toString());
+	else if(obj.contains("WIN-MESSAGE"_L1))
+		emit message(obj.value("WIN-MESSAGE"_L1).toString());
 
-	if(obj.contains(QLatin1String("WIN-UPGRADECODE")))
-		version = installedVersion(obj.value(QLatin1String("WIN-UPGRADECODE")).toString());
-	QString available = obj.value(QLatin1String("WIN-LATEST")).toString();
-	request.setUrl(obj.value(QLatin1String("WIN-DOWNLOAD")).toString());
+	if(obj.contains("WIN-UPGRADECODE"_L1))
+		version = installedVersion(obj.value("WIN-UPGRADECODE"_L1).toString());
+	QString available = obj.value("WIN-LATEST"_L1).toString();
+	request.setUrl(obj.value("WIN-DOWNLOAD"_L1).toString());
 	qDebug() << "Installed version" << version << "available version" << available;
 
 	if(!lessThanVersion(version, available))
@@ -198,11 +199,11 @@ void idupdater::finished(bool /*changed*/, const QString &err)
 QString idupdater::installedVersion(const QString &upgradeCode) const
 {
 	QString code = upgradeCode.toUpper();
-	QSettings s(QStringLiteral("HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall"), QSettings::Registry32Format);
+	QSettings s(u"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall"_s, QSettings::Registry32Format);
 	for(const QString &key: s.childGroups()) {
 		s.beginGroup(key);
-		if(s.value(QStringLiteral("/BundleUpgradeCode")).toString().toUpper() == code)
-			return s.value(QStringLiteral("/DisplayVersion")).toString();
+		if(s.value(u"/BundleUpgradeCode"_s).toString().toUpper() == code)
+			return s.value(u"/DisplayVersion"_s).toString();
 		s.endGroup();
 	}
 

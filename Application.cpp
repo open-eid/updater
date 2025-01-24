@@ -75,8 +75,7 @@ Application::Application( int &argc, char **argv )
 #endif
 	setWindowIcon(QIcon(u":/appicon.png"_s));
 	setApplicationName(u"id-updater"_s);
-	setApplicationVersion(u"%1.%2.%3.%4"_s
-		.arg( MAJOR_VER ).arg( MINOR_VER ).arg( RELEASE_VER ).arg( BUILD_VER ) );
+	setApplicationVersion(u"" VERSION ""_s);
 	setOrganizationDomain(u"ria.ee"_s);
 	setOrganizationName(u"RIA"_s);
 	setStyle(u"windowsvista"_s);

@@ -12,8 +12,6 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v4
-      with:
-        submodules: recursive
     - name: Build
       run: |
         cmake -DCMAKE_OSX_ARCHITECTURES="x86_64;arm64" -S . -B build
@@ -46,12 +44,12 @@ jobs:
       id: runvcpkg
       with:
         vcpkgArguments: openssl
-        vcpkgGitCommitId: 8161f655436492669adc8eb6f269dc41392ffa70
+        vcpkgGitCommitId: e4644bd15436d406bba71928d086c809e5c9ca45
         vcpkgTriplet: x64-windows
     - name: Install Qt
       uses: jurplel/install-qt-action@v3
       with:
-        version: 6.7.2
+        version: 6.7.3
         arch: win64_msvc2019_64
     - name: Setup dev env
       uses: ilammy/msvc-dev-cmd@v1
@@ -59,8 +57,8 @@ jobs:
         arch: x64
     - name: Install WiX
       run: |
-        dotnet tool install -g wix --version 5.0.1
-        wix extension -g add WixToolset.UI.wixext/5.0.1
+        dotnet tool install -g wix --version 5.0.2
+        wix extension -g add WixToolset.UI.wixext/5.0.2
     - name: Build
       run: |
         cmake -S . -B build `

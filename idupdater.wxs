@@ -19,7 +19,7 @@
 <Wix xmlns="http://wixtoolset.org/schemas/v4/wxs"
      xmlns:ui="http://wixtoolset.org/schemas/v4/wxs/ui">
   <Package Name="Open-EID Updater" UpgradeCode="d3aa8bd7-e1e6-46d0-97a6-c9b87d2b830b"
-      Language="1033" Version="$(var.MSI_VERSION)" Codepage="1251" Manufacturer="RIA" InstallerVersion="500">
+      Language="1033" Version="!(bind.FileVersion.id_updater.exe)" Codepage="1251" Manufacturer="RIA" InstallerVersion="500">
     <MediaTemplate EmbedCab="yes" CompressionLevel="high" />
     <Icon Id="appicon.ico" SourceFile="$(var.appicon)" />
     <Property Id="ARPPRODUCTICON" Value="appicon.ico" />
