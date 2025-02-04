@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>409</width>
-    <height>170</height>
+    <height>202</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -48,12 +48,6 @@
    </item>
    <item>
     <widget class="QGroupBox" name="groupBoxProduct">
-     <property name="sizePolicy">
-      <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-       <horstretch>0</horstretch>
-       <verstretch>1</verstretch>
-      </sizepolicy>
-     </property>
      <layout class="QGridLayout" name="gridLayout">
       <item row="0" column="0" colspan="3">
        <widget class="QLabel" name="changelog">
@@ -90,6 +84,9 @@
         <property name="alignment">
          <set>Qt::AlignCenter</set>
         </property>
+        <property name="textVisible">
+         <bool>false</bool>
+        </property>
        </widget>
       </item>
       <item row="3" column="2">
@@ -109,20 +106,13 @@
     </widget>
    </item>
    <item>
-    <spacer name="verticalSpacer">
-     <property name="orientation">
-      <enum>Qt::Vertical</enum>
-     </property>
-     <property name="sizeHint" stdset="0">
+    <widget class="QDialogButtonBox" name="buttonBox">
+     <property name="minimumSize">
       <size>
-       <width>20</width>
+       <width>391</width>
        <height>0</height>
       </size>
      </property>
-    </spacer>
-   </item>
-   <item>
-    <widget class="QDialogButtonBox" name="buttonBox">
      <property name="standardButtons">
       <set>QDialogButtonBox::Close|QDialogButtonBox::Ok</set>
      </property>
