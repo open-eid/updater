@@ -33,30 +33,40 @@
     NSString *signature;
 }
 
-- (instancetype)initWithDelegate:(id <UpdateDelegate>)delegate {
+- (instancetype)init {
     if (self = [super init]) {
-        self.delegate = delegate;
         self.updaterversion = [self versionInfo:@"ee.ria.ID-updater"];
-        self.baseversion = [self versionInfo:@"ee.ria.open-eid"];
-        self.clientversion = [self versionInfo:@"ee.ria.qdigidocclient"];
         self.digidoc4 = [self versionInfo:@"ee.ria.qdigidoc4"];
-        self.utilityversion = [self versionInfo:@"ee.ria.qesteidutil"];
     }
     return self;
 }
 
+- (instancetype)initWithDelegate:(id <UpdateDelegate>)delegate {
+    if (self = [self init]) {
+        self.delegate = delegate;
+    }
+    return self;
+}
+
+- (NSString*)getBaseversion {
+    return [self versionInfo:@"ee.ria.open-eid"];
+} 
+
 - (BOOL)checkCertificatePinning:(NSURLAuthenticationChallenge *)challenge {
     SecTrustRef serverTrust = challenge.protectionSpace.serverTrust;
     SecTrustResultType trustResult;
-    if (!SecTrustEvaluateWithError(serverTrust, nil)) {
-        return NO;
+    CFErrorRef err = nil;
+    if (!SecTrustEvaluateWithError(serverTrust, &err)) {
+        NSLog(@"%@", CFBridgingRelease(err));
+        //return NO;
     }
     SecTrustGetTrustResult(serverTrust, &trustResult);
     if ((trustResult == kSecTrustResultUnspecified ||
-         trustResult == kSecTrustResultProceed) &&
+         trustResult == kSecTrustResultProceed ||
+         trustResult == kSecTrustResultRecoverableTrustFailure) &&
         SecTrustGetCertificateCount(serverTrust) > 0) {
-        SecCertificateRef certificate = SecTrustGetCertificateAtIndex(serverTrust, 0);
-        NSData *der = CFBridgingRelease(SecCertificateCopyData(certificate));
+        NSArray *chain = CFBridgingRelease(SecTrustCopyCertificateChain(serverTrust));
+        NSData *der = CFBridgingRelease(SecCertificateCopyData((__bridge SecCertificateRef)chain[0]));
         return [self.cert_bundle containsObject:der];
     }
     return NO;
@@ -80,12 +90,6 @@
 
     NSString *devices = [TKSmartCardSlotManager.defaultManager.slotNames componentsJoinedByString:@"/"];
     NSMutableArray *agent = [NSMutableArray arrayWithObject:[NSString stringWithFormat:@"id-updater/%@", self.updaterversion]];
-    if (diangostics && self.clientversion.length) {
-        [agent addObject:[NSString stringWithFormat:@"qdigidocclient/%@", self.clientversion]];
-    }
-    if (diangostics && self.utilityversion.length) {
-        [agent addObject:[NSString stringWithFormat:@"qesteidutility/%@", self.utilityversion]];
-    }
     if (diangostics && self.digidoc4.length) {
         [agent addObject:[NSString stringWithFormat:@"qdigidoc4/%@", self.digidoc4]];
     }
@@ -99,15 +103,14 @@
     NSString *pem = @((char*)config_pub);
     pem = [pem stringByReplacingOccurrencesOfString:@"-----BEGIN RSA PUBLIC KEY-----" withString:@""];
     pem = [pem stringByReplacingOccurrencesOfString:@"-----END RSA PUBLIC KEY-----" withString:@""];
-    pem = [NSString stringWithFormat:@"%@%@", @"MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8A", pem];
     NSData *keyData = [[NSData alloc] initWithBase64EncodedString:pem options:NSDataBase64DecodingIgnoreUnknownCharacters];
     NSDictionary *parameters = @{
         (__bridge id)kSecAttrKeyType: (__bridge id)kSecAttrKeyTypeRSA,
         (__bridge id)kSecAttrKeyClass: (__bridge id)kSecAttrKeyClassPublic
     };
     CFErrorRef err = nil;
-    id key = CFBridgingRelease(SecKeyCreateFromData((__bridge CFDictionaryRef)parameters, (__bridge CFDataRef)keyData, &err));
-    if (err) { if(error) *error = CFBridgingRelease(err); return false; }
+    id key = CFBridgingRelease(SecKeyCreateWithData((__bridge CFDataRef)keyData, (__bridge CFDictionaryRef)parameters, &err));
+    if (key == nil) { if(error) *error = CFBridgingRelease(err); return false; }
 
     NSData *signatureData = [[NSData alloc] initWithBase64EncodedString:signature options:NSDataBase64DecodingIgnoreUnknownCharacters];
     BOOL isValid = SecKeyVerifySignature((__bridge SecKeyRef)key, kSecKeyAlgorithmRSASignatureMessagePKCS1v15SHA512,

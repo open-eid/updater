@@ -80,7 +80,7 @@ if( APPLE )
 		)
 	endif()
 	add_custom_target(pkgbuild DEPENDS ${PROJECT_NAME}
-		COMMAND make install DESTDIR=install
+		COMMAND DESTDIR=install ${CMAKE_COMMAND} --install ${CMAKE_BINARY_DIR}
 		COMMAND chmod 755 install/Library/PreferencePanes/ID-updater.prefPane/Contents/Resources/id-updater-helper
 		COMMAND pkgbuild --root install "$<$<BOOL:${SIGNCERT}>:--sign;${SIGNCERT}>" updater_${VERSION}$ENV{VER_SUFFIX}.pkg
 		COMMAND_EXPAND_LISTS
