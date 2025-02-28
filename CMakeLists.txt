@@ -14,12 +14,13 @@ set(VERSION ${PROJECT_VERSION}.${BUILD_NUMBER})
 set_env( CONFIG_URL "https://id.eesti.ee/config.json" CACHE STRING "Set Config URL" )
 set_env( SIGNCERT "" CACHE STRING "Common name of certificate to used sign binaries, empty skip signing" )
 add_definitions( -DCONFIG_URL="${CONFIG_URL}" )
-string( REPLACE ".json" ".pub" PUB_URL ${CONFIG_URL} )
-file( DOWNLOAD ${PUB_URL} ${CMAKE_CURRENT_BINARY_DIR}/config.pub )
+string(REPLACE ".json" ".ecpub" PUB_URL ${CONFIG_URL})
+message("Fetching pub key: ${PUB_URL}")
+file(DOWNLOAD ${PUB_URL} ${CMAKE_CURRENT_BINARY_DIR}/config.ecpub)
 
 if( APPLE )
 	add_custom_command( OUTPUT config.h
-		COMMAND xxd -i config.pub config.h
+		COMMAND xxd -i config.ecpub config.h
 		COMMENT "Generating config.h"
 	)
 	include_directories( ${CMAKE_CURRENT_BINARY_DIR} )
@@ -118,9 +119,9 @@ else()
 	if(NOT EXISTS ${CMAKE_SOURCE_DIR}/common/CMakeLists.txt)
 		message(FATAL_ERROR "cmake submodule directory empty, did you 'git clone --recursive'?")
 	endif()
-	file( DOWNLOAD ${CONFIG_URL} ${CMAKE_CURRENT_BINARY_DIR}/config.json )
-	string( REPLACE ".json" ".rsa" RSA_URL ${CONFIG_URL} )
-	file( DOWNLOAD ${RSA_URL} ${CMAKE_CURRENT_BINARY_DIR}/config.rsa )
+	file(DOWNLOAD ${CONFIG_URL} ${CMAKE_CURRENT_BINARY_DIR}/config.json)
+	string(REPLACE ".json" ".ecc" ECC_URL ${CONFIG_URL})
+	file(DOWNLOAD ${ECC_URL} ${CMAKE_CURRENT_BINARY_DIR}/config.ecc)
 	set(CONFIG_DIR ${CMAKE_CURRENT_BINARY_DIR})
 
 	find_package(OpenSSL 3.0.0 REQUIRED)
@@ -167,7 +168,7 @@ else()
 	)
 	qt_add_resources(${PROJECT_NAME} icon FILES appicon.png)
 	qt_add_resources(${PROJECT_NAME} config BASE ${CONFIG_DIR} PREFIX / FILES
-		${CONFIG_DIR}/config.json ${CONFIG_DIR}/config.rsa ${CONFIG_DIR}/config.pub
+		${CONFIG_DIR}/config.json ${CONFIG_DIR}/config.ecc ${CONFIG_DIR}/config.ecpub
 	)
 
 	if(OPENSSL_ROOT_DIR)
