@@ -17,7 +17,7 @@
  *
  */
 
-#import "update.h"
+#import <id_updater_lib/id_updater_lib-Swift.h>
 
 #import <PreferencePanes/PreferencePanes.h>
 
@@ -87,7 +87,7 @@
 @end
 
 @implementation ID_updater {
-    NSString *filename;
+    NSURL *filename;
     NSTimer *timer;
     double lastRecvd;
     Update *update;
@@ -117,7 +117,7 @@
     [self setLastUpdateCheck:NO];
 
     update = [[Update alloc] initWithDelegate:self];
-    self.mainLabel.stringValue = [NSString stringWithFormat:@"%@ %@", self.mainLabel.stringValue, update.baseversion];
+    self.mainLabel.stringValue = [NSString stringWithFormat:@"%@ %@", self.mainLabel.stringValue, update.baseVersion];
 }
 
 - (void)willSelect {
@@ -145,7 +145,7 @@
         dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(5.0 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
             NSLog(@"Update UI");
             self.install.hidden = YES;
-            self.mainLabel.stringValue = [NSString stringWithFormat:@"%@ %@", NSLocalizedString(@"Your ID-software is up to date - version", nil), update.baseversion];
+            self.mainLabel.stringValue = [NSString stringWithFormat:@"%@ %@", NSLocalizedString(@"Your ID-software is up to date - version", nil), update.baseVersion];
         });
     });
     dispatch_source_set_cancel_handler(watcher, ^{ close(fileDescriptor); });
@@ -183,11 +183,11 @@
     }
     dispatch_sync(dispatch_get_main_queue(), ^{
         switch (error.code) {
-            case InvalidSignature:
+            case UpdateErrorInvalidSignature:
                 self.infoLabel.stringValue = NSLocalizedString(@"The configuration file located on the server cannot be validated.", nil);
                 break;
 
-            case FileNotFound:
+            case UpdateErrorFileNotFound:
                 self.infoLabel.stringValue = NSLocalizedString(@"File not found", nil);
                 break;
 
@@ -213,7 +213,7 @@
     });
 }
 
-- (void)updateAvailable:(NSString *)_available filename:(NSString *)_filename {
+- (void)updateAvailable:(NSString *)_available filename:(NSURL *)_filename {
     dispatch_sync(dispatch_get_main_queue(), ^{
         self.install.hidden = NO;
         filename = _filename;
@@ -233,6 +233,45 @@
             [center deliverNotification:notification];
         }
     });
+}
+
+- (BOOL)verifyCMSSignature:(NSData *)signatureData data:(NSData *)data cert:(NSData *)cert {
+    #define RETURN_IF_OERROR(MSG) if (oserr) { NSLog(MSG); return false; }
+    CMSDecoderRef decoderRef;
+    OSStatus oserr = CMSDecoderCreate(&decoderRef);
+    RETURN_IF_OERROR(@"CMSDecoderCreate")
+    id decoder = CFBridgingRelease(decoderRef);
+
+    oserr = CMSDecoderUpdateMessage((__bridge CMSDecoderRef)decoder, signatureData.bytes, signatureData.length);
+    RETURN_IF_OERROR(@"CMSDecoderUpdateMessage")
+    oserr = CMSDecoderFinalizeMessage((__bridge CMSDecoderRef)decoder);
+    RETURN_IF_OERROR(@"CMSDecoderFinalizeMessage")
+    oserr = CMSDecoderSetDetachedContent((__bridge CMSDecoderRef)decoder, (__bridge CFDataRef)data);
+    RETURN_IF_OERROR(@"CMSDecoderSetDetachedContent")
+
+    size_t numSignersOut = 0;
+    oserr = CMSDecoderGetNumSigners((__bridge CMSDecoderRef)decoder, &numSignersOut);
+    RETURN_IF_OERROR(@"CMSDecoderGetNumSigners")
+    if (numSignersOut != 1) {
+        NSLog(@"Invalid number of signers: %lu", numSignersOut);
+        return false;
+    }
+
+    SecPolicyRef policy = SecPolicyCreateBasicX509();
+    CMSSignerStatus status;
+    oserr = CMSDecoderCopySignerStatus((__bridge CMSDecoderRef)decoder, 0, policy, TRUE, &status, nil, nil);
+    CFRelease(policy);
+    RETURN_IF_OERROR(@"CMSDecoderCopySignerStatus")
+    bool isValid = status == kCMSSignerValid;
+
+    SecCertificateRef signerCert;
+    oserr = CMSDecoderCopySignerCert((__bridge CMSDecoderRef)decoder, 0, &signerCert);
+    RETURN_IF_OERROR(@"CMSDecoderCopySignerCert")
+    bool isSameCert = [cert isEqualToData:CFBridgingRelease(SecCertificateCopyData(signerCert))];
+    CFRelease(signerCert);
+
+    NSLog(@"Signature is (%d) and cert is equal(%d)", isValid, isSameCert);
+    return isValid && isSameCert;
 }
 
 #pragma mark - Connection delegate
@@ -309,7 +348,7 @@
     }
 
     if([signatureType isEqualToString:@"CMS"]) {
-        if ([update verifyCMSSignature:signature data:data cert:certData])
+        if ([self verifyCMSSignature:signature data:data cert:certData])
             [NSTask launchedTaskWithLaunchPath:@"/usr/bin/open" arguments:@[path]];
         else
         {
@@ -357,7 +396,7 @@
     self.progress.doubleValue = 0;
     [self.progress startAnimation:self];
     NSURLSession *defaultSession = [NSURLSession sessionWithConfiguration:NSURLSessionConfiguration.defaultSessionConfiguration delegate:self delegateQueue:nil];
-    NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:[NSURL URLWithString:filename]];
+    NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:filename];
     [request addValue:[update userAgent:YES] forHTTPHeaderField:@"User-Agent"];
     [[defaultSession downloadTaskWithRequest:request] resume];
     lastRecvd = 0;
@@ -367,29 +406,34 @@
     }];
 }
 
+- (NSString*)versionInfo:(NSString *)pkg {
+    NSDictionary *list = [NSDictionary dictionaryWithContentsOfFile:[NSString stringWithFormat:@"/var/db/receipts/%@.plist", pkg]];
+    return list ? list[@"PackageVersion"] : [NSString string];
+}
+
 - (IBAction)diagnostics:(id)sender {
     NSDictionary *versions = @{
         @"DigiDoc4": update.digidoc4,
-        @"Open-EID": update.baseversion,
-        @"ID-Updater": [update versionInfo:@"ee.ria.ID-updater"],
-        NSLocalizedString(@"Safari (Extensions) browser plugin", nil): [update versionInfo:@"ee.ria.safari-token-signing"],
-        NSLocalizedString(@"Safari (NPAPI) browser plugin", nil): [update versionInfo:@"ee.ria.firefox-token-signing"],
-        NSLocalizedString(@"Chrome/Firefox browser plugin", nil): [update versionInfo:@"ee.ria.chrome-token-signing"],
-        NSLocalizedString(@"Chrome browser plugin", nil): [update versionInfo:@"ee.ria.token-signing-chrome"],
-        NSLocalizedString(@"Chrome browser plugin policy", nil): [update versionInfo:@"ee.ria.token-signing-chrome-policy"],
-        NSLocalizedString(@"Firefox browser plugin", nil): [update versionInfo:@"ee.ria.token-signing-firefox"],
-        NSLocalizedString(@"Web-eID native component", nil): [update versionInfo:@"eu.web-eid.web-eid"],
-        NSLocalizedString(@"Safari browser extension (Web-eID)", nil): [update versionInfo:@"eu.web-eid.web-eid-safari"],
-        NSLocalizedString(@"Chrome browser extension (Web-eID)", nil): [update versionInfo:@"eu.web-eid.web-eid-chrome"],
-        NSLocalizedString(@"Chrome browser extension policy (Web-eID)", nil): [update versionInfo:@"eu.web-eid.web-eid-chrome-policy"],
-        NSLocalizedString(@"Firefox browser extension (Web-eID)", nil): [update versionInfo:@"eu.web-eid.web-eid-firefox"],
-        NSLocalizedString(@"PKCS11 loader", nil): [update versionInfo:@"ee.ria.firefox-pkcs11-loader"],
-        NSLocalizedString(@"IDEMIA PKCS11 loader", nil): [update versionInfo:@"com.idemia.awp.xpi"],
-        @"OpenSC": [update versionInfo:@"org.opensc-project.mac"],
-        @"IDEMIA PKCS11": [update versionInfo:@"com.idemia.awp.pkcs11"],
-        @"EstEID Tokend": [update versionInfo:@"ee.ria.esteid-tokend"],
-        @"EstEID CTK Tokend": [update versionInfo:@"ee.ria.esteid-ctk-tokend"],
-        @"IDEMIA Tokend": [update versionInfo:@"com.idemia.awp.tokend"],
+        @"Open-EID": update.baseVersion,
+        @"ID-Updater": update.updaterVersion,
+        NSLocalizedString(@"Safari (Extensions) browser plugin", nil): [self versionInfo:@"ee.ria.safari-token-signing"],
+        NSLocalizedString(@"Safari (NPAPI) browser plugin", nil): [self versionInfo:@"ee.ria.firefox-token-signing"],
+        NSLocalizedString(@"Chrome/Firefox browser plugin", nil): [self versionInfo:@"ee.ria.chrome-token-signing"],
+        NSLocalizedString(@"Chrome browser plugin", nil): [self versionInfo:@"ee.ria.token-signing-chrome"],
+        NSLocalizedString(@"Chrome browser plugin policy", nil): [self versionInfo:@"ee.ria.token-signing-chrome-policy"],
+        NSLocalizedString(@"Firefox browser plugin", nil): [self versionInfo:@"ee.ria.token-signing-firefox"],
+        NSLocalizedString(@"Web-eID native component", nil): [self versionInfo:@"eu.web-eid.web-eid"],
+        NSLocalizedString(@"Safari browser extension (Web-eID)", nil): [self versionInfo:@"eu.web-eid.web-eid-safari"],
+        NSLocalizedString(@"Chrome browser extension (Web-eID)", nil): [self versionInfo:@"eu.web-eid.web-eid-chrome"],
+        NSLocalizedString(@"Chrome browser extension policy (Web-eID)", nil): [self versionInfo:@"eu.web-eid.web-eid-chrome-policy"],
+        NSLocalizedString(@"Firefox browser extension (Web-eID)", nil): [self versionInfo:@"eu.web-eid.web-eid-firefox"],
+        NSLocalizedString(@"PKCS11 loader", nil): [self versionInfo:@"ee.ria.firefox-pkcs11-loader"],
+        NSLocalizedString(@"IDEMIA PKCS11 loader", nil): [self versionInfo:@"com.idemia.awp.xpi"],
+        @"OpenSC": [self versionInfo:@"org.opensc-project.mac"],
+        @"IDEMIA PKCS11": [self versionInfo:@"com.idemia.awp.pkcs11"],
+        @"EstEID Tokend": [self versionInfo:@"ee.ria.esteid-tokend"],
+        @"EstEID CTK Tokend": [self versionInfo:@"ee.ria.esteid-ctk-tokend"],
+        @"IDEMIA Tokend": [self versionInfo:@"com.idemia.awp.tokend"],
     };
     NSMutableArray *list = [[NSMutableArray alloc] init];
     [versions enumerateKeysAndObjectsUsingBlock:^(id key, id object, BOOL *stop) {

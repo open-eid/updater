@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.22)
-project(ID-updater VERSION 3.18.0)
+project(ID-updater VERSION 3.19.0)
 
 macro( SET_ENV NAME DEF )
 	if( DEFINED ENV{${NAME}} )
@@ -13,40 +13,71 @@ set_env(BUILD_NUMBER 0)
 set(VERSION ${PROJECT_VERSION}.${BUILD_NUMBER})
 set_env( CONFIG_URL "https://id.eesti.ee/config.json" CACHE STRING "Set Config URL" )
 set_env( SIGNCERT "" CACHE STRING "Common name of certificate to used sign binaries, empty skip signing" )
-add_definitions( -DCONFIG_URL="${CONFIG_URL}" )
-string( REPLACE ".json" ".pub" PUB_URL ${CONFIG_URL} )
-file( DOWNLOAD ${PUB_URL} ${CMAKE_CURRENT_BINARY_DIR}/config.pub )
+string(REPLACE ".json" ".ecpub" PUB_URL ${CONFIG_URL})
+message("Fetching pub key: ${PUB_URL}")
+file(DOWNLOAD ${PUB_URL} ${CMAKE_CURRENT_BINARY_DIR}/config.ecpub)
 
 if( APPLE )
-	add_custom_command( OUTPUT config.h
-		COMMAND xxd -i config.pub config.h
+	add_custom_command(OUTPUT config.h
+		BYPRODUCTS module.modulemap
+		COMMAND xxd -i config.ecpub config.h
+		COMMAND echo "\\\#define CONFIG_URL \\\"${CONFIG_URL}\\\"" >> config.h
+		COMMAND echo "module config [system] {" > module.modulemap
+		COMMAND echo "	private header \\\"config.h\\\"" >> module.modulemap
+		COMMAND echo "	export *" >> module.modulemap
+		COMMAND echo "}" >> module.modulemap
 		COMMENT "Generating config.h"
 	)
-	include_directories( ${CMAKE_CURRENT_BINARY_DIR} )
-	add_library(id-updater-lib STATIC prefPane/update.m config.h)
-	target_compile_options(id-updater-lib PRIVATE -Wno-unused-parameter -fobjc-arc -fmodules)
-	set(SWIFT_FLAGS "")
+	set(SWIFT_FLAGS xcrun --sdk macosx swiftc -I ${CMAKE_CURRENT_BINARY_DIR})
 	if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-		set(SWIFT_FLAGS -g)
+		list(APPEND SWIFT_FLAGS -g)
 	elseif(CMAKE_BUILD_TYPE STREQUAL "Release")
-		set(SWIFT_FLAGS -O)
+		list(APPEND SWIFT_FLAGS -O)
 	elseif(CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
-		set(SWIFT_FLAGS -O -g)
+		list(APPEND SWIFT_FLAGS -O -g)
 	elseif(CMAKE_BUILD_TYPE STREQUAL "MinSizeRel")
-		set(SWIFT_FLAGS -Osize)
+		list(APPEND SWIFT_FLAGS -Osize)
 	endif()
+	set(SWIFTMOD_DIR ${CMAKE_CURRENT_BINARY_DIR}/id_updater_lib.swiftmodule)
+	set(SWIFTHDR_DIR ${CMAKE_CURRENT_BINARY_DIR}/id_updater_lib)
+	add_custom_command(OUTPUT
+			libid-updater-lib.a
+		BYPRODUCTS
+			libid-updater-lib_arm64.a
+			libid-updater-lib_x86_64.a
+			${SWIFTMOD_DIR}/arm64-apple-macos.swiftmodule
+			${SWIFTMOD_DIR}/x86_64-apple-macos.swiftmodule
+		DEPENDS config.h
+		COMMENT "Build id-updater-lib"
+		COMMAND ${CMAKE_COMMAND} -E make_directory ${SWIFTMOD_DIR}
+		COMMAND ${CMAKE_COMMAND} -E make_directory ${SWIFTHDR_DIR}
+		COMMAND ${SWIFT_FLAGS} -target arm64-apple-macosx${CMAKE_OSX_DEPLOYMENT_TARGET}
+			-module-name id_updater_lib
+			-emit-module -emit-module-path ${SWIFTMOD_DIR}/arm64-apple-macos.swiftmodule
+			-emit-objc-header -emit-objc-header-path ${SWIFTHDR_DIR}/id_updater_lib-Swift.h
+			${CMAKE_CURRENT_SOURCE_DIR}/prefPane/update.swift
+			-emit-library -static -o libid-updater-lib_arm64.a
+		COMMAND ${SWIFT_FLAGS} -target x86_64-apple-macosx${CMAKE_OSX_DEPLOYMENT_TARGET}
+			-module-name id_updater_lib
+			-emit-module -emit-module-path ${SWIFTMOD_DIR}/x86_64-apple-macos.swiftmodule
+			-emit-objc-header -emit-objc-header-path ${SWIFTHDR_DIR}/id_updater_lib-Swift.h
+			${CMAKE_CURRENT_SOURCE_DIR}/prefPane/update.swift
+			-emit-library -static -o libid-updater-lib_x86_64.a
+		COMMAND lipo -create libid-updater-lib_arm64.a libid-updater-lib_x86_64.a -output libid-updater-lib.a
+	)
 	add_custom_command(OUTPUT id-updater-helper
-		BYPRODUCTS id-updater-helper_arm64 id-updater-helper_x86_64
+		BYPRODUCTS
+			id-updater-helper_arm64
+			id-updater-helper_x86_64
+		DEPENDS libid-updater-lib.a
 		COMMENT "Build id-updater-helper"
-		COMMAND xcrun --sdk macosx swiftc -target arm64-apple-macosx${CMAKE_OSX_DEPLOYMENT_TARGET} -parse-as-library ${SWIFT_FLAGS}
-			-import-objc-header ${CMAKE_CURRENT_SOURCE_DIR}/prefPane/update.h
-			${CMAKE_CURRENT_SOURCE_DIR}/prefPane/id-updater-helper.swift
-			$<TARGET_FILE:id-updater-lib>
+		COMMAND ${SWIFT_FLAGS} -target arm64-apple-macosx${CMAKE_OSX_DEPLOYMENT_TARGET} -parse-as-library
+			${CMAKE_CURRENT_BINARY_DIR}/libid-updater-lib.a
+			${CMAKE_CURRENT_SOURCE_DIR}/prefPane/main.swift
 			-o id-updater-helper_arm64
-		COMMAND xcrun --sdk macosx swiftc -target x86_64-apple-macosx${CMAKE_OSX_DEPLOYMENT_TARGET} -parse-as-library ${SWIFT_FLAGS}
-			-import-objc-header ${CMAKE_CURRENT_SOURCE_DIR}/prefPane/update.h
-			${CMAKE_CURRENT_SOURCE_DIR}/prefPane/id-updater-helper.swift
-			$<TARGET_FILE:id-updater-lib>
+		COMMAND ${SWIFT_FLAGS} -target x86_64-apple-macosx${CMAKE_OSX_DEPLOYMENT_TARGET} -parse-as-library
+			${CMAKE_CURRENT_BINARY_DIR}/libid-updater-lib.a
+			${CMAKE_CURRENT_SOURCE_DIR}/prefPane/main.swift
 			-o id-updater-helper_x86_64
 		COMMAND lipo -create id-updater-helper_arm64 id-updater-helper_x86_64 -output id-updater-helper
 	)
@@ -55,25 +86,18 @@ if( APPLE )
 		COMMAND ibtool --errors --warnings --notices --output-format human-readable-text
 			--compile ID_updater.nib ${CMAKE_CURRENT_SOURCE_DIR}/prefPane/Base.lproj/ID_updater.xib
 	)
-	set(EN_RESOURCES prefPane/en.lproj/InfoPlist.strings prefPane/en.lproj/ID_updater.strings prefPane/en.lproj/Localizable.strings)
-	set(ET_RESOURCES prefPane/et.lproj/InfoPlist.strings prefPane/et.lproj/ID_updater.strings prefPane/et.lproj/Localizable.strings)
-	set(RU_RESOURCES prefPane/ru.lproj/InfoPlist.strings prefPane/ru.lproj/ID_updater.strings prefPane/ru.lproj/Localizable.strings)
 
+	file(GLOB RESOURCE_FILES prefPane/Icon.icns prefPane/*.lproj)
 	find_library( XAR xar )
 	add_library(${PROJECT_NAME} MODULE
 		${CMAKE_CURRENT_BINARY_DIR}/id-updater-helper
 		ID_updater.nib
-		${EN_RESOURCES}
-		${ET_RESOURCES}
-		${RU_RESOURCES}
+		${RESOURCE_FILES}
 		prefPane/Icon.icns
 		prefPane/id-updater.m
 	)
-	set_source_files_properties(prefPane/Icon.icns PROPERTIES MACOSX_PACKAGE_LOCATION Resources)
 	set_source_files_properties(ID_updater.nib PROPERTIES MACOSX_PACKAGE_LOCATION Resources/Base.lproj)
-	set_source_files_properties(${EN_RESOURCES} PROPERTIES MACOSX_PACKAGE_LOCATION Resources/en.lproj)
-	set_source_files_properties(${ET_RESOURCES} PROPERTIES MACOSX_PACKAGE_LOCATION Resources/et.lproj)
-	set_source_files_properties(${RU_RESOURCES} PROPERTIES MACOSX_PACKAGE_LOCATION Resources/ru.lproj)
+	set_source_files_properties(${RESOURCE_FILES} PROPERTIES MACOSX_PACKAGE_LOCATION Resources)
 	set_target_properties(${PROJECT_NAME} PROPERTIES
 		BUNDLE YES
 		BUNDLE_EXTENSION prefPane
@@ -89,7 +113,8 @@ if( APPLE )
 		MACOSX_BUNDLE_BUNDLE_VERSION ${BUILD_NUMBER}
 		XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER "ee.ria.${PROJECT_NAME}"
 	)
-	target_link_libraries(${PROJECT_NAME} ${XAR} id-updater-lib)
+	target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
+	target_link_libraries(${PROJECT_NAME} ${XAR} ${CMAKE_CURRENT_BINARY_DIR}/libid-updater-lib.a)
 	add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
 		COMMAND cp ${CMAKE_CURRENT_BINARY_DIR}/id-updater-helper $<TARGET_BUNDLE_CONTENT_DIR:${PROJECT_NAME}>/Resources
 	)
@@ -118,9 +143,9 @@ else()
 	if(NOT EXISTS ${CMAKE_SOURCE_DIR}/common/CMakeLists.txt)
 		message(FATAL_ERROR "cmake submodule directory empty, did you 'git clone --recursive'?")
 	endif()
-	file( DOWNLOAD ${CONFIG_URL} ${CMAKE_CURRENT_BINARY_DIR}/config.json )
-	string( REPLACE ".json" ".rsa" RSA_URL ${CONFIG_URL} )
-	file( DOWNLOAD ${RSA_URL} ${CMAKE_CURRENT_BINARY_DIR}/config.rsa )
+	file(DOWNLOAD ${CONFIG_URL} ${CMAKE_CURRENT_BINARY_DIR}/config.json)
+	string(REPLACE ".json" ".ecc" ECC_URL ${CONFIG_URL})
+	file(DOWNLOAD ${ECC_URL} ${CMAKE_CURRENT_BINARY_DIR}/config.ecc)
 	set(CONFIG_DIR ${CMAKE_CURRENT_BINARY_DIR})
 
 	find_package(OpenSSL 3.0.0 REQUIRED)
@@ -167,7 +192,7 @@ else()
 	)
 	qt_add_resources(${PROJECT_NAME} icon FILES appicon.png)
 	qt_add_resources(${PROJECT_NAME} config BASE ${CONFIG_DIR} PREFIX / FILES
-		${CONFIG_DIR}/config.json ${CONFIG_DIR}/config.rsa ${CONFIG_DIR}/config.pub
+		${CONFIG_DIR}/config.json ${CONFIG_DIR}/config.ecc ${CONFIG_DIR}/config.ecpub
 	)
 
 	if(OPENSSL_ROOT_DIR)
