@@ -94,6 +94,8 @@
     NSBundle *bundlelang;
     NSDateFormatter *df;
     NSUserDefaults *defaults;
+    dispatch_source_t watcher;
+    int fileDescriptor;
 }
 
 - (void)mainViewDidLoad {
@@ -116,7 +118,40 @@
 
     update = [[Update alloc] initWithDelegate:self];
     self.mainLabel.stringValue = [NSString stringWithFormat:@"%@ %@", self.mainLabel.stringValue, update.baseversion];
+}
+
+- (void)willSelect {
+    [self watchFile:@"/var/db/receipts/ee.ria.open-eid.plist"];
     [update request];
+}
+
+- (void)willUnselect {
+    dispatch_source_cancel(watcher);
+    watcher = nil;
+}
+
+- (void)watchFile:(NSString *)filePath {
+    fileDescriptor = open([filePath fileSystemRepresentation], O_EVTONLY);
+    if (fileDescriptor < 0) {
+        NSLog(@"Failed to open file: %@", filePath);
+        return;
+    }
+
+    watcher = dispatch_source_create(DISPATCH_SOURCE_TYPE_VNODE, fileDescriptor,
+        DISPATCH_VNODE_WRITE | DISPATCH_VNODE_EXTEND | DISPATCH_VNODE_DELETE,
+        dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0));
+    dispatch_source_set_event_handler(watcher, ^{
+        NSLog(@"File changed on disk: %@", filePath);
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(5.0 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+            NSLog(@"Update UI");
+            self.install.hidden = YES;
+            self.mainLabel.stringValue = [NSString stringWithFormat:@"%@ %@", NSLocalizedString(@"Your ID-software is up to date - version", nil), update.baseversion];
+        });
+    });
+    dispatch_source_set_cancel_handler(watcher, ^{ close(fileDescriptor); });
+    dispatch_resume(watcher);
+
+    NSLog(@"Started watching %@", filePath);
 }
 
 - (void)setLastUpdateCheck:(BOOL)set {
@@ -334,9 +369,7 @@
 
 - (IBAction)diagnostics:(id)sender {
     NSDictionary *versions = @{
-        NSLocalizedString(@"DigiDoc3 Client", nil): update.clientversion,
         @"DigiDoc4": update.digidoc4,
-        NSLocalizedString(@"ID-Card Utility", nil): update.utilityversion,
         @"Open-EID": update.baseversion,
         @"ID-Updater": [update versionInfo:@"ee.ria.ID-updater"],
         NSLocalizedString(@"Safari (Extensions) browser plugin", nil): [update versionInfo:@"ee.ria.safari-token-signing"],

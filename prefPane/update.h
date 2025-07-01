@@ -31,8 +31,10 @@ enum {
     InvalidSignature = 1000,
     DateLaterThanCurrent = 1001,
     FileNotFound = 1002,
+    KeyError = 1003,
 };
 
+- (id)init;
 - (id)initWithDelegate:(id <UpdateDelegate>)delegate;
 - (BOOL)checkCertificatePinning:(NSURLAuthenticationChallenge *)challenge;
 - (void)request;
@@ -40,11 +42,9 @@ enum {
 - (BOOL)verifyCMSSignature:(NSData *)signatureData data:(NSData *)data cert:(NSData *)cert;
 - (NSString*)versionInfo:(NSString *)pkg;
 
-@property(retain) NSString *baseversion;
+@property(nonatomic, readonly, getter=getBaseversion) NSString *baseversion;
 @property(retain) NSString *updaterversion;
-@property(retain) NSString *clientversion;
 @property(retain) NSString *digidoc4;
-@property(retain) NSString *utilityversion;
 @property(retain) NSDictionary *centralConfig;
 @property(retain) NSArray *cert_bundle;
 @property(assign) id <UpdateDelegate> delegate;
