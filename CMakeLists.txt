@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.22)
-project(ID-updater VERSION 3.17.0)
+project(ID-updater VERSION 3.18.0)
 
 macro( SET_ENV NAME DEF )
 	if( DEFINED ENV{${NAME}} )
@@ -23,8 +23,33 @@ if( APPLE )
 		COMMENT "Generating config.h"
 	)
 	include_directories( ${CMAKE_CURRENT_BINARY_DIR} )
-	add_executable( id-updater-helper prefPane/id-updater-helper.m prefPane/update.m config.h )
-	target_compile_options(id-updater-helper PRIVATE -Wno-unused-parameter -fobjc-arc -fmodules)
+	add_library(id-updater-lib STATIC prefPane/update.m config.h)
+	target_compile_options(id-updater-lib PRIVATE -Wno-unused-parameter -fobjc-arc -fmodules)
+	set(SWIFT_FLAGS "")
+	if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+		set(SWIFT_FLAGS -g)
+	elseif(CMAKE_BUILD_TYPE STREQUAL "Release")
+		set(SWIFT_FLAGS -O)
+	elseif(CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
+		set(SWIFT_FLAGS -O -g)
+	elseif(CMAKE_BUILD_TYPE STREQUAL "MinSizeRel")
+		set(SWIFT_FLAGS -Osize)
+	endif()
+	add_custom_command(OUTPUT id-updater-helper
+		BYPRODUCTS id-updater-helper_arm64 id-updater-helper_x86_64
+		COMMENT "Build id-updater-helper"
+		COMMAND xcrun --sdk macosx swiftc -target arm64-apple-macosx${CMAKE_OSX_DEPLOYMENT_TARGET} -parse-as-library ${SWIFT_FLAGS}
+			-import-objc-header ${CMAKE_CURRENT_SOURCE_DIR}/prefPane/update.h
+			${CMAKE_CURRENT_SOURCE_DIR}/prefPane/id-updater-helper.swift
+			$<TARGET_FILE:id-updater-lib>
+			-o id-updater-helper_arm64
+		COMMAND xcrun --sdk macosx swiftc -target x86_64-apple-macosx${CMAKE_OSX_DEPLOYMENT_TARGET} -parse-as-library ${SWIFT_FLAGS}
+			-import-objc-header ${CMAKE_CURRENT_SOURCE_DIR}/prefPane/update.h
+			${CMAKE_CURRENT_SOURCE_DIR}/prefPane/id-updater-helper.swift
+			$<TARGET_FILE:id-updater-lib>
+			-o id-updater-helper_x86_64
+		COMMAND lipo -create id-updater-helper_arm64 id-updater-helper_x86_64 -output id-updater-helper
+	)
 
 	add_custom_command( OUTPUT ID_updater.nib
 		COMMAND ibtool --errors --warnings --notices --output-format human-readable-text
@@ -36,14 +61,13 @@ if( APPLE )
 
 	find_library( XAR xar )
 	add_library(${PROJECT_NAME} MODULE
+		${CMAKE_CURRENT_BINARY_DIR}/id-updater-helper
 		ID_updater.nib
-		config.h
 		${EN_RESOURCES}
 		${ET_RESOURCES}
 		${RU_RESOURCES}
 		prefPane/Icon.icns
 		prefPane/id-updater.m
-		prefPane/update.m
 	)
 	set_source_files_properties(prefPane/Icon.icns PROPERTIES MACOSX_PACKAGE_LOCATION Resources)
 	set_source_files_properties(ID_updater.nib PROPERTIES MACOSX_PACKAGE_LOCATION Resources/Base.lproj)
@@ -65,28 +89,29 @@ if( APPLE )
 		MACOSX_BUNDLE_BUNDLE_VERSION ${BUILD_NUMBER}
 		XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER "ee.ria.${PROJECT_NAME}"
 	)
-	target_link_libraries(${PROJECT_NAME} ${XAR})
-	add_dependencies(${PROJECT_NAME} id-updater-helper)
-	set_target_properties(id-updater-helper PROPERTIES
-		RUNTIME_OUTPUT_DIRECTORY $<TARGET_BUNDLE_CONTENT_DIR:${PROJECT_NAME}>/Resources
+	target_link_libraries(${PROJECT_NAME} ${XAR} id-updater-lib)
+	add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+		COMMAND cp ${CMAKE_CURRENT_BINARY_DIR}/id-updater-helper $<TARGET_BUNDLE_CONTENT_DIR:${PROJECT_NAME}>/Resources
 	)
 	install( TARGETS ${PROJECT_NAME} DESTINATION /Library/PreferencePanes )
 
+	# Sign bundle after resources are copied
+	add_custom_target(signhelper DEPENDS ${PROJECT_NAME})
 	if(SIGNCERT)
-		add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+		add_custom_command(TARGET signhelper POST_BUILD
 			COMMAND codesign -f --options=runtime -s "Developer ID Application: ${SIGNCERT}"
 				$<TARGET_BUNDLE_CONTENT_DIR:${PROJECT_NAME}>/Resources/id-updater-helper
 				$<TARGET_BUNDLE_DIR:${PROJECT_NAME}>
 		)
 	endif()
-	add_custom_target(pkgbuild DEPENDS ${PROJECT_NAME}
+	add_custom_target(pkgbuild DEPENDS signhelper
 		COMMAND DESTDIR=install ${CMAKE_COMMAND} --install ${CMAKE_BINARY_DIR}
 		COMMAND chmod 755 install/Library/PreferencePanes/ID-updater.prefPane/Contents/Resources/id-updater-helper
 		COMMAND pkgbuild --root install "$<$<BOOL:${SIGNCERT}>:--sign;${SIGNCERT}>" updater_${VERSION}$ENV{VER_SUFFIX}.pkg
 		COMMAND_EXPAND_LISTS
 	)
 	add_custom_target(zipdebug DEPENDS ${PROJECT_NAME}
-		COMMAND dsymutil -o ${PROJECT_NAME}.dSYM $<TARGET_FILE:${PROJECT_NAME}> $<TARGET_FILE:id-updater-helper>
+		COMMAND dsymutil -o ${PROJECT_NAME}.dSYM $<TARGET_FILE:${PROJECT_NAME}> id-updater-helper
 		COMMAND zip -r updater-dbg_${VERSION}$ENV{VER_SUFFIX}.zip ${PROJECT_NAME}.dSYM
 	)
 else()
