@@ -8,7 +8,7 @@ jobs:
     name: Build on macOS
     runs-on: macos-latest
     env:
-      MACOSX_DEPLOYMENT_TARGET: 12.0
+      MACOSX_DEPLOYMENT_TARGET: 13.0
     steps:
     - name: Checkout
       uses: actions/checkout@v4
@@ -23,15 +23,10 @@ jobs:
         path: build/*.pkg
   windows:
     name: Build on Windows
-    runs-on: ${{ matrix.image }}
+    runs-on: windows-2022
     strategy:
       matrix:
-        vcver: [142, 143]
-        include:
-        - vcver: 142
-          image: windows-2019
-        - vcver: 143
-          image: windows-2022
+        vcver: [143]
     env:
       VER_SUFFIX: .VS${{ matrix.vcver }}
     steps:
@@ -41,15 +36,14 @@ jobs:
         submodules: recursive
     - name: Prepare vcpkg
       uses: lukka/run-vcpkg@v7
-      id: runvcpkg
       with:
         vcpkgArguments: openssl
-        vcpkgGitCommitId: e4644bd15436d406bba71928d086c809e5c9ca45
+        vcpkgGitCommitId: 031ad89ce6c575df35a8e58707ad2c898446c63e
         vcpkgTriplet: x64-windows
     - name: Install Qt
-      uses: jurplel/install-qt-action@v3
+      uses: jurplel/install-qt-action@v4
       with:
-        version: 6.8.2
+        version: 6.9.1
         arch: win64_msvc2022_64
     - name: Setup dev env
       uses: ilammy/msvc-dev-cmd@v1
@@ -57,8 +51,8 @@ jobs:
         arch: x64
     - name: Install WiX
       run: |
-        dotnet tool install -g wix --version 5.0.2
-        wix extension -g add WixToolset.UI.wixext/5.0.2
+        dotnet tool install -g wix --version 6.0.1
+        wix extension -g add WixToolset.UI.wixext/6.0.1
     - name: Build
       run: |
         cmake -S . -B build `
