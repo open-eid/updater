@@ -45,7 +45,6 @@ enum {
 @property(nonatomic, readonly, getter=getBaseversion) NSString *baseversion;
 @property(retain) NSString *updaterversion;
 @property(retain) NSString *digidoc4;
-@property(retain) NSDictionary *centralConfig;
 @property(retain) NSArray *cert_bundle;
 @property(assign) id <UpdateDelegate> delegate;
 @end

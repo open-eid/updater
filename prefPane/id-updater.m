@@ -371,7 +371,7 @@
     NSDictionary *versions = @{
         @"DigiDoc4": update.digidoc4,
         @"Open-EID": update.baseversion,
-        @"ID-Updater": [update versionInfo:@"ee.ria.ID-updater"],
+        @"ID-Updater": update.updaterversion,
         NSLocalizedString(@"Safari (Extensions) browser plugin", nil): [update versionInfo:@"ee.ria.safari-token-signing"],
         NSLocalizedString(@"Safari (NPAPI) browser plugin", nil): [update versionInfo:@"ee.ria.firefox-token-signing"],
         NSLocalizedString(@"Chrome/Firefox browser plugin", nil): [update versionInfo:@"ee.ria.chrome-token-signing"],

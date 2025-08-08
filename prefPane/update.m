@@ -29,11 +29,34 @@
 #define UPDATER_ID @"ee.ria.id-updater"
 
 @implementation Update {
-    NSMutableURLRequest *request;
-    NSString *signature;
+    id key;
 }
 
 - (instancetype)init {
+    NSString *pem = @((char*)config_ecpub);
+    pem = [pem stringByReplacingOccurrencesOfString:@"-----BEGIN PUBLIC KEY-----" withString:@""];
+    pem = [pem stringByReplacingOccurrencesOfString:@"-----END PUBLIC KEY-----" withString:@""];
+    NSData *keyData = [[NSData alloc] initWithBase64EncodedString:pem options:NSDataBase64DecodingIgnoreUnknownCharacters];
+    TKTLVRecord *record = [TKBERTLVRecord recordFromData:keyData];
+    NSData *eckey;
+    for (TKTLVRecord *nestedRecord in [TKBERTLVRecord sequenceOfRecordsFromData:record.value]) {
+        if (nestedRecord.tag == 0x03) {
+            eckey = nestedRecord.value;
+            eckey = [eckey subdataWithRange:NSMakeRange(1, eckey.length - 1)];
+        }
+    }
+    NSDictionary *parameters = @{
+        (__bridge id)kSecAttrKeyType: (__bridge id)kSecAttrKeyTypeEC,
+        (__bridge id)kSecAttrKeyClass: (__bridge id)kSecAttrKeyClassPublic,
+    };
+    CFErrorRef err = nil;
+    key = CFBridgingRelease(SecKeyCreateWithData((__bridge CFDataRef)eckey, (__bridge CFDictionaryRef)parameters, &err));
+    if (key == nil) {
+        NSLog(@"Failed to create key: %@", err);
+        CFRelease(err);
+        return nil;
+    }
+
     if (self = [super init]) {
         self.updaterversion = [self versionInfo:@"ee.ria.ID-updater"];
         self.digidoc4 = [self versionInfo:@"ee.ria.qdigidoc4"];
@@ -74,12 +97,31 @@
 
 - (void)request {
     NSURL *url = [NSURL URLWithString:@CONFIG_URL];
-    url = [url.URLByDeletingLastPathComponent URLByAppendingPathComponent:@"config.rsa"];
-    request = [NSMutableURLRequest requestWithURL:url
+    url = [url.URLByDeletingLastPathComponent URLByAppendingPathComponent:@"config.ecc"];
+    NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:url
         cachePolicy:NSURLRequestReloadIgnoringLocalCacheData timeoutInterval:10];
     [request addValue:[self userAgent:YES] forHTTPHeaderField:@"User-Agent"];
     [[NSURLSession.sharedSession dataTaskWithRequest:request completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
-        [self receivedData:data withResponse:response];
+        NSHTTPURLResponse *http = (NSHTTPURLResponse*)response;
+        if (http.statusCode != 200) {
+            [self.delegate didFinish:[NSError errorWithDomain:@"ee.ria.ID-updater" code:FileNotFound userInfo:nil]];
+            return;
+        }
+        NSData *signature = [[NSData alloc] initWithBase64EncodedData:data options:NSDataBase64DecodingIgnoreUnknownCharacters];
+        if(signature == nil) {
+            NSLog(@"Failed to fetch signature");
+            [self.delegate didFinish:[NSError errorWithDomain:@"ee.ria.ID-updater" code:InvalidSignature userInfo:nil]];
+            return;
+        }
+        request.URL = [NSURL URLWithString:@CONFIG_URL];
+        [[NSURLSession.sharedSession dataTaskWithRequest:request completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
+            NSHTTPURLResponse *http = (NSHTTPURLResponse*)response;
+            if (http.statusCode != 200) {
+                [self.delegate didFinish:[NSError errorWithDomain:@"ee.ria.ID-updater" code:FileNotFound userInfo:nil]];
+                return;
+            }
+            [self receivedData:data withSignature:signature];
+        }] resume];
     }] resume];
 }
 
@@ -97,26 +139,6 @@
     [agent addObject:[NSString stringWithFormat:@"(Mac OS %@ (%lu/%s)) Locale: %@ / %@ Devices: %@",
         os[@"ProductVersion"], sizeof(void *)<<3, unameData.machine, locale, @"UTF-8", devices]];
     return [agent componentsJoinedByString:@" "];
-}
-
-- (BOOL)verify:(NSData *)data error:(NSError **)error {
-    NSString *pem = @((char*)config_pub);
-    pem = [pem stringByReplacingOccurrencesOfString:@"-----BEGIN RSA PUBLIC KEY-----" withString:@""];
-    pem = [pem stringByReplacingOccurrencesOfString:@"-----END RSA PUBLIC KEY-----" withString:@""];
-    NSData *keyData = [[NSData alloc] initWithBase64EncodedString:pem options:NSDataBase64DecodingIgnoreUnknownCharacters];
-    NSDictionary *parameters = @{
-        (__bridge id)kSecAttrKeyType: (__bridge id)kSecAttrKeyTypeRSA,
-        (__bridge id)kSecAttrKeyClass: (__bridge id)kSecAttrKeyClassPublic
-    };
-    CFErrorRef err = nil;
-    id key = CFBridgingRelease(SecKeyCreateWithData((__bridge CFDataRef)keyData, (__bridge CFDictionaryRef)parameters, &err));
-    if (key == nil) { if(error) *error = CFBridgingRelease(err); return false; }
-
-    NSData *signatureData = [[NSData alloc] initWithBase64EncodedString:signature options:NSDataBase64DecodingIgnoreUnknownCharacters];
-    BOOL isValid = SecKeyVerifySignature((__bridge SecKeyRef)key, kSecKeyAlgorithmRSASignatureMessagePKCS1v15SHA512,
-                                         (__bridge CFDataRef)data, (__bridge CFDataRef)signatureData, &err);
-    if (err) { if(error) *error = CFBridgingRelease(err); return false; }
-    return isValid;
 }
 
 - (BOOL)verifyCMSSignature:(NSData *)signatureData data:(NSData *)data cert:(NSData *)cert {
@@ -175,79 +197,74 @@
     }
 }
 
-- (void)receivedData:(NSData *)data withResponse:(NSURLResponse *)response {
-    NSHTTPURLResponse *http = (NSHTTPURLResponse*)response;
-    if (http.statusCode != 200) {
-        [self.delegate didFinish:[NSError errorWithDomain:@"ee.ria.ID-updater" code:FileNotFound userInfo:nil]];
+- (void)receivedData:(NSData *)data withSignature:(NSData *)signature {
+    NSDictionary<NSString*, id> *attributes = CFBridgingRelease(SecKeyCopyAttributes((__bridge SecKeyRef)key));
+    NSNumber *keySize = attributes[(__bridge NSString*)kSecAttrKeySizeInBits];
+    SecKeyAlgorithm algorithm = kSecKeyAlgorithmECDSASignatureMessageX962SHA512;
+    switch (keySize.unsignedIntValue) {
+        case 256: algorithm = kSecKeyAlgorithmECDSASignatureMessageX962SHA256; break;
+        case 384: algorithm = kSecKeyAlgorithmECDSASignatureMessageX962SHA384; break;
+        default: break;
+    }
+    CFErrorRef err = nil;
+    BOOL isValid = SecKeyVerifySignature((__bridge SecKeyRef)key, algorithm, (__bridge CFDataRef)data,
+                                         (__bridge CFDataRef)signature, &err);
+    if (!isValid) {
+        NSLog(@"Verify error: %@", err);
+        CFRelease(err);
+        [self.delegate didFinish:[NSError errorWithDomain:@"ee.ria.ID-updater" code:InvalidSignature userInfo:nil]];
+        return;
+    }
+    NSError *error;
+    NSDictionary *json = [NSJSONSerialization JSONObjectWithData:data options:0 error:&error];
+    if (!json) {
+        [self.delegate didFinish:error];
         return;
     }
 
-    NSString *file = request.URL.absoluteString.lastPathComponent;
-    NSError *error;
-    if ([file isEqualToString:@"config.json"]) {
-        if (![self verify:data error:&error]) {
-            NSLog(@"Verify error: %@", error);
-            [self.delegate didFinish:[NSError errorWithDomain:@"ee.ria.ID-updater" code:InvalidSignature userInfo:nil]];
-            return;
-        }
-        NSError *error = nil;
-        NSDictionary *json = [NSJSONSerialization JSONObjectWithData:data options:0 error:&error];
-        if (!json) {
-            [self.delegate didFinish:error];
-            return;
-        }
-
-        NSDateFormatter *df = [[NSDateFormatter alloc] init];
-        df.dateFormat = @"yyyyMMddHHmmss'Z'";
-        df.timeZone = [NSTimeZone timeZoneForSecondsFromGMT:0];
-        if ([NSDate.date compare:[df dateFromString:json[@"META-INF"][@"DATE"]]] == NSOrderedAscending) {
-            [self.delegate didFinish:[NSError errorWithDomain:@"ee.ria.ID-updater" code:DateLaterThanCurrent userInfo:nil]];
-            return;
-        }
-
-        self.centralConfig = json;
-        NSMutableArray *certs = [NSMutableArray arrayWithCapacity:[self.centralConfig[@"CERT-BUNDLE"] count]];
-        for (NSString *b64 in self.centralConfig[@"CERT-BUNDLE"]) {
-            [certs addObject:[[NSData alloc] initWithBase64EncodedString:b64 options:NSDataBase64DecodingIgnoreUnknownCharacters]];
-        }
-        self.cert_bundle = certs;
-        NSString *version = json[@"OSX-LATEST"];
-        if (version) {
-            NSLog(@"Remote version: %@", version);
-            if ([version compare:self.baseversion options:NSNumericSearch] > 0) {
-                [self.delegate updateAvailable:version filename:json[@"OSX-DOWNLOAD"]];
-            }
-        }
-        NSString *message_url = json[@"UPDATER-MESSAGE-URL"];
-        if (message_url) {
-            NSURLSession *session = [NSURLSession sessionWithConfiguration:NSURLSessionConfiguration.defaultSessionConfiguration delegate:self delegateQueue:Nil];
-            NSMutableURLRequest *urlRequest = [NSMutableURLRequest requestWithURL:[NSURL URLWithString:message_url]
-                cachePolicy:NSURLRequestReloadIgnoringLocalCacheData timeoutInterval:10];
-            [urlRequest addValue:[self userAgent:NO] forHTTPHeaderField:@"User-Agent"];
-            [[session dataTaskWithRequest:urlRequest completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
-                NSHTTPURLResponse *http = (NSHTTPURLResponse*)response;
-                if (http.statusCode != 200) {
-                    [self.delegate didFinish:nil];
-                    return;
-                }
-                [self.delegate message:[[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding]];
-                [self.delegate didFinish:nil];
-            }] resume];
-            return;
-        }
-        NSString *message = json[@"OSX-MESSAGE"];
-        if (message) {
-            NSLog(@"Message: %@", message);
-            [self.delegate message:message];
-        }
-        [self.delegate didFinish:error];
-    } else if ([file isEqualToString:@"config.rsa"]) {
-        signature = [[NSString alloc] initWithData:data encoding:NSASCIIStringEncoding];
-        request.URL = [NSURL URLWithString:@CONFIG_URL];
-        [[NSURLSession.sharedSession dataTaskWithRequest:request completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
-            [self receivedData:data withResponse:response];
-        }] resume];
+    NSISO8601DateFormatter *df = [[NSISO8601DateFormatter alloc] init];
+    if ([NSDate.date compare:[df dateFromString:json[@"META-INF"][@"DATE"]]] == NSOrderedAscending) {
+        [self.delegate didFinish:[NSError errorWithDomain:@"ee.ria.ID-updater" code:DateLaterThanCurrent userInfo:nil]];
+        return;
     }
+
+    NSLog(@"Config: %@ %@", json[@"META-INF"][@"SERIAL"], json[@"META-INF"][@"DATE"]);
+
+    NSMutableArray *certs = [NSMutableArray arrayWithCapacity:[json[@"CERT-BUNDLE"] count]];
+    for (NSString *b64 in json[@"CERT-BUNDLE"]) {
+        [certs addObject:[[NSData alloc] initWithBase64EncodedString:b64 options:NSDataBase64DecodingIgnoreUnknownCharacters]];
+    }
+    self.cert_bundle = certs;
+    NSString *version = json[@"OSX-LATEST"];
+    if (version) {
+        NSLog(@"Remote version: %@ base version: %@", version, self.baseversion);
+        if ([version compare:self.baseversion options:NSNumericSearch] > 0) {
+            [self.delegate updateAvailable:version filename:json[@"OSX-DOWNLOAD"]];
+        }
+    }
+    NSString *message_url = json[@"UPDATER-MESSAGE-URL"];
+    if (message_url) {
+        NSURLSession *session = [NSURLSession sessionWithConfiguration:NSURLSessionConfiguration.defaultSessionConfiguration delegate:self delegateQueue:Nil];
+        NSMutableURLRequest *urlRequest = [NSMutableURLRequest requestWithURL:[NSURL URLWithString:message_url]
+            cachePolicy:NSURLRequestReloadIgnoringLocalCacheData timeoutInterval:10];
+        [urlRequest addValue:[self userAgent:NO] forHTTPHeaderField:@"User-Agent"];
+        [[session dataTaskWithRequest:urlRequest completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
+            NSHTTPURLResponse *http = (NSHTTPURLResponse*)response;
+            if (http.statusCode != 200) {
+                [self.delegate didFinish:nil];
+                return;
+            }
+            [self.delegate message:[[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding]];
+            [self.delegate didFinish:nil];
+        }] resume];
+        return;
+    }
+    NSString *message = json[@"OSX-MESSAGE"];
+    if (message) {
+        NSLog(@"Message: %@", message);
+        [self.delegate message:message];
+    }
+    [self.delegate didFinish:error];
 }
 
 @end
