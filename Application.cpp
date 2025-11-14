@@ -54,7 +54,6 @@ Application::Application( int &argc, char **argv )
 		qInstallMessageHandler( msgHandler );
 
 	QTranslator *qt = new QTranslator( this );
-	QTranslator *common = new QTranslator( this );
 	QTranslator *t = new QTranslator( this );
 	QString lang;
 	auto languages = QLocale().uiLanguages().first();
@@ -65,10 +64,8 @@ Application::Application( int &argc, char **argv )
 	else
 		lang = u"en"_s;
 	void(qt->load(":/qtbase_%1.qm"_L1.arg(lang)));
-	void(common->load(":/common_%1.qm"_L1.arg(lang)));
 	void(t->load(":/idupdater_%1.qm"_L1.arg(lang)));
 	installTranslator( qt );
-	installTranslator( common );
 	installTranslator( t );
 #ifdef NDEBUG
 	setLibraryPaths({ applicationDirPath() });

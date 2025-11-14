@@ -32,15 +32,13 @@
 #endif
 
 template <class T>
-class CPtr
+struct CPtr
 {
-	T *d;
- public:
-	CPtr(T *p = nullptr): d(p) {}
-	~CPtr() { if(d) d->Release(); }
-	inline T* operator->() const { return d; }
-	inline operator T*() const { return d; }
-	inline T** operator&() { return &d; }
+    T *d{};
+    ~CPtr() { if(d) d->Release(); }
+    inline T* operator->() const { return d; }
+    inline operator T*() const { return d; }
+    inline T** operator&() { return &d; }
 };
 
 class ScheduledUpdateTaskPrivate
@@ -79,8 +77,8 @@ bool ScheduledUpdateTask::configure(ScheduledUpdateTask::Interval interval)
 	if( FAILED(d->service->NewTask( 0, &task )) )
 		return false;
 
-	CPtr<ITaskSettings> settings;
-	if( SUCCEEDED(task->get_Settings( &settings )) )
+	if(CPtr<ITaskSettings> settings;
+		SUCCEEDED(task->get_Settings(&settings)))
 	{
 		settings->put_StartWhenAvailable(VARIANT_TRUE);
 		settings->put_RunOnlyIfNetworkAvailable(VARIANT_TRUE);

@@ -1,7 +1,7 @@
-﻿<?if $(sys.BUILDARCH) = x64 ?>
-  <?define OpenSSLSuffix = "-x64" ?>
-<?else?>
+﻿<?if $(sys.BUILDARCH) = x86 ?>
   <?define OpenSSLSuffix = "" ?>
+<?else?>
+  <?define OpenSSLSuffix = "-$(sys.BUILDARCH)" ?>
 <?endif?>
 
 <?if $(env.VisualStudioVersion) = "17.0" ?>
@@ -18,7 +18,7 @@
 
 <Wix xmlns="http://wixtoolset.org/schemas/v4/wxs"
      xmlns:ui="http://wixtoolset.org/schemas/v4/wxs/ui">
-  <Package Name="Open-EID Updater" UpgradeCode="d3aa8bd7-e1e6-46d0-97a6-c9b87d2b830b"
+  <Package Name="Open-EID Updater $(sys.BUILDARCH)" UpgradeCode="d3aa8bd7-e1e6-46d0-97a6-c9b87d2b830b"
       Language="1033" Version="!(bind.FileVersion.id_updater.exe)" Codepage="1251" Manufacturer="RIA" InstallerVersion="500">
     <MediaTemplate EmbedCab="yes" CompressionLevel="high" />
     <Icon Id="appicon.ico" SourceFile="$(var.appicon)" />
@@ -35,7 +35,7 @@
           <File Id="id_updater.exe" Source="$(var.updater_path)" KeyPath="yes" />
           <RegistryValue Root="HKMU" Key="Software\[Manufacturer]\Open-EID"
             Name="Installed" Value="[INSTALLFOLDER]" Type="string" />
-<?if $(sys.BUILDARCH) = x64 ?>
+<?if $(sys.BUILDARCH) != x86 ?>
           <RegistryValue Root="HKMU" Key="Software\Wow6432Node\[Manufacturer]\Open-EID"
             Name="Installed" Value="[INSTALLFOLDER]" Type="string" />
 <?endif?>
@@ -55,21 +55,15 @@
         <File Name="Qt6PrintSupport$(var.qt_suffix).dll" />
         <File Name="Qt6Svg$(var.qt_suffix).dll" />
         <File Name="Qt6Widgets$(var.qt_suffix).dll" />
+        <File Name="Qt6SvgWidgets$(var.qt_suffix).dll" />
+<?if $(sys.BUILDARCH) != arm64 ?>
         <File Name="D3DCompiler_47.dll" />
         <File Name="opengl32sw.dll" />
-        <File Name="Qt6SvgWidgets$(var.qt_suffix).dll" />
-        <Directory Id="platforms" Name="platforms">
-          <File Source="$(var.qt_path)\..\plugins\platforms\qwindows$(var.qt_suffix).dll" />
-        </Directory>
-        <Directory Id="tls" Name="tls">
-          <File Source="$(var.qt_path)\..\plugins\tls\qopensslbackend$(var.qt_suffix).dll" />
-        </Directory>
-        <Directory Id="styles" Name="styles">
-          <File Source="$(var.qt_path)\..\plugins\styles\qmodernwindowsstyle$(var.qt_suffix).dll" />
-        </Directory>
-        <Directory Id="imageformats" Name="imageformats">
-          <File Source="$(var.qt_path)\..\plugins\imageformats\qsvg$(var.qt_suffix).dll" />
-        </Directory>
+<?endif?>
+        <File Subdirectory="platforms" Source="$(var.qt_path)\..\plugins\platforms\qwindows$(var.qt_suffix).dll" />
+        <File Subdirectory="tls" Source="$(var.qt_path)\..\plugins\tls\qopensslbackend$(var.qt_suffix).dll" />
+        <File Subdirectory="styles" Source="$(var.qt_path)\..\plugins\styles\qmodernwindowsstyle$(var.qt_suffix).dll" />
+        <File Subdirectory="imageformats" Source="$(var.qt_path)\..\plugins\imageformats\qsvg$(var.qt_suffix).dll" />
       </Directory>
     </StandardDirectory>
 

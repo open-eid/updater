@@ -160,7 +160,7 @@ else()
 	set(CONFIG_DIR ${CMAKE_CURRENT_BINARY_DIR})
 
 	find_package(OpenSSL 3.0.0 REQUIRED)
-	find_package(Qt6 6.0.0 REQUIRED COMPONENTS Core Widgets Network LinguistTools)
+	find_package(Qt6 6.9.0 REQUIRED COMPONENTS Core Widgets Network LinguistTools)
 
 	add_executable(${PROJECT_NAME} WIN32
 		${SOURCES}
@@ -184,7 +184,7 @@ else()
 		INTERPROCEDURAL_OPTIMIZATION_DEBUG NO
 	)
 	target_include_directories(${PROJECT_NAME} PRIVATE common/qtsingleapplication/src)
-	target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_20)
+	target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_23)
 	target_compile_definitions(${PROJECT_NAME} PRIVATE
 		WIN32_LEAN_AND_MEAN
 		UNICODE
@@ -200,6 +200,7 @@ else()
 		common/translations/common_et.ts common/translations/common_ru.ts
 		common/translations/qtbase_et.ts common/translations/qtbase_ru.ts
 		RESOURCE_PREFIX /
+		LUPDATE_OPTIONS -locations none
 	)
 	qt_add_resources(${PROJECT_NAME} icon FILES appicon.png)
 	qt_add_resources(${PROJECT_NAME} config BASE ${CONFIG_DIR} PREFIX / FILES
@@ -213,8 +214,7 @@ else()
 		get_filename_component(SSL_PATH "${OPENSSL_INCLUDE_DIR}/../bin" ABSOLUTE)
 	endif()
 	set(MSI_FILE "ID-Updater-${VERSION}$ENV{VER_SUFFIX}.$ENV{PLATFORM}")
-	get_target_property(qtCore_install_prefix Qt6::qmake IMPORTED_LOCATION)
-	get_filename_component(qtCore_install_prefix ${qtCore_install_prefix} DIRECTORY)
+	get_filename_component(QT_BASE_DIR "${Qt6_DIR}/../../.." ABSOLUTE)
 	add_custom_target(installer DEPENDS ${PROJECT_NAME}
 		COMMAND wix.exe build -nologo
 			-arch $ENV{PLATFORM}
@@ -222,7 +222,7 @@ else()
 			-bv WixUIDialogBmp=${CMAKE_SOURCE_DIR}/common/dlgbmp.bmp
 			-bv WixUIBannerBmp=${CMAKE_SOURCE_DIR}/common/banner.bmp
 			-d appicon=${CMAKE_SOURCE_DIR}/appicon.ico
-			-d qt_path=${qtCore_install_prefix}
+			-d qt_path=${QT_BASE_DIR}/bin
 			-d qt_suffix=$<$<CONFIG:Debug>:d>
 			-d libs_path="${SSL_PATH}"
 			-d updater_path=$<TARGET_FILE:${PROJECT_NAME}>
@@ -238,7 +238,7 @@ else()
 		list(APPEND SIGNCMD signtool.exe sign /a /v /s MY /n "${SIGNCERT}" /fd SHA256
 			/du http://installer.id.ee /tr http://timestamp.digicert.com /td SHA256)
 		add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-			COMMAND ${SIGNCMD} "$<$<BOOL:${CROSSSIGNCERT}>:/ph;/ac;${CROSSSIGNCERT}>" $<TARGET_FILE:${PROJECT_NAME}>
+			COMMAND ${SIGNCMD} "$<$<BOOL:${CROSSSIGNCERT}>:/ph;/ac;${CROSSSIGNCERT}>" $<TARGET_FILE:${PROJECT_NAME}> ${SSL_PATH}/*.dll
 			COMMAND_EXPAND_LISTS
 		)
 		add_custom_command(TARGET installer POST_BUILD
