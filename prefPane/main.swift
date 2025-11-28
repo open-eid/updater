@@ -16,19 +16,25 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  *
  */
- 
+
 import Foundation
+import id_updater_lib
 
 @main
-class Updater: Update, UpdateDelegate, @unchecked Sendable {
+class Updater: UpdateDelegate {
     private let path: String
+    private let update: Update
 
-    init(path: String) {
+    init?(path: String) {
         self.path = path
-        super.init()
-        delegate = self
-        print("Installed \(path): \(self.baseversion ?? "")")
-        request()
+        guard let update = Update(delegate: nil) else {
+            print("Failed to create update")
+            return nil
+        }
+        self.update = update
+        self.update.delegate = self
+        print("Installed \(path): \(update.baseVersion ?? "")")
+        update.makeRequest()
     }
 
     static func launch(_ path: String, arguments: [String]) -> Int32 {
@@ -38,25 +44,6 @@ class Updater: Update, UpdateDelegate, @unchecked Sendable {
         task.launch()
         task.waitUntilExit()
         return task.terminationStatus
-    }
-
-    // MARK: - Update Delegate
-
-    func didFinish(_ error: Error?) {
-        if let error = error {
-            print("Error: \(error.localizedDescription)")
-        }
-        exit(0)
-    }
-
-    func message(_ message: String) {
-        print(message)
-        _ = Updater.launch("/usr/bin/open", arguments: [path])
-    }
-
-    func updateAvailable(_ available: String, filename: String) {
-        print("Update available \(available) \(filename)")
-        _ = Updater.launch("/usr/bin/open", arguments: [path])
     }
 
     static func main() {
@@ -99,5 +86,24 @@ class Updater: Update, UpdateDelegate, @unchecked Sendable {
         try? FileManager.default.createDirectory(atPath: directoryPath, withIntermediateDirectories: true, attributes: nil)
         FileManager.default.createFile(atPath: PATH, contents: plistData, attributes: nil)
         exit(Updater.launch("/bin/launchctl", arguments: ["load", "-w", PATH]))
+    }
+
+    // MARK: - Update Delegate
+
+    func didFinish(_ error: Error?) {
+        if let error = error {
+            print("Error: \(error.localizedDescription)")
+        }
+        exit(0)
+    }
+
+    func message(_ message: String) {
+        print(message)
+        _ = Updater.launch("/usr/bin/open", arguments: [path])
+    }
+
+    func updateAvailable(_ available: String, filename: URL) {
+        print("Update available \(available) \(filename)")
+        _ = Updater.launch("/usr/bin/open", arguments: [path])
     }
 }
