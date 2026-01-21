@@ -19,7 +19,9 @@
 
 import CryptoTokenKit
 
+#if !NO_CONFIG_MODULE
 import config
+#endif
 
 @objc public enum UpdateError: Int, Error {
     case invalidSignature = 1000
@@ -37,8 +39,6 @@ import config
 open class Update: NSObject, URLSessionDelegate {
     public var delegate: UpdateDelegate?
     @objc public var baseVersion: String? { Update.versionInfo("ee.ria.open-eid") }
-    @objc public var updaterVersion: String? { Update.versionInfo("ee.ria.ID-updater") }
-    @objc public var digidoc4: String? { Update.versionInfo("ee.ria.qdigidoc4") }
     @objc(cert_bundle) public var certBundle: [Data] = []
 
     private let url: URL
@@ -106,9 +106,9 @@ open class Update: NSObject, URLSessionDelegate {
 
         var trustResult = SecTrustResultType.invalid
         SecTrustGetTrustResult(serverTrust, &trustResult)
-        if trustResult == .unspecified,
-           trustResult == .proceed,
-           trustResult == .recoverableTrustFailure,
+        if (trustResult == .unspecified ||
+           trustResult == .proceed ||
+           trustResult == .recoverableTrustFailure),
            let chain = SecTrustCopyCertificateChain(serverTrust) as? [SecCertificate],
            let firstCert = chain.first {
             return certBundle.contains(SecCertificateCopyData(firstCert) as Data)
@@ -218,9 +218,9 @@ open class Update: NSObject, URLSessionDelegate {
             String(cString: $0.bindMemory(to: CChar.self).baseAddress!)
         }
         let devices = TKSmartCardSlotManager.default?.slotNames.joined(separator: "/") ?? ""
-        var agent = ["id-updater/\(updaterVersion ?? "0.0.0.0")"]
+        var agent = ["id-updater/\(Update.versionInfo("ee.ria.ID-updater") ?? "0.0.0.0")"]
 
-        if diagnostics, let digidoc4 = digidoc4, !digidoc4.isEmpty {
+        if diagnostics, let digidoc4 = Update.versionInfo("ee.ria.qdigidoc4"), !digidoc4.isEmpty {
             agent.append("qdigidoc4/\(digidoc4)")
         }
 
