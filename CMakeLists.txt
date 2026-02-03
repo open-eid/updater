@@ -47,7 +47,11 @@ if( APPLE )
 			libid-updater-lib_x86_64.a
 			${SWIFTMOD_DIR}/arm64-apple-macos.swiftmodule
 			${SWIFTMOD_DIR}/x86_64-apple-macos.swiftmodule
-		DEPENDS config.h
+		DEPENDS
+			config.h
+			prefPane/AdvancedWindowController.swift
+			prefPane/id-updater.swift
+			prefPane/update.swift
 		COMMENT "Build id-updater-lib"
 		COMMAND ${CMAKE_COMMAND} -E make_directory ${SWIFTMOD_DIR}
 		COMMAND ${CMAKE_COMMAND} -E make_directory ${SWIFTHDR_DIR}
@@ -55,30 +59,37 @@ if( APPLE )
 			-module-name id_updater_lib
 			-emit-module -emit-module-path ${SWIFTMOD_DIR}/arm64-apple-macos.swiftmodule
 			-emit-objc-header -emit-objc-header-path ${SWIFTHDR_DIR}/id_updater_lib-Swift.h
-			${CMAKE_CURRENT_SOURCE_DIR}/prefPane/update.swift
 			-emit-library -static -o libid-updater-lib_arm64.a
+			${CMAKE_CURRENT_SOURCE_DIR}/prefPane/AdvancedWindowController.swift
+			${CMAKE_CURRENT_SOURCE_DIR}/prefPane/id-updater.swift
+			${CMAKE_CURRENT_SOURCE_DIR}/prefPane/update.swift
 		COMMAND ${SWIFT_FLAGS} -target x86_64-apple-macosx${CMAKE_OSX_DEPLOYMENT_TARGET}
 			-module-name id_updater_lib
 			-emit-module -emit-module-path ${SWIFTMOD_DIR}/x86_64-apple-macos.swiftmodule
 			-emit-objc-header -emit-objc-header-path ${SWIFTHDR_DIR}/id_updater_lib-Swift.h
-			${CMAKE_CURRENT_SOURCE_DIR}/prefPane/update.swift
 			-emit-library -static -o libid-updater-lib_x86_64.a
+			${CMAKE_CURRENT_SOURCE_DIR}/prefPane/AdvancedWindowController.swift
+			${CMAKE_CURRENT_SOURCE_DIR}/prefPane/id-updater.swift
+			${CMAKE_CURRENT_SOURCE_DIR}/prefPane/update.swift
 		COMMAND lipo -create libid-updater-lib_arm64.a libid-updater-lib_x86_64.a -output libid-updater-lib.a
 	)
 	add_custom_command(OUTPUT id-updater-helper
 		BYPRODUCTS
 			id-updater-helper_arm64
 			id-updater-helper_x86_64
-		DEPENDS libid-updater-lib.a
+		DEPENDS
+			${CMAKE_CURRENT_BINARY_DIR}/libid-updater-lib.a
+			prefPane/update.swift
+			prefPane/main.swift
 		COMMENT "Build id-updater-helper"
 		COMMAND ${SWIFT_FLAGS} -target arm64-apple-macosx${CMAKE_OSX_DEPLOYMENT_TARGET} -parse-as-library
-			${CMAKE_CURRENT_BINARY_DIR}/libid-updater-lib.a
-			${CMAKE_CURRENT_SOURCE_DIR}/prefPane/main.swift
 			-o id-updater-helper_arm64
-		COMMAND ${SWIFT_FLAGS} -target x86_64-apple-macosx${CMAKE_OSX_DEPLOYMENT_TARGET} -parse-as-library
-			${CMAKE_CURRENT_BINARY_DIR}/libid-updater-lib.a
+			${CMAKE_CURRENT_SOURCE_DIR}/prefPane/update.swift
 			${CMAKE_CURRENT_SOURCE_DIR}/prefPane/main.swift
+		COMMAND ${SWIFT_FLAGS} -target x86_64-apple-macosx${CMAKE_OSX_DEPLOYMENT_TARGET} -parse-as-library
 			-o id-updater-helper_x86_64
+			${CMAKE_CURRENT_SOURCE_DIR}/prefPane/update.swift
+			${CMAKE_CURRENT_SOURCE_DIR}/prefPane/main.swift
 		COMMAND lipo -create id-updater-helper_arm64 id-updater-helper_x86_64 -output id-updater-helper
 	)
 
