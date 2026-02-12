@@ -11,62 +11,59 @@ jobs:
       MACOSX_DEPLOYMENT_TARGET: 13.0
     steps:
     - name: Checkout
-      uses: actions/checkout@v5
+      uses: actions/checkout@v6
     - name: Build
       run: |
-        cmake -DCMAKE_OSX_ARCHITECTURES="x86_64;arm64" -DCMAKE_BUILD_TYPE=RelWithDebInfo -S . -B build
+        cmake -S . -B build -DCMAKE_OSX_ARCHITECTURES="x86_64;arm64" -DCMAKE_BUILD_TYPE=RelWithDebInfo
         cmake --build build --target pkgbuild
     - name: Archive artifacts
-      uses: actions/upload-artifact@v5
+      uses: actions/upload-artifact@v6
       with:
         name: macOS
         path: build/*.pkg
   windows:
     name: Build on Windows
-    runs-on: windows-2025
+    runs-on: ${{ matrix.platform == 'arm64' && 'windows-11-arm' || 'windows-2025' }}
     strategy:
       matrix:
         vcver: [143]
+        platform: [x64, arm64]
     env:
       VER_SUFFIX: .VS${{ matrix.vcver }}
     steps:
     - name: Checkout
-      uses: actions/checkout@v5
+      uses: actions/checkout@v6
       with:
         submodules: recursive
     - name: Cache vcpkg
-      uses: actions/cache@v4
+      uses: actions/cache@v5
       with:
         path: ${{ github.workspace }}/vcpkg_cache
-        key: vcpkg-${{ matrix.vcver }}-${{ hashFiles('vcpkg.json') }}
-    - name: Prepare vcpkg
-      uses: lukka/run-vcpkg@v11 
-      with:
-        vcpkgJsonGlob: ./vcpkg.json
-        runVcpkgInstall: true
-      env:
-        VCPKG_BINARY_SOURCES: clear;files,${{ github.workspace }}/vcpkg_cache,readwrite
-        VCPKG_INSTALLED_DIR: ${{ github.workspace }}/build/vcpkg_installed
+        key: vcpkg-${{ matrix.vcver }}-${{ matrix.platform }}-${{ hashFiles('vcpkg.json') }}
     - name: Install Qt
       uses: jurplel/install-qt-action@v4
       with:
-        version: 6.10.1
-        arch: win64_msvc2022_64
+        version: 6.10.2
+        arch: ${{ matrix.platform == 'arm64' && 'win64_msvc2022_arm64' || 'win64_msvc2022_64' }}
+        cache: true
     - name: Setup dev env
       uses: ilammy/msvc-dev-cmd@v1
       with:
-        arch: x64
+        arch: ${{ matrix.platform }}
     - name: Install WiX
       run: |
         dotnet tool install -g wix --version 6.0.2
         wix extension -g add WixToolset.UI.wixext/6.0.2
     - name: Build
+      env:
+        VCPKG_BINARY_SOURCES: clear;files,${{ github.workspace }}/vcpkg_cache,readwrite
       run: |
-        cmake -S . -B build -DCMAKE_BUILD_TYPE=RelWithDebInfo `
-          -DCMAKE_TOOLCHAIN_FILE=${{ env.RUNVCPKG_VCPKG_ROOT }}/scripts/buildsystems/vcpkg.cmake
+        cmake -A ${{ matrix.platform }} -S . -B build -DCMAKE_BUILD_TYPE=RelWithDebInfo `
+          -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake `
+          -DVCPKG_TARGET_TRIPLET=${{ matrix.platform }}-windows
         cmake --build build --target installer
     - name: Archive artifacts
-      uses: actions/upload-artifact@v5
+      uses: actions/upload-artifact@v6
       with:
-        name: msi_${{ matrix.vcver }}_x64
+        name: msi_${{ matrix.vcver }}_${{ matrix.platform }}
         path: build/*.msi
