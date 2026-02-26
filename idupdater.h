@@ -58,7 +58,7 @@ Q_SIGNALS:
 
 private:
 	void finished(bool changed, const QString &error);
-	QString installedVersion(const QString &upgradeCode) const;
+	static QString installedVersion(const QString &upgradeCode) ;
 	bool verifyPackage(const QString &filePath) const;
 
 	bool m_autoupdate = false, m_autoclose = false;

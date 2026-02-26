@@ -19,9 +19,8 @@
 
 #pragma once
 
-#include <QString>
+#include <memory>
 
-class ScheduledUpdateTaskPrivate;
 class ScheduledUpdateTask
 {
 public:
@@ -39,5 +38,6 @@ public:
 	bool remove();
 
 private:
-	ScheduledUpdateTaskPrivate *d;
+	struct Private;
+	std::unique_ptr<Private> d;
 };

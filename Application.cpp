@@ -22,21 +22,31 @@
 #include "idupdater.h"
 #include "ScheduledUpdateTask.h"
 
+#include "common/Common.h"
+
 #include <QDateTime>
 #include <QDebug>
 #include <QDir>
 #include <QIcon>
 #include <QLocale>
+#include <QLocalServer>
+#include <QLocalSocket>
 #include <QMenu>
 #include <QMessageBox>
 #include <QSettings>
+#include <QStandardPaths>
 #include <QTranslator>
+#include <QThread>
 #include <QtNetwork/QNetworkProxyFactory>
 
 #include <qt_windows.h>
 #include <userenv.h>
 #include <wtsapi32.h>
 
+#include <chrono>
+#include <span>
+
+using namespace std::chrono_literals;
 using namespace Qt::StringLiterals;
 
 int main( int argc, char *argv[] )
@@ -47,14 +57,20 @@ int main( int argc, char *argv[] )
 
 
 Application::Application( int &argc, char **argv )
-:	QtSingleApplication( argc, argv )
+	: QApplication(argc, argv)
+	, lockFile([] {
+		QString runtimeDir = QStandardPaths::writableLocation(QStandardPaths::RuntimeLocation);
+		if(runtimeDir.isEmpty())
+			runtimeDir = QDir::tempPath();
+		return runtimeDir + u"/id-updater-lockfile"_s;
+	}())
 {
 	log.setFileName(QDir::tempPath() + u"/id-updater.log"_s);
 	if( log.exists() && log.open( QFile::WriteOnly|QFile::Append ) )
 		qInstallMessageHandler( msgHandler );
 
-	QTranslator *qt = new QTranslator( this );
-	QTranslator *t = new QTranslator( this );
+	auto *qt = new QTranslator(this);
+	auto *t = new QTranslator(this);
 	QString lang;
 	auto languages = QLocale().uiLanguages().first();
 	if(languages.contains("et"_L1, Qt::CaseInsensitive))
@@ -85,7 +101,7 @@ Application::~Application()
 	qInstallMessageHandler(nullptr);
 }
 
-int Application::confTask( const QStringList &args ) const
+int Application::confTask(const QStringList &args)
 {
 	ScheduledUpdateTask task;
 	if(args.contains("-status"_L1))
@@ -108,29 +124,29 @@ bool Application::execute(const QStringList &arguments)
 	QString command = QDir::toNativeSeparators(applicationFilePath()) + ' ' + arguments.join(' ');
 	qDebug() << "command:" << command;
 
-	PWTS_SESSION_INFOW sessionInfo = 0;
+	PWTS_SESSION_INFOW sessionInfo {};
 	DWORD count = 0;
 	WTSEnumerateSessionsW(WTS_CURRENT_SERVER_HANDLE, 0, 1, &sessionInfo, &count);
 
 	DWORD sessionId = 0;
-	for(DWORD i = 0; i < count; ++i)
+	for(const auto &session: std::span(sessionInfo, count))
 	{
-		if(sessionInfo[i].State == WTSActive)
+		if(session.State == WTSActive)
 		{
-			sessionId = sessionInfo[i].SessionId;
+			sessionId = session.SessionId;
 			break;
 		}
 	}
 	WTSFreeMemory(sessionInfo);
 	qDebug() << "Active session ID " << sessionId;
 
-	HANDLE currentToken = 0;
+	HANDLE currentToken {};
 	BOOL ret = WTSQueryUserToken(sessionId, &currentToken);
 	qDebug() << "WTSQueryUserToken" << ret << GetLastError();
 	if(!ret)
 		return false;
 
-	HANDLE primaryToken = 0;
+	HANDLE primaryToken {};
 	ret = DuplicateTokenEx(currentToken, TOKEN_ASSIGN_PRIMARY | TOKEN_ALL_ACCESS, 0,
 		SecurityImpersonation, TokenPrimary, &primaryToken);
 	CloseHandle(currentToken);
@@ -142,7 +158,7 @@ bool Application::execute(const QStringList &arguments)
 	if(!primaryToken)
 		return false;
 
-	void *environment = nullptr;
+	void *environment {};
 	ret = CreateEnvironmentBlock(&environment, primaryToken, true);
 	qDebug() << "CreateEnvironmentBlock" << environment << ret <<  GetLastError();
 
@@ -159,22 +175,17 @@ bool Application::execute(const QStringList &arguments)
 	return ret;
 }
 
-void Application::messageReceived( const QString &str )
+void Application::msgHandler(QtMsgType type, const QMessageLogContext &/* ctx */, const QString &msg)
 {
-	w->checkUpdates(str.contains("-autoupdate"_L1), str.contains("-autoclose"_L1));
-}
-
-void Application::msgHandler( QtMsgType type, const QMessageLogContext &, const QString &msg )
-{
-	QFile *log = &qobject_cast<Application*>(qApp)->log;
-	log->write(QDateTime::currentDateTime().toString(u"yyyy-MM-dd hh:mm:ss:zzz "_s).toUtf8());
+	QFile &log = qobject_cast<Application*>(qApp)->log;
+	log.write(QDateTime::currentDateTime().toString(u"yyyy-MM-dd hh:mm:ss:zzz "_s).toUtf8());
 	switch( type )
 	{
-	case QtDebugMsg: log->write("DBG: %1\n"_L1.arg(msg).toUtf8()); break;
-	case QtInfoMsg: log->write("INF: %1\n"_L1.arg(msg).toUtf8()); break;
-	case QtWarningMsg: log->write("WRN: %1\n"_L1.arg(msg).toUtf8()); break;
-	case QtCriticalMsg: log->write("CRI: %1\n"_L1.arg( msg).toUtf8()); break;
-	case QtFatalMsg: log->write("FAT: %1\n"_L1.arg(msg).toUtf8()); abort();
+	case QtDebugMsg: log.write("DBG: %1\n"_L1.arg(msg).toUtf8()); break;
+	case QtInfoMsg: log.write("INF: %1\n"_L1.arg(msg).toUtf8()); break;
+	case QtWarningMsg: log.write("WRN: %1\n"_L1.arg(msg).toUtf8()); break;
+	case QtCriticalMsg: log.write("CRI: %1\n"_L1.arg( msg).toUtf8()); break;
+	case QtFatalMsg: log.write("FAT: %1\n"_L1.arg(msg).toUtf8()); abort();
 	}
 }
 
@@ -223,10 +234,13 @@ int Application::run()
 		return !execute(args);
 	}
 
-	if( isRunning() )
-		return !sendMessage(args.join(' '));
-	connect( this, &QtSingleApplication::messageReceived, this, &Application::messageReceived );
+	if(!lockFile.tryLock(500ms))
+		return Common::sendLocalMessage(args);
 
+	Common::startLocalServer(this, [this](const QStringList &args) {
+		if(w)
+			w->checkUpdates(args.contains("-autoupdate"_L1), args.contains("-autoclose"_L1));
+	});
 	w = new idupdater( this );
 	w->checkUpdates(args.contains("-autoupdate"_L1), args.contains("-autoclose"_L1));
 

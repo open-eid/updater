@@ -43,7 +43,6 @@
 using namespace Qt::StringLiterals;
 
 idupdaterui::idupdaterui( const QString &version, idupdater *parent )
-:	QWidget()
 {
 	setupUi( this );
 	m_message->hide();
@@ -196,7 +195,7 @@ void idupdater::finished(bool /*changed*/, const QString &err)
 	if(w) w->setInfo(version, available);
 }
 
-QString idupdater::installedVersion(const QString &upgradeCode) const
+QString idupdater::installedVersion(const QString &upgradeCode)
 {
 	QString code = upgradeCode.toUpper();
 	QSettings s(u"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall"_s, QSettings::Registry32Format);
@@ -212,7 +211,7 @@ QString idupdater::installedVersion(const QString &upgradeCode) const
 		return {};
 
 	DWORD size = 0;
-	MsiGetProductInfo(prodCode, INSTALLPROPERTY_VERSIONSTRING, 0, &size);
+	MsiGetProductInfo(prodCode, INSTALLPROPERTY_VERSIONSTRING, nullptr, &size);
 	QString version(size, '\0');
 	size += 1;
 	MsiGetProductInfo(prodCode, INSTALLPROPERTY_VERSIONSTRING, LPWSTR(version.data()), &size);
@@ -310,5 +309,5 @@ bool idupdater::verifyPackage(const QString &filePath) const
 	WinTrustData.pFile = &FileData;
 
 	GUID WVTPolicyGUID = WINTRUST_ACTION_GENERIC_VERIFY_V2;
-	return WinVerifyTrust(0, &WVTPolicyGUID, &WinTrustData) == ERROR_SUCCESS;
+	return WinVerifyTrust(nullptr, &WVTPolicyGUID, &WinTrustData) == ERROR_SUCCESS;
 }
