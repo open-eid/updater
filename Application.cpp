@@ -22,11 +22,14 @@
 #include "idupdater.h"
 #include "ScheduledUpdateTask.h"
 
+#include "common/Common.h"
+
 #include <QDateTime>
 #include <QDebug>
 #include <QDir>
 #include <QIcon>
 #include <QLocale>
+#include <QLockFile>
 #include <QMenu>
 #include <QMessageBox>
 #include <QSettings>
@@ -49,7 +52,7 @@ int main( int argc, char *argv[] )
 
 
 Application::Application( int &argc, char **argv )
-:	QtSingleApplication( argc, argv )
+	: QApplication(argc, argv)
 {
 	log.setFileName(QDir::tempPath() + u"/id-updater.log"_s);
 	if( log.exists() && log.open( QFile::WriteOnly|QFile::Append ) )
@@ -162,11 +165,6 @@ bool Application::execute(const QStringList &arguments)
 	return ret;
 }
 
-void Application::messageReceived( const QString &str )
-{
-	w->checkUpdates(str.contains("-autoupdate"_L1), str.contains("-autoclose"_L1));
-}
-
 void Application::msgHandler(QtMsgType type, const QMessageLogContext &/* ctx */, const QString &msg)
 {
 	QFile &log = qobject_cast<Application*>(qApp)->log;
@@ -226,10 +224,18 @@ int Application::run()
 		return !execute(args);
 	}
 
-	if( isRunning() )
-		return !sendMessage(args.join(' '));
-	connect( this, &QtSingleApplication::messageReceived, this, &Application::messageReceived );
+	lockFile = Common::acquireInstanceLock(args);
+	if(!lockFile)
+		return 0;
 
+	if(!Common::startLocalServer(this, [this](const QStringList &args) {
+		if(w)
+			w->checkUpdates(args.contains("-autoupdate"_L1), args.contains("-autoclose"_L1));
+	}))
+	{
+		qWarning() << "Failed to start local server";
+		return 1;
+	}
 	w = new idupdater( this );
 	w->checkUpdates(args.contains("-autoupdate"_L1), args.contains("-autoclose"_L1));
 
