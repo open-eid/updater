@@ -162,8 +162,8 @@ else()
 	file(DOWNLOAD ${ECC_URL} ${CMAKE_CURRENT_BINARY_DIR}/config.ecc)
 	set(CONFIG_DIR ${CMAKE_CURRENT_BINARY_DIR})
 
-	find_package(OpenSSL 3.0.0 REQUIRED)
-	find_package(Qt6 6.9.0 REQUIRED COMPONENTS Core Widgets Network LinguistTools)
+	find_package(OpenSSL 3.5.0 REQUIRED)
+	find_package(Qt6 6.10.0 REQUIRED COMPONENTS Core Widgets Network LinguistTools)
 
 	add_executable(${PROJECT_NAME} WIN32
 		${SOURCES}
@@ -174,8 +174,6 @@ else()
 		ScheduledUpdateTask.cpp
 		common/Common.cpp
 		common/Configuration.cpp
-		common/qtsingleapplication/src/qtlocalpeer.cpp
-		common/qtsingleapplication/src/qtsingleapplication.cpp
 	)
 	set_target_properties(${PROJECT_NAME} PROPERTIES
 		AUTOMOC TRUE
@@ -186,21 +184,20 @@ else()
 		INTERPROCEDURAL_OPTIMIZATION YES
 		INTERPROCEDURAL_OPTIMIZATION_DEBUG NO
 	)
-	target_include_directories(${PROJECT_NAME} PRIVATE common/qtsingleapplication/src)
 	target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_23)
 	target_compile_definitions(${PROJECT_NAME} PRIVATE
 		WIN32_LEAN_AND_MEAN
 		UNICODE
 		CONFIG_URL="${CONFIG_URL}"
 		NO_CACHE
+		NO_REGISTRY
 		VERSION="${VERSION}"
 		VERSION_INF=${PROJECT_VERSION_MAJOR},${PROJECT_VERSION_MINOR},${PROJECT_VERSION_PATCH},${BUILD_NUMBER}
 	)
 	target_link_libraries(${PROJECT_NAME} PRIVATE Qt6::Widgets Qt6::Network OpenSSL::Crypto
 		msi wintrust Crypt32 taskschd comsupp Setupapi winscard Wtsapi32
 	)
-	qt_add_translations(${PROJECT_NAME} TS_FILES idupdater_et.ts
-		common/translations/qtbase_et.ts
+	qt_add_translations(${PROJECT_NAME} TS_FILES idupdater_et.ts common/translations/qtbase_et.ts
 		RESOURCE_PREFIX /
 		LUPDATE_OPTIONS -locations none
 	)
@@ -238,7 +235,7 @@ else()
 			target_link_options(${PROJECT_NAME} PRIVATE "/INTEGRITYCHECK")
 		endif()
 		list(APPEND SIGNCMD signtool.exe sign /a /v /s MY /n "${SIGNCERT}" /fd SHA256
-			/du http://installer.id.ee /tr http://timestamp.digicert.com /td SHA256)
+			/du https://installer.id.ee /tr http://timestamp.digicert.com /td SHA256)
 		add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
 			COMMAND ${SIGNCMD} "$<$<BOOL:${CROSSSIGNCERT}>:/ph;/ac;${CROSSSIGNCERT}>" $<TARGET_FILE:${PROJECT_NAME}> ${SSL_PATH}/*.dll
 			COMMAND_EXPAND_LISTS
