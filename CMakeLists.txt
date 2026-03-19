@@ -1,11 +1,12 @@
 # SPDX-FileCopyrightText: Estonian Information System Authority
 # SPDX-License-Identifier: LGPL-2.1-or-later
 
-cmake_minimum_required(VERSION 3.22)
+cmake_minimum_required(VERSION 4.5)
 set(CMAKE_OSX_DEPLOYMENT_TARGET 14.0 CACHE STRING "Minimum OS X deployment version")
 project(ID-updater VERSION 3.21.0
 	DESCRIPTION "Open-eID updater application for macOS and Windows"
 	HOMEPAGE_URL https://github.com/open-eid/updater
+	SPDX_LICENSE LGPL-2.1-or-later
 )
 
 macro( SET_ENV NAME DEF )
@@ -136,7 +137,10 @@ if( APPLE )
 	add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
 		COMMAND cp ${CMAKE_CURRENT_BINARY_DIR}/id-updater-helper $<TARGET_BUNDLE_CONTENT_DIR:${PROJECT_NAME}>/Resources
 	)
-	install( TARGETS ${PROJECT_NAME} DESTINATION /Library/PreferencePanes )
+	install(TARGETS ${PROJECT_NAME} EXPORT ${PROJECT_NAME}Export DESTINATION /Library/PreferencePanes)
+	export(SBOM ${PROJECT_NAME} EXPORTS ${PROJECT_NAME}Export
+		#PACKAGE_URL "pkg:github/open-eid/updater@${PROJECT_VERSION}"
+	)
 
 	# Sign bundle after resources are copied
 	add_custom_target(signhelper DEPENDS ${PROJECT_NAME})
@@ -234,6 +238,8 @@ else()
 			${CMAKE_SOURCE_DIR}/common/WixUI_Minimal.wxs
 			-o ${MSI_FILE}.msi
 	)
+	install(TARGETS ${PROJECT_NAME} EXPORT ${PROJECT_NAME}Export)
+	export(SBOM ${PROJECT_NAME} EXPORTS ${PROJECT_NAME}Export)
 	if(SIGNCERT)
 		if(CROSSSIGNCERT)
 			target_link_options(${PROJECT_NAME} PRIVATE "/INTEGRITYCHECK")
