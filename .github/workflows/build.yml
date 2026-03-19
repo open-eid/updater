@@ -12,15 +12,19 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v6
+    - name: Install CMake
+      uses: lukka/get-cmake@latest
     - name: Build
       run: |
         cmake -S . -B build -DCMAKE_OSX_ARCHITECTURES="x86_64;arm64" -DCMAKE_BUILD_TYPE=RelWithDebInfo
         cmake --build build --target pkgbuild
     - name: Archive artifacts
-      uses: actions/upload-artifact@v6
+      uses: actions/upload-artifact@v7
       with:
         name: macOS
-        path: build/*.pkg
+        path: |
+          build/*.pkg
+          build/ID-updater.spdx.json
   windows:
     name: Build on Windows
     runs-on: ${{ matrix.platform == 'arm64' && 'windows-11-arm' || 'windows-2025' }}
@@ -50,6 +54,8 @@ jobs:
       uses: ilammy/msvc-dev-cmd@v1
       with:
         arch: ${{ matrix.platform }}
+    - name: Install CMake
+      uses: lukka/get-cmake@latest
     - name: Install WiX
       run: |
         dotnet tool install -g wix --version 6.0.2
@@ -63,7 +69,9 @@ jobs:
           -DVCPKG_TARGET_TRIPLET=${{ matrix.platform }}-windows
         cmake --build build --target installer
     - name: Archive artifacts
-      uses: actions/upload-artifact@v6
+      uses: actions/upload-artifact@v7
       with:
         name: msi_${{ matrix.vcver }}_${{ matrix.platform }}
-        path: build/*.msi
+        path: |
+          build/*.msi
+          build/ID-updater.spdx.json
