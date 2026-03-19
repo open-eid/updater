@@ -1,5 +1,9 @@
 cmake_minimum_required(VERSION 3.22)
-project(ID-updater VERSION 3.19.0)
+project(ID-updater VERSION 3.19.0
+	DESCRIPTION "Open-eID updater application for macOS and Windows"
+	HOMEPAGE_URL https://github.com/open-eid/updater
+	SPDX_LICENSE LGPL-2.1-or-later
+)
 
 macro( SET_ENV NAME DEF )
 	if( DEFINED ENV{${NAME}} )
@@ -10,6 +14,7 @@ macro( SET_ENV NAME DEF )
 endmacro()
 
 set_env(BUILD_NUMBER 0)
+set(CMAKE_EXPERIMENTAL_GENERATE_SBOM ca494ed3-b261-4205-a01f-603c95e4cae0)
 set(VERSION ${PROJECT_VERSION}.${BUILD_NUMBER})
 set_env( CONFIG_URL "https://id.eesti.ee/config.json" CACHE STRING "Set Config URL" )
 set_env( SIGNCERT "" CACHE STRING "Common name of certificate to used sign binaries, empty skip signing" )
@@ -118,7 +123,7 @@ if( APPLE )
 		MACOSX_BUNDLE_INFO_PLIST ${CMAKE_CURRENT_SOURCE_DIR}/prefPane/Info.plist.cmake
 		MACOSX_BUNDLE_BUNDLE_NAME ${PROJECT_NAME}
 		MACOSX_BUNDLE_GUI_IDENTIFIER "ee.ria.${PROJECT_NAME}"
-		MACOSX_BUNDLE_COPYRIGHT "(C) 2010-2025 Estonian Information System Authority"
+		MACOSX_BUNDLE_COPYRIGHT "(C) 2010-2026 Estonian Information System Authority"
 		MACOSX_BUNDLE_ICON_FILE Icon.icns
 		MACOSX_BUNDLE_SHORT_VERSION_STRING ${PROJECT_VERSION}
 		MACOSX_BUNDLE_BUNDLE_VERSION ${BUILD_NUMBER}
@@ -129,7 +134,10 @@ if( APPLE )
 	add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
 		COMMAND cp ${CMAKE_CURRENT_BINARY_DIR}/id-updater-helper $<TARGET_BUNDLE_CONTENT_DIR:${PROJECT_NAME}>/Resources
 	)
-	install( TARGETS ${PROJECT_NAME} DESTINATION /Library/PreferencePanes )
+	install(TARGETS ${PROJECT_NAME} EXPORT ${PROJECT_NAME}Export DESTINATION /Library/PreferencePanes)
+	export(SBOM ${PROJECT_NAME} EXPORT ${PROJECT_NAME}Export
+		#PACKAGE_URL "pkg:github/open-eid/updater@${PROJECT_VERSION}"                                                           
+	)
 
 	# Sign bundle after resources are copied
 	add_custom_target(signhelper DEPENDS ${PROJECT_NAME})
@@ -197,7 +205,6 @@ else()
 		msi wintrust Crypt32 taskschd comsupp Setupapi winscard Wtsapi32
 	)
 	qt_add_translations(${PROJECT_NAME} TS_FILES idupdater_et.ts idupdater_ru.ts
-		common/translations/common_et.ts common/translations/common_ru.ts
 		common/translations/qtbase_et.ts common/translations/qtbase_ru.ts
 		RESOURCE_PREFIX /
 		LUPDATE_OPTIONS -locations none
@@ -231,6 +238,8 @@ else()
 			${CMAKE_SOURCE_DIR}/common/WixUI_Minimal.wxs
 			-o ${MSI_FILE}.msi
 	)
+	install(TARGETS ${PROJECT_NAME} EXPORT ${PROJECT_NAME}Export)
+	export(SBOM ${PROJECT_NAME} EXPORT ${PROJECT_NAME}Export)
 	if(SIGNCERT)
 		if(CROSSSIGNCERT)
 			target_link_options(${PROJECT_NAME} PRIVATE "/INTEGRITYCHECK")
