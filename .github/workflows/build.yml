@@ -17,7 +17,7 @@ jobs:
         cmake -S . -B build -DCMAKE_OSX_ARCHITECTURES="x86_64;arm64" -DCMAKE_BUILD_TYPE=RelWithDebInfo
         cmake --build build --target pkgbuild
     - name: Archive artifacts
-      uses: actions/upload-artifact@v6
+      uses: actions/upload-artifact@v7
       with:
         name: macOS
         path: build/*.pkg
@@ -63,7 +63,7 @@ jobs:
           -DVCPKG_TARGET_TRIPLET=${{ matrix.platform }}-windows
         cmake --build build --target installer
     - name: Archive artifacts
-      uses: actions/upload-artifact@v6
+      uses: actions/upload-artifact@v7
       with:
         name: msi_${{ matrix.vcver }}_${{ matrix.platform }}
         path: build/*.msi
