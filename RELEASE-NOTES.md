@@ -1,3 +1,45 @@
+Id-updater version [3.19.0](https://github.com/open-eid/updater/releases/tag/v3.19.0) release notes
+--------------------------------------
+- ECC key support (#97)
+- Windows arm64 (#99)
+- Rewrite some code to swift and detach mountpoint (#100)
+
+[Full Changelog](https://github.com/open-eid/updater/compare/v3.18.0...v3.19.0)
+
+Id-updater version [3.18.0](https://github.com/open-eid/updater/releases/tag/v3.18.0) release notes
+--------------------------------------
+- Refresh UI when user select pane (#96)
+- Update version number and packages (#98)
+
+[Full Changelog](https://github.com/open-eid/updater/compare/v3.17.0...v3.18.0)
+
+Id-updater version [3.17.0](https://github.com/open-eid/updater/releases/tag/v3.17.0) release notes
+--------------------------------------
+- Use default theme on windows (#94)
+- Update version number (#95)
+
+[Full Changelog](https://github.com/open-eid/updater/compare/v3.16.0...v3.17.0)
+
+Id-updater version [3.16.0](https://github.com/open-eid/updater/releases/tag/v3.16.0) release notes
+--------------------------------------
+- Remove Gemalto card support (#85)
+- Use WIX 5 (#89)
+- Update Qt 6.7.1 (#90)
+
+[Full Changelog](https://github.com/open-eid/updater/compare/v3.15.0...v3.16.0)
+
+Id-updater version [3.15.0](https://github.com/open-eid/updater/releases/tag/v3.15.0) release notes
+--------------------------------------
+- Minor fixes and improvements
+
+[Full Changelog](https://github.com/open-eid/updater/compare/v3.14.0...v3.15.0)
+
+Id-updater version [3.14.0](https://github.com/open-eid/updater/releases/tag/v3.14.0) release notes
+--------------------------------------
+- Minor fixes and improvements
+
+[Full Changelog](https://github.com/open-eid/updater/compare/v3.13.5...v3.14.0)
+
 Id-updater version [3.13.5](https://github.com/open-eid/updater/releases/tag/v3.13.5) release notes
 --------------------------------------
 - macOS updated UI (#72)

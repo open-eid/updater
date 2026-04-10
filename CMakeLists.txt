@@ -1,5 +1,8 @@
 cmake_minimum_required(VERSION 3.22)
-project(ID-updater VERSION 3.19.0)
+project(ID-updater VERSION 3.19.0
+	DESCRIPTION "Open-eID updater application for macOS and Windows"
+	HOMEPAGE_URL https://github.com/open-eid/updater
+)
 
 macro( SET_ENV NAME DEF )
 	if( DEFINED ENV{${NAME}} )
@@ -118,7 +121,7 @@ if( APPLE )
 		MACOSX_BUNDLE_INFO_PLIST ${CMAKE_CURRENT_SOURCE_DIR}/prefPane/Info.plist.cmake
 		MACOSX_BUNDLE_BUNDLE_NAME ${PROJECT_NAME}
 		MACOSX_BUNDLE_GUI_IDENTIFIER "ee.ria.${PROJECT_NAME}"
-		MACOSX_BUNDLE_COPYRIGHT "(C) 2010-2025 Estonian Information System Authority"
+		MACOSX_BUNDLE_COPYRIGHT "(C) 2010-2026 Estonian Information System Authority"
 		MACOSX_BUNDLE_ICON_FILE Icon.icns
 		MACOSX_BUNDLE_SHORT_VERSION_STRING ${PROJECT_VERSION}
 		MACOSX_BUNDLE_BUNDLE_VERSION ${BUILD_NUMBER}
@@ -197,7 +200,6 @@ else()
 		msi wintrust Crypt32 taskschd comsupp Setupapi winscard Wtsapi32
 	)
 	qt_add_translations(${PROJECT_NAME} TS_FILES idupdater_et.ts idupdater_ru.ts
-		common/translations/common_et.ts common/translations/common_ru.ts
 		common/translations/qtbase_et.ts common/translations/qtbase_ru.ts
 		RESOURCE_PREFIX /
 		LUPDATE_OPTIONS -locations none
