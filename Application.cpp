@@ -59,8 +59,6 @@ Application::Application( int &argc, char **argv )
 	auto languages = QLocale().uiLanguages().first();
 	if(languages.contains("et"_L1, Qt::CaseInsensitive))
 		lang = u"et"_s;
-	else if(languages.contains("ru"_L1, Qt::CaseInsensitive))
-		lang = u"ru"_s;
 	else
 		lang = u"en"_s;
 	void(qt->load(":/qtbase_%1.qm"_L1.arg(lang)));
