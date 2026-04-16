@@ -199,8 +199,8 @@ else()
 	target_link_libraries(${PROJECT_NAME} PRIVATE Qt6::Widgets Qt6::Network OpenSSL::Crypto
 		msi wintrust Crypt32 taskschd comsupp Setupapi winscard Wtsapi32
 	)
-	qt_add_translations(${PROJECT_NAME} TS_FILES idupdater_et.ts idupdater_ru.ts
-		common/translations/qtbase_et.ts common/translations/qtbase_ru.ts
+	qt_add_translations(${PROJECT_NAME} TS_FILES idupdater_et.ts
+		common/translations/qtbase_et.ts
 		RESOURCE_PREFIX /
 		LUPDATE_OPTIONS -locations none
 	)
