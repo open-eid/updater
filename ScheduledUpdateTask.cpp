@@ -34,16 +34,15 @@
 template <class T>
 struct CPtr
 {
-    T *d{};
-    ~CPtr() { if(d) d->Release(); }
-    inline T* operator->() const { return d; }
-    inline operator T*() const { return d; }
-    inline T** operator&() { return &d; }
+	T *d{};
+	~CPtr() { if(d) d->Release(); }
+	constexpr T* operator->() const { return d; }
+	constexpr operator T*() const { return d; }
+	constexpr T** operator&() { return &d; }
 };
 
-class ScheduledUpdateTaskPrivate
+struct ScheduledUpdateTask::Private
 {
-public:
 	CPtr<ITaskService> service;
 	CPtr<ITaskFolder> folder;
 };
@@ -51,7 +50,7 @@ public:
 
 
 ScheduledUpdateTask::ScheduledUpdateTask()
-	: d(new ScheduledUpdateTaskPrivate)
+	: d(std::make_unique<Private>())
 {
 	CoInitialize(nullptr);
 	CoInitializeSecurity(nullptr, -1, nullptr, nullptr, RPC_C_AUTHN_LEVEL_PKT_PRIVACY,
@@ -64,7 +63,7 @@ ScheduledUpdateTask::ScheduledUpdateTask()
 
 ScheduledUpdateTask::~ScheduledUpdateTask()
 {
-	delete d;
+	d.release();
 	CoUninitialize();
 }
 
@@ -84,6 +83,7 @@ bool ScheduledUpdateTask::configure(ScheduledUpdateTask::Interval interval)
 		settings->put_RunOnlyIfNetworkAvailable(VARIANT_TRUE);
 		settings->put_DisallowStartIfOnBatteries(VARIANT_FALSE);
 		settings->put_StopIfGoingOnBatteries(VARIANT_FALSE);
+		settings->put_MultipleInstances(TASK_INSTANCES_STOP_EXISTING);
 	}
 
 	CPtr<ITriggerCollection> triggerCollection;
@@ -139,7 +139,7 @@ bool ScheduledUpdateTask::configure(ScheduledUpdateTask::Interval interval)
 	}
 	}
 
-	QString command = QDir::toNativeSeparators(qApp->applicationFilePath());
+	QString command = QDir::toNativeSeparators(QCoreApplication::applicationFilePath());
 	CPtr<IActionCollection> actionCollection;
 	CPtr<IAction> action;
 	CPtr<IExecAction> execAction;
@@ -147,10 +147,10 @@ bool ScheduledUpdateTask::configure(ScheduledUpdateTask::Interval interval)
 	return SUCCEEDED(task->get_Actions( &actionCollection )) &&
 		SUCCEEDED(actionCollection->Create( TASK_ACTION_EXEC, &action )) &&
 		SUCCEEDED(action->QueryInterface( IID_PPV_ARGS(&execAction) )) &&
-		SUCCEEDED(execAction->put_Path(_bstr_t(LPCWSTR(command.utf16())))) &&
-		SUCCEEDED(execAction->put_Arguments( _bstr_t(L"-task") )) &&
+		SUCCEEDED(execAction->put_Path(BSTR(command.utf16()))) &&
+		SUCCEEDED(execAction->put_Arguments(BSTR(L"-task"))) &&
 		SUCCEEDED(d->folder->RegisterTaskDefinition(
-			_bstr_t(TASK_NAME), task, TASK_CREATE_OR_UPDATE,
+			BSTR(TASK_NAME), task, TASK_CREATE_OR_UPDATE,
 			_variant_t(L"SYSTEM"), _variant_t(),
 			TASK_LOGON_SERVICE_ACCOUNT, _variant_t(L""), &registeredTask ));
 }

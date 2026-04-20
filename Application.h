@@ -19,13 +19,14 @@
 
 #pragma once
 
-#include <QtSingleApplication>
+#include <QApplication>
 
 #include <QFile>
+#include <QLockFile>
 
 class idupdater;
 
-class Application: public QtSingleApplication
+class Application: public QApplication
 {
 	Q_OBJECT
 public:
@@ -35,12 +36,12 @@ public:
 	int run();
 
 private:
-	bool execute(const QStringList &arguments);
-	void messageReceived( const QString &str );
+	static bool execute(const QStringList &arguments);
 	static void msgHandler( QtMsgType type, const QMessageLogContext &ctx, const QString &msg );
-	int confTask( const QStringList &args ) const;
-	void printHelp();
+	static int confTask(const QStringList &args);
+	static void printHelp();
 
+	QLockFile lockFile;
 	QFile log;
 	QString url;
 	idupdater *w = nullptr;
