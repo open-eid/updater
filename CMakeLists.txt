@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.22)
-project(ID-updater VERSION 3.19.0
+project(ID-updater VERSION 3.20.0
 	DESCRIPTION "Open-eID updater application for macOS and Windows"
 	HOMEPAGE_URL https://github.com/open-eid/updater
 )
