@@ -78,6 +78,8 @@ public class AdvancedWindowController: NSWindowController {
     }
 }
 
+#if DEBUG
 #Preview {
     AdvancedWindowView()
 }
+#endif
