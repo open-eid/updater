@@ -34,16 +34,15 @@
 template <class T>
 struct CPtr
 {
-    T *d{};
-    ~CPtr() { if(d) d->Release(); }
-    inline T* operator->() const { return d; }
-    inline operator T*() const { return d; }
-    inline T** operator&() { return &d; }
+	T *d{};
+	~CPtr() { if(d) d->Release(); }
+	constexpr T* operator->() const { return d; }
+	constexpr operator T*() const { return d; }
+	constexpr T** operator&() { return &d; }
 };
 
-class ScheduledUpdateTaskPrivate
+struct ScheduledUpdateTask::Private
 {
-public:
 	CPtr<ITaskService> service;
 	CPtr<ITaskFolder> folder;
 };
@@ -51,7 +50,7 @@ public:
 
 
 ScheduledUpdateTask::ScheduledUpdateTask()
-	: d(new ScheduledUpdateTaskPrivate)
+	: d(std::make_unique<Private>())
 {
 	CoInitialize(nullptr);
 	CoInitializeSecurity(nullptr, -1, nullptr, nullptr, RPC_C_AUTHN_LEVEL_PKT_PRIVACY,
@@ -64,7 +63,7 @@ ScheduledUpdateTask::ScheduledUpdateTask()
 
 ScheduledUpdateTask::~ScheduledUpdateTask()
 {
-	delete d;
+	d.reset();
 	CoUninitialize();
 }
 
@@ -84,6 +83,7 @@ bool ScheduledUpdateTask::configure(ScheduledUpdateTask::Interval interval)
 		settings->put_RunOnlyIfNetworkAvailable(VARIANT_TRUE);
 		settings->put_DisallowStartIfOnBatteries(VARIANT_FALSE);
 		settings->put_StopIfGoingOnBatteries(VARIANT_FALSE);
+		settings->put_MultipleInstances(TASK_INSTANCES_STOP_EXISTING);
 	}
 
 	CPtr<ITriggerCollection> triggerCollection;
@@ -139,7 +139,7 @@ bool ScheduledUpdateTask::configure(ScheduledUpdateTask::Interval interval)
 	}
 	}
 
-	QString command = QDir::toNativeSeparators(qApp->applicationFilePath());
+	QString command = QDir::toNativeSeparators(QCoreApplication::applicationFilePath());
 	CPtr<IActionCollection> actionCollection;
 	CPtr<IAction> action;
 	CPtr<IExecAction> execAction;

@@ -43,7 +43,6 @@
 using namespace Qt::StringLiterals;
 
 idupdaterui::idupdaterui( const QString &version, idupdater *parent )
-:	QWidget()
 {
 	setupUi( this );
 	m_message->hide();
@@ -152,7 +151,7 @@ void idupdater::finished(bool /*changed*/, const QString &err)
 
 	QJsonObject obj = conf->object();
 	trusted.clear();
-	for(const auto array = conf->object().value("CERT-BUNDLE"_L1).toArray(); const auto &c: array)
+	for(const auto array = conf->rawObject().value("CERT-BUNDLE"_L1).toArray(); const auto &c: array)
 		trusted.append(QSslCertificate(QByteArray::fromBase64(c.toString().toLatin1()), QSsl::Der));
 	if(obj.contains("UPDATER-MESSAGE-URL"_L1))
 	{
@@ -196,7 +195,7 @@ void idupdater::finished(bool /*changed*/, const QString &err)
 	if(w) w->setInfo(version, available);
 }
 
-QString idupdater::installedVersion(const QString &upgradeCode) const
+QString idupdater::installedVersion(const QString &upgradeCode)
 {
 	QString code = upgradeCode.toUpper();
 	QSettings s(u"HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall"_s, QSettings::Registry32Format);
@@ -212,7 +211,7 @@ QString idupdater::installedVersion(const QString &upgradeCode) const
 		return {};
 
 	DWORD size = 0;
-	MsiGetProductInfo(prodCode, INSTALLPROPERTY_VERSIONSTRING, 0, &size);
+	MsiGetProductInfo(prodCode, INSTALLPROPERTY_VERSIONSTRING, nullptr, &size);
 	QString version(size, '\0');
 	size += 1;
 	MsiGetProductInfo(prodCode, INSTALLPROPERTY_VERSIONSTRING, LPWSTR(version.data()), &size);
@@ -299,16 +298,20 @@ bool idupdater::verifyPackage(const QString &filePath) const
 	if(!trusted.contains(cert))
 		return false;
 
-	WINTRUST_FILE_INFO FileData { sizeof(WINTRUST_FILE_INFO) };
-	FileData.pcwszFilePath = LPCWSTR(path.utf16());
+	WINTRUST_FILE_INFO FileData {
+		.cbStruct = sizeof(WINTRUST_FILE_INFO),
+		.pcwszFilePath = LPCWSTR(path.utf16()),
+	};
 
-	WINTRUST_DATA WinTrustData { sizeof(WinTrustData) };
-	WinTrustData.dwUIChoice = m_autoupdate ? WTD_UI_NONE : WTD_UI_ALL;
-	WinTrustData.fdwRevocationChecks = WTD_REVOKE_NONE;
-	WinTrustData.dwUnionChoice = WTD_CHOICE_FILE;
-	WinTrustData.dwProvFlags = WTD_SAFER_FLAG;
-	WinTrustData.pFile = &FileData;
+	WINTRUST_DATA WinTrustData {
+		.cbStruct = sizeof(WinTrustData),
+		.dwUIChoice = DWORD(m_autoupdate ? WTD_UI_NONE : WTD_UI_ALL),
+		.fdwRevocationChecks = WTD_REVOKE_NONE,
+		.dwUnionChoice = WTD_CHOICE_FILE,
+		.pFile = &FileData,
+		.dwProvFlags = WTD_SAFER_FLAG,
+	};
 
 	GUID WVTPolicyGUID = WINTRUST_ACTION_GENERIC_VERIFY_V2;
-	return WinVerifyTrust(0, &WVTPolicyGUID, &WinTrustData) == ERROR_SUCCESS;
+	return WinVerifyTrust(nullptr, &WVTPolicyGUID, &WinTrustData) == ERROR_SUCCESS;
 }
