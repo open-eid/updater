@@ -8,11 +8,26 @@
 ## Building
 [![Build Status](https://github.com/open-eid/updater/workflows/CI/badge.svg?branch=master)](https://github.com/open-eid/updater/actions)
 
-### OSX
+### Windows
 
 1. Fetch the source
 
         git clone --recursive https://github.com/open-eid/updater
+        cd updater
+
+2. Configure
+
+        cmake -B build -S .
+
+3. Build
+
+        cmake --build build
+
+### OSX
+
+1. Fetch the source
+
+        git clone https://github.com/open-eid/updater
         cd updater
 
 2. Configure

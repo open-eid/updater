@@ -37,6 +37,8 @@
 #include <userenv.h>
 #include <wtsapi32.h>
 
+#include <span>
+
 using namespace Qt::StringLiterals;
 
 int main( int argc, char *argv[] )
@@ -53,8 +55,8 @@ Application::Application( int &argc, char **argv )
 	if( log.exists() && log.open( QFile::WriteOnly|QFile::Append ) )
 		qInstallMessageHandler( msgHandler );
 
-	QTranslator *qt = new QTranslator( this );
-	QTranslator *t = new QTranslator( this );
+	auto *qt = new QTranslator(this);
+	auto *t = new QTranslator(this);
 	QString lang;
 	auto languages = QLocale().uiLanguages().first();
 	if(languages.contains("et"_L1, Qt::CaseInsensitive))
@@ -83,7 +85,7 @@ Application::~Application()
 	qInstallMessageHandler(nullptr);
 }
 
-int Application::confTask( const QStringList &args ) const
+int Application::confTask(const QStringList &args)
 {
 	ScheduledUpdateTask task;
 	if(args.contains("-status"_L1))
@@ -106,29 +108,32 @@ bool Application::execute(const QStringList &arguments)
 	QString command = QDir::toNativeSeparators(applicationFilePath()) + ' ' + arguments.join(' ');
 	qDebug() << "command:" << command;
 
-	PWTS_SESSION_INFOW sessionInfo = 0;
+	PWTS_SESSION_INFOW sessionInfo {};
 	DWORD count = 0;
-	WTSEnumerateSessionsW(WTS_CURRENT_SERVER_HANDLE, 0, 1, &sessionInfo, &count);
+	auto ret = WTSEnumerateSessionsW(WTS_CURRENT_SERVER_HANDLE, 0, 1, &sessionInfo, &count);
+	qDebug() << "WTSEnumerateSessionsW" << ret << GetLastError();
+	if(!ret)
+		return false;
 
 	DWORD sessionId = 0;
-	for(DWORD i = 0; i < count; ++i)
+	for(const auto &session: std::span(sessionInfo, count))
 	{
-		if(sessionInfo[i].State == WTSActive)
+		if(session.State == WTSActive)
 		{
-			sessionId = sessionInfo[i].SessionId;
+			sessionId = session.SessionId;
 			break;
 		}
 	}
 	WTSFreeMemory(sessionInfo);
 	qDebug() << "Active session ID " << sessionId;
 
-	HANDLE currentToken = 0;
-	BOOL ret = WTSQueryUserToken(sessionId, &currentToken);
+	HANDLE currentToken {};
+	ret = WTSQueryUserToken(sessionId, &currentToken);
 	qDebug() << "WTSQueryUserToken" << ret << GetLastError();
 	if(!ret)
 		return false;
 
-	HANDLE primaryToken = 0;
+	HANDLE primaryToken {};
 	ret = DuplicateTokenEx(currentToken, TOKEN_ASSIGN_PRIMARY | TOKEN_ALL_ACCESS, 0,
 		SecurityImpersonation, TokenPrimary, &primaryToken);
 	CloseHandle(currentToken);
@@ -140,7 +145,7 @@ bool Application::execute(const QStringList &arguments)
 	if(!primaryToken)
 		return false;
 
-	void *environment = nullptr;
+	void *environment {};
 	ret = CreateEnvironmentBlock(&environment, primaryToken, true);
 	qDebug() << "CreateEnvironmentBlock" << environment << ret <<  GetLastError();
 
@@ -162,17 +167,17 @@ void Application::messageReceived( const QString &str )
 	w->checkUpdates(str.contains("-autoupdate"_L1), str.contains("-autoclose"_L1));
 }
 
-void Application::msgHandler( QtMsgType type, const QMessageLogContext &, const QString &msg )
+void Application::msgHandler(QtMsgType type, const QMessageLogContext &/* ctx */, const QString &msg)
 {
-	QFile *log = &qobject_cast<Application*>(qApp)->log;
-	log->write(QDateTime::currentDateTime().toString(u"yyyy-MM-dd hh:mm:ss:zzz "_s).toUtf8());
+	QFile &log = qobject_cast<Application*>(qApp)->log;
+	log.write(QDateTime::currentDateTime().toString(u"yyyy-MM-dd hh:mm:ss:zzz "_s).toUtf8());
 	switch( type )
 	{
-	case QtDebugMsg: log->write("DBG: %1\n"_L1.arg(msg).toUtf8()); break;
-	case QtInfoMsg: log->write("INF: %1\n"_L1.arg(msg).toUtf8()); break;
-	case QtWarningMsg: log->write("WRN: %1\n"_L1.arg(msg).toUtf8()); break;
-	case QtCriticalMsg: log->write("CRI: %1\n"_L1.arg( msg).toUtf8()); break;
-	case QtFatalMsg: log->write("FAT: %1\n"_L1.arg(msg).toUtf8()); abort();
+	case QtDebugMsg: log.write("DBG: %1\n"_L1.arg(msg).toUtf8()); break;
+	case QtInfoMsg: log.write("INF: %1\n"_L1.arg(msg).toUtf8()); break;
+	case QtWarningMsg: log.write("WRN: %1\n"_L1.arg(msg).toUtf8()); break;
+	case QtCriticalMsg: log.write("CRI: %1\n"_L1.arg( msg).toUtf8()); break;
+	case QtFatalMsg: log.write("FAT: %1\n"_L1.arg(msg).toUtf8()); abort();
 	}
 }
 

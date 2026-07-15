@@ -38,8 +38,8 @@ private:
 	bool execute(const QStringList &arguments);
 	void messageReceived( const QString &str );
 	static void msgHandler( QtMsgType type, const QMessageLogContext &ctx, const QString &msg );
-	int confTask( const QStringList &args ) const;
-	void printHelp();
+	static int confTask(const QStringList &args);
+	static void printHelp();
 
 	QFile log;
 	QString url;
