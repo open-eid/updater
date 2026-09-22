@@ -21,8 +21,6 @@
 
 #import <PreferencePanes/PreferencePanes.h>
 
-#include <xar/xar.h>
-
 #undef NSLocalizedString
 #define NSLocalizedString(key, comment) \
 [bundlelang localizedStringForKey:(key) value:@"" table:nil]
@@ -49,6 +47,7 @@
     NSUserDefaults *defaults;
     dispatch_source_t watcher;
     int fileDescriptor;
+    VerifiedPackageInstaller *verifiedPackageInstaller;
 }
 
 - (void)mainViewDidLoad {
@@ -69,6 +68,7 @@
     defaults = NSUserDefaults.standardUserDefaults;
     [self setLastUpdateCheck:NO];
 
+    verifiedPackageInstaller = [[VerifiedPackageInstaller alloc] initWithLocalizedBundle:bundlelang];
     update = [[Update alloc] initWithDelegate:self];
     self.mainLabel.stringValue = [NSString stringWithFormat:@"%@ %@", self.mainLabel.stringValue, update.baseVersion];
 }
@@ -198,102 +198,17 @@
 }
 
 - (void)URLSession:(NSURLSession *)session downloadTask:(NSURLSessionDownloadTask *)downloadTask didFinishDownloadingToURL:(NSURL *)location {
-    [self.progress stopAnimation:self];
-    [timer invalidate];
-    timer = nil;
-    NSString *tmp = [NSString stringWithFormat:@"%@/%@", NSTemporaryDirectory(), filename.lastPathComponent];
-    [NSFileManager.defaultManager removeItemAtPath:tmp error:nil];
-    [NSFileManager.defaultManager moveItemAtPath:location.path toPath:tmp error:nil];
-
-    NSString *volumePath = @"/Volumes/Open-EID";
-    NSArray *args = @[@"detach", volumePath];
-    NSTask *task = [NSTask launchedTaskWithLaunchPath:@"/usr/bin/hdiutil" arguments:args];
-    [task waitUntilExit];
-    
-    args = @[@"attach", @"-verify", @"-mountpoint", volumePath, tmp];
-    task = [NSTask launchedTaskWithLaunchPath:@"/usr/bin/hdiutil" arguments:args];
-    [task waitUntilExit];
-    if (task.terminationStatus != 0) {
-        self.infoLabel.stringValue = [NSString stringWithFormat:@"Verify failed, status: %i", task.terminationStatus];
-        return;
-    }
-
-    NSArray *paths = [NSFileManager.defaultManager subpathsAtPath:volumePath];
-    NSPredicate *predicate = [NSPredicate predicateWithFormat:@"SELF contains[cd] %@", @".pkg"];
-    NSString *path = [NSString stringWithFormat:@"%@/%@", volumePath,
-                      [paths filteredArrayUsingPredicate:predicate].lastObject];
-
-    xar_t xar = xar_open(path.UTF8String, 0);
-    if (!xar) {
-        self.infoLabel.stringValue = [NSString stringWithFormat:NSLocalizedString(@"Failed to open xar archive: %@", nil), path];
-        return;
-    }
-
-    NSData *certData;
-    xar_signature_t sig = xar_signature_first(xar);
-    xar_signature_t next = xar_signature_next(sig);
-    if(next && strcmp("CMS", xar_signature_type(next)) == 0)
-        sig = next;
-    NSString *signatureType = @(xar_signature_type(sig));
-    NSLog(@"Signature type %@", signatureType);
-    for (int32_t i = 0, count = xar_signature_get_x509certificate_count(sig); i < count; ++i) {
-        uint32_t size = 0;
-        const uint8_t *data = nil;
-        if (xar_signature_get_x509certificate_data(sig, i, &data, &size))
-            continue;
-
-        NSData *der = [NSData dataWithBytesNoCopy:(uint8_t*)data length:size freeWhenDone:NO];
-        if ([update.cert_bundle containsObject:der])
-            certData = [NSData dataWithBytes:(uint8_t*)data length:size]; // Make copy of memory will be lost after xar_close
-    }
-
-    if (!certData) {
-        self.infoLabel.stringValue = NSLocalizedString(@"No matching certificate", nil);
-        xar_close(xar);
-        return;
-    }
-
-    uint8_t *signedData = nil, *signatureData = nil;
-    uint32_t signedDataSize = 0, signatureDataSize = 0;
-    off_t offset = 0;
-    uint8_t err = xar_signature_copy_signed_data(sig, &signedData, &signedDataSize, &signatureData, &signatureDataSize, &offset);
-    NSData *signature = [NSData dataWithBytesNoCopy:signatureData length:signatureDataSize];
-    NSData *data = [NSData dataWithBytesNoCopy:signedData length:signedDataSize];
-    xar_close(xar);
-    if (err) {
-        self.infoLabel.stringValue = NSLocalizedString(@"Failed to copy signature", nil);
-        return;
-    }
-
-    if([signatureType isEqualToString:@"CMS"]) {
-        if ([Updater verifyCMSSignature:signature data:data cert:certData])
-            [NSTask launchedTaskWithLaunchPath:@"/usr/bin/open" arguments:@[path]];
-        else
-        {
-            NSLog(@"CMS Verify error");
-            self.infoLabel.stringValue = NSLocalizedString(@"Failed to verify signature", nil);
-        }
-        return;
-    }
-
-    SecCertificateRef certref = SecCertificateCreateWithData(0, (__bridge CFDataRef)certData);
-    SecKeyRef publickey = SecCertificateCopyKey(certref);
-    CFRelease(certref);
-    if (publickey == nil) {
-        self.infoLabel.stringValue = NSLocalizedString(@"Failed to copy public key", nil);
-        return;
-    }
-
-    CFErrorRef error = nil;
-    bool isValid = SecKeyVerifySignature(publickey, kSecKeyAlgorithmRSASignatureDigestPKCS1v15SHA1,
-                                         (__bridge CFDataRef)data, (__bridge CFDataRef)signature, &error);
-    CFRelease(publickey);
-    if (isValid)
-        [NSTask launchedTaskWithLaunchPath:@"/usr/bin/open" arguments:@[path]];
-    else
-    {
-        NSLog(@"Verify error: %@", CFBridgingRelease(error));
-        self.infoLabel.stringValue = NSLocalizedString(@"Failed to verify signature", nil);
+    dispatch_async(dispatch_get_main_queue(), ^{
+        [self.progress stopAnimation:self];
+        [self->timer invalidate];
+        self->timer = nil;
+    });
+    NSString *errorMessage = [verifiedPackageInstaller installVerifiedPackageFromDownloadedDiskImage:location
+                                                                                 trustedCertificates:update.cert_bundle];
+    if (errorMessage) {
+        dispatch_async(dispatch_get_main_queue(), ^{
+            self.infoLabel.stringValue = errorMessage;
+        });
     }
 }
 

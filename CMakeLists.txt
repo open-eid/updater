@@ -1,4 +1,5 @@
 cmake_minimum_required(VERSION 3.22)
+set(CMAKE_OSX_DEPLOYMENT_TARGET 14.0 CACHE STRING "Minimum macOS version (Apple only)")
 project(ID-updater VERSION 3.20.0
 	DESCRIPTION "Open-eID updater application for macOS and Windows"
 	HOMEPAGE_URL https://github.com/open-eid/updater
@@ -21,12 +22,21 @@ message("Fetching pub key: ${PUB_URL}")
 file(DOWNLOAD ${PUB_URL} ${CMAKE_CURRENT_BINARY_DIR}/config.ecpub)
 
 if( APPLE )
+	execute_process(
+		COMMAND xcrun --sdk macosx --show-sdk-path
+		OUTPUT_VARIABLE MACOSX_SDK_PATH
+		OUTPUT_STRIP_TRAILING_WHITESPACE
+	)
 	add_custom_command(OUTPUT config.h
 		BYPRODUCTS module.modulemap
 		COMMAND xxd -i config.ecpub config.h
 		COMMAND echo "\\\#define CONFIG_URL \\\"${CONFIG_URL}\\\"" >> config.h
 		COMMAND echo "module config [system] {" > module.modulemap
 		COMMAND echo "	private header \\\"config.h\\\"" >> module.modulemap
+		COMMAND echo "	export *" >> module.modulemap
+		COMMAND echo "}" >> module.modulemap
+		COMMAND echo "module xar [system] {" >> module.modulemap
+		COMMAND echo "	header \\\"${MACOSX_SDK_PATH}/usr/include/xar/xar.h\\\"" >> module.modulemap
 		COMMAND echo "	export *" >> module.modulemap
 		COMMAND echo "}" >> module.modulemap
 		COMMENT "Generating config.h"
@@ -53,7 +63,7 @@ if( APPLE )
 		DEPENDS
 			config.h
 			prefPane/AdvancedWindowController.swift
-			prefPane/id-updater.swift
+			prefPane/VerifiedPackageInstaller.swift
 			prefPane/update.swift
 		COMMENT "Build id-updater-lib"
 		COMMAND ${CMAKE_COMMAND} -E make_directory ${SWIFTMOD_DIR}
@@ -64,7 +74,7 @@ if( APPLE )
 			-emit-objc-header -emit-objc-header-path ${SWIFTHDR_DIR}/id_updater_lib-Swift.h
 			-emit-library -static -o libid-updater-lib_arm64.a
 			${CMAKE_CURRENT_SOURCE_DIR}/prefPane/AdvancedWindowController.swift
-			${CMAKE_CURRENT_SOURCE_DIR}/prefPane/id-updater.swift
+			${CMAKE_CURRENT_SOURCE_DIR}/prefPane/VerifiedPackageInstaller.swift
 			${CMAKE_CURRENT_SOURCE_DIR}/prefPane/update.swift
 		COMMAND ${SWIFT_FLAGS} -target x86_64-apple-macosx${CMAKE_OSX_DEPLOYMENT_TARGET}
 			-module-name id_updater_lib
@@ -72,7 +82,7 @@ if( APPLE )
 			-emit-objc-header -emit-objc-header-path ${SWIFTHDR_DIR}/id_updater_lib-Swift.h
 			-emit-library -static -o libid-updater-lib_x86_64.a
 			${CMAKE_CURRENT_SOURCE_DIR}/prefPane/AdvancedWindowController.swift
-			${CMAKE_CURRENT_SOURCE_DIR}/prefPane/id-updater.swift
+			${CMAKE_CURRENT_SOURCE_DIR}/prefPane/VerifiedPackageInstaller.swift
 			${CMAKE_CURRENT_SOURCE_DIR}/prefPane/update.swift
 		COMMAND lipo -create libid-updater-lib_arm64.a libid-updater-lib_x86_64.a -output libid-updater-lib.a
 	)
