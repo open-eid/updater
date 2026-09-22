@@ -59,7 +59,7 @@ Q_SIGNALS:
 private:
 	void finished(bool changed, const QString &error);
 	static QString installedVersion(const QString &upgradeCode);
-	bool verifyPackage(const QString &filePath) const;
+	bool verifyAndExecute(const QString &filePath);
 
 	bool m_autoupdate = false, m_autoclose = false;
 	QNetworkRequest request;

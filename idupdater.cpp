@@ -25,19 +25,19 @@
 #include <QDebug>
 #include <QDir>
 #include <QElapsedTimer>
+#include <QFile>
 #include <QJsonArray>
 #include <QJsonObject>
 #include <QNetworkReply>
 #include <QProcess>
 #include <QPushButton>
 #include <QSettings>
-#include <QScopedPointer>
 #include <QSslCertificate>
+#include <QTemporaryDir>
 #include <QUrl>
 #include <QVersionNumber>
 
 #include <qt_windows.h>
-#include <Msi.h>
 #include <Softpub.h>
 
 using namespace Qt::StringLiterals;
@@ -182,16 +182,13 @@ void idupdater::finished(bool /*changed*/, const QString &err)
 		if(m_autoclose)
 			QApplication::quit();
 	}
-	else
+	else if(!m_autoupdate)
 	{
-		if(!m_autoupdate)
-		{
-			if( !w ) w = new idupdaterui(version, this);
-			emit status(tr("Update is available"));
-		}
-		else
-			startInstall();
+		if( !w ) w = new idupdaterui(version, this);
+		emit status(tr("Update is available"));
 	}
+	else
+		startInstall();
 	if(w) w->setInfo(version, available);
 }
 
@@ -205,17 +202,7 @@ QString idupdater::installedVersion(const QString &upgradeCode)
 			return s.value(u"/DisplayVersion"_s).toString();
 		s.endGroup();
 	}
-
-	WCHAR prodCode[40];
-	if(ERROR_SUCCESS != MsiEnumRelatedProducts(L"{58A1DBA8-81A2-4D58-980B-4A6174D5B66B}", 0, 0, prodCode))
-		return {};
-
-	DWORD size = 0;
-	MsiGetProductInfo(prodCode, INSTALLPROPERTY_VERSIONSTRING, nullptr, &size);
-	QString version(size, '\0');
-	size += 1;
-	MsiGetProductInfo(prodCode, INSTALLPROPERTY_VERSIONSTRING, LPWSTR(version.data()), &size);
-	return version;
+	return {};
 }
 
 bool idupdater::lessThanVersion(const QString &current, const QString &available)
@@ -237,71 +224,55 @@ void idupdater::startInstall()
 
 		qDebug() << "Downloaded" << reply->url().toString();
 		emit status(tr("Download finished, starting installation..."));
-		QFile tmp(QDir::tempPath() + "/" + reply->url().fileName());
-		if(!tmp.open(QFile::WriteOnly))
-			return emit error(tr("Downloaded package integrity check failed"));
-
-		tmp.write(reply->readAll());
-		tmp.close();
+		QByteArray data = reply->readAll();
 		reply->deleteLater();
 
-		bool verify = verifyPackage(tmp.fileName());
-		qDebug() << "Package signature" << (verify ? "OK" : "NOT OK");
-		if(!verify)
-			return emit error( tr("Downloaded package integrity check failed") );
-		if(!QProcess::startDetached( tmp.fileName(),
-				m_autoupdate ? QStringList("/quiet") : QStringList()))
-			return emit error( tr("Package installation failed"));
+		QTemporaryDir tmp(QDir::tempPath() + u"/id-updater-XXXXXX"_s);
+		HANDLE dir = !tmp.isValid() ? INVALID_HANDLE_VALUE :
+						CreateFileW(LPCWSTR(QDir::toNativeSeparators(tmp.path()).utf16()), GENERIC_READ,
+									FILE_SHARE_READ, nullptr, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, nullptr);
+		auto dirScope = qScopeGuard([&dir] {
+			if(dir != INVALID_HANDLE_VALUE)
+				CloseHandle(dir);
+		});
+		QString path = tmp.filePath(u"update.exe"_s);
+		if(QFile file(path);
+			dir == INVALID_HANDLE_VALUE ||
+			!file.open(QFile::WriteOnly|QFile::NewOnly) ||
+			file.write(data) != data.size() ||
+			!file.flush())
+			return emit error(tr("Downloaded package integrity check failed"));
+
+		if(!verifyAndExecute(path))
+			return;
 		emit status(tr("Package installed"));
 		QApplication::quit();
 	});
 	if( w ) w->setProgress(reply);
 }
 
-bool idupdater::verifyPackage(const QString &filePath) const
+bool idupdater::verifyAndExecute(const QString &filePath)
 {
+	auto integrityError = [this] {
+		emit error(tr("Downloaded package integrity check failed"));
+		return false;
+	};
 	QString path = QDir::toNativeSeparators(filePath);
-	HCERTSTORE store = nullptr;
-	HCRYPTMSG msg = nullptr;
-	if(!CryptQueryObject(CERT_QUERY_OBJECT_FILE, LPCWSTR(path.utf16()),
-		CERT_QUERY_CONTENT_FLAG_PKCS7_SIGNED_EMBED, CERT_QUERY_FORMAT_FLAG_BINARY,
-		0, nullptr, nullptr, nullptr, &store, &msg, nullptr))
-		return false;
-
-	DWORD infoSize = 0;
-	if(!CryptMsgGetParam(msg, CMSG_SIGNER_CERT_INFO_PARAM, 0, nullptr, &infoSize))
-	{
-		CryptMsgClose(msg);
-		CertCloseStore(store, 0);
-		return false;
-	}
-
-	QScopedPointer<CERT_INFO,QScopedPointerPodDeleter> info(PCERT_INFO(std::malloc(infoSize)));
-	if(!CryptMsgGetParam(msg, CMSG_SIGNER_CERT_INFO_PARAM, 0, info.data(), &infoSize))
-	{
-		CryptMsgClose(msg);
-		CertCloseStore(store, 0);
-		return false;
-	}
-	CryptMsgClose(msg);
-
-	PCCERT_CONTEXT certContext = CertFindCertificateInStore(store,
-		X509_ASN_ENCODING, 0, CERT_FIND_SUBJECT_CERT, info.data(), nullptr);
-	CertCloseStore(store, 0);
-	if(!certContext)
-		return false;
-
-	QSslCertificate cert(QByteArray::fromRawData(
-		(const char*)certContext->pbCertEncoded, certContext->cbCertEncoded ), QSsl::Der);
-	CertFreeCertificateContext(certContext);
-
-	if(!trusted.contains(cert))
-		return false;
-
 	WINTRUST_FILE_INFO FileData {
 		.cbStruct = sizeof(WINTRUST_FILE_INFO),
 		.pcwszFilePath = LPCWSTR(path.utf16()),
+		.hFile = CreateFileW(LPCWSTR(path.utf16()), GENERIC_READ, FILE_SHARE_READ, nullptr,
+							 OPEN_EXISTING, FILE_FLAG_OPEN_REPARSE_POINT, nullptr),
 	};
+	auto fileScope = qScopeGuard([&FileData] {
+		if(FileData.hFile != INVALID_HANDLE_VALUE)
+			CloseHandle(FileData.hFile);
+	});
+	BY_HANDLE_FILE_INFORMATION fileInfo{};
+	if(FileData.hFile == INVALID_HANDLE_VALUE ||
+		!GetFileInformationByHandle(FileData.hFile, &fileInfo) ||
+		fileInfo.dwFileAttributes & (FILE_ATTRIBUTE_DIRECTORY|FILE_ATTRIBUTE_REPARSE_POINT))
+		return integrityError();
 
 	WINTRUST_DATA WinTrustData {
 		.cbStruct = sizeof(WinTrustData),
@@ -309,9 +280,35 @@ bool idupdater::verifyPackage(const QString &filePath) const
 		.fdwRevocationChecks = WTD_REVOKE_NONE,
 		.dwUnionChoice = WTD_CHOICE_FILE,
 		.pFile = &FileData,
+		.dwStateAction = WTD_STATEACTION_VERIFY,
 		.dwProvFlags = WTD_SAFER_FLAG,
 	};
 
 	GUID WVTPolicyGUID = WINTRUST_ACTION_GENERIC_VERIFY_V2;
-	return WinVerifyTrust(nullptr, &WVTPolicyGUID, &WinTrustData) == ERROR_SUCCESS;
+	bool verified = WinVerifyTrust(nullptr, &WVTPolicyGUID, &WinTrustData) == ERROR_SUCCESS;
+	QSslCertificate cert;
+	if(CRYPT_PROVIDER_DATA *provider = verified ?
+			WTHelperProvDataFromStateData(WinTrustData.hWVTStateData) : nullptr)
+	{
+		if(CRYPT_PROVIDER_SGNR *signer = WTHelperGetProvSignerFromChain(provider, 0, FALSE, 0))
+		{
+			if(CRYPT_PROVIDER_CERT *signerCert = WTHelperGetProvCertFromChain(signer, 0))
+				cert = QSslCertificate(QByteArray::fromRawData(
+					(const char*)signerCert->pCert->pbCertEncoded,
+					signerCert->pCert->cbCertEncoded), QSsl::Der);
+		}
+	}
+	WinTrustData.dwStateAction = WTD_STATEACTION_CLOSE;
+	WinVerifyTrust(nullptr, &WVTPolicyGUID, &WinTrustData);
+
+	qDebug() << "Package signature" << (verified ? "OK" : "NOT OK");
+	if(!verified || cert.isNull() || !trusted.contains(cert))
+		return integrityError();
+	if(!QProcess::startDetached(filePath,
+			m_autoupdate ? QStringList(u"/quiet"_s) : QStringList()))
+	{
+		emit error(tr("Package installation failed"));
+		return false;
+	}
+	return true;
 }

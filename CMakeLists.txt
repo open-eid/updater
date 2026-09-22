@@ -197,7 +197,7 @@ else()
 		VERSION_INF=${PROJECT_VERSION_MAJOR},${PROJECT_VERSION_MINOR},${PROJECT_VERSION_PATCH},${BUILD_NUMBER}
 	)
 	target_link_libraries(${PROJECT_NAME} PRIVATE Qt6::Widgets Qt6::Network OpenSSL::Crypto
-		msi wintrust Crypt32 taskschd comsupp Setupapi winscard Wtsapi32
+		wintrust taskschd comsupp Setupapi winscard Wtsapi32
 	)
 	qt_add_translations(${PROJECT_NAME} TS_FILES idupdater_et.ts
 		common/translations/qtbase_et.ts
