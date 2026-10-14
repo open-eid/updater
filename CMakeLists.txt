@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 3.22)
-project(ID-updater VERSION 3.20.0
+set(CMAKE_OSX_DEPLOYMENT_TARGET 14.0 CACHE STRING "Minimum OS X deployment version")
+project(ID-updater VERSION 3.21.0
 	DESCRIPTION "Open-eID updater application for macOS and Windows"
 	HOMEPAGE_URL https://github.com/open-eid/updater
 )
