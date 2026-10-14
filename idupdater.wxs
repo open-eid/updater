@@ -31,15 +31,7 @@
 
     <StandardDirectory Id="ProgramFiles6432Folder">
       <Directory Id="INSTALLFOLDER" Name="Open-EID" FileSource="$(var.qt_path)">
-        <Component Id="Application">
-          <File Id="id_updater.exe" Source="$(var.updater_path)" KeyPath="yes" />
-          <RegistryValue Root="HKMU" Key="Software\[Manufacturer]\Open-EID"
-            Name="Installed" Value="[INSTALLFOLDER]" Type="string" />
-<?if $(sys.BUILDARCH) != x86 ?>
-          <RegistryValue Root="HKMU" Key="Software\Wow6432Node\[Manufacturer]\Open-EID"
-            Name="Installed" Value="[INSTALLFOLDER]" Type="string" />
-<?endif?>
-        </Component>
+        <File Id="id_updater.exe" Source="$(var.updater_path)" KeyPath="yes" />
         <File Source="$(var.VCPATH)\msvcp140$(var.qt_suffix).dll" />
         <File Source="$(var.VCPATH)\msvcp140_1$(var.qt_suffix).dll" />
         <File Source="$(var.VCPATH)\msvcp140_2$(var.qt_suffix).dll" />
