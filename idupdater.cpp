@@ -93,24 +93,6 @@ idupdater::idupdater( QObject *parent )
 	qDebug() << "User-Agent:" << userAgent;
 	request.setRawHeader( "User-Agent", userAgent.toUtf8() );
 	connect(conf, &Configuration::finished, this, &idupdater::finished);
-	connect(this, &QNetworkAccessManager::sslErrors, this, [](QNetworkReply *reply, const QList<QSslError> &errors) {
-		QList<QSslError> ignore;
-		for(const QSslError &error: errors)
-		{
-			switch(error.error())
-			{
-			case QSslError::UnableToGetLocalIssuerCertificate:
-			case QSslError::CertificateUntrusted:
-			case QSslError::SelfSignedCertificateInChain:
-				if(reply->sslConfiguration().caCertificates().contains(reply->sslConfiguration().peerCertificate())) {
-					ignore << error;
-					break;
-				}
-			default: break;
-			}
-		}
-		reply->ignoreSslErrors(ignore);
-	});
 }
 
 void idupdater::checkUpdates(bool autoupdate, bool autoclose)
@@ -145,6 +127,24 @@ void idupdater::finished(bool /*changed*/, const QString &err)
 		copy.setSslConfiguration(ssl);
 		copy.setUrl(obj.value("UPDATER-MESSAGE-URL"_L1).toString());
 		QNetworkReply *reply = get(copy);
+		connect(reply, &QNetworkReply::sslErrors, this, [reply](const QList<QSslError> &errors) {
+			QList<QSslError> ignore;
+			for(const QSslError &error: errors)
+			{
+				switch(error.error())
+				{
+				case QSslError::UnableToGetLocalIssuerCertificate:
+				case QSslError::CertificateUntrusted:
+				case QSslError::SelfSignedCertificateInChain:
+					if(reply->sslConfiguration().caCertificates().contains(reply->sslConfiguration().peerCertificate())) {
+						ignore << error;
+						break;
+					}
+				default: break;
+				}
+			}
+			reply->ignoreSslErrors(ignore);
+		});
 		connect(reply, &QNetworkReply::finished, this, [this, reply]{
 			if(reply->error() == QNetworkReply::NoError)
 				emit message(reply->readAll());
