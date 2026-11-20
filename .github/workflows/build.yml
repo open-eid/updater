@@ -13,6 +13,8 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v6
+    - name: Install CMake
+      uses: lukka/get-cmake@latest
     - name: Build
       run: |
         cmake -S . -B build -DCMAKE_OSX_ARCHITECTURES="x86_64;arm64" -DCMAKE_BUILD_TYPE=RelWithDebInfo
@@ -21,7 +23,9 @@ jobs:
       uses: actions/upload-artifact@v7
       with:
         name: macOS
-        path: build/*.pkg
+        path: |
+          build/*.pkg
+          build/sbom/ID-updater/*.spdx.json
   windows:
     name: Build on Windows
     runs-on: windows-2022
@@ -51,6 +55,8 @@ jobs:
         arch: ${{ matrix.platform == 'arm64' && 'win64_msvc2022_arm64_cross_compiled' || 'win64_msvc2022_64' }}
         cache: true
         aqtsource: git+https://github.com/miurahr/aqtinstall.git
+    - name: Install CMake
+      uses: lukka/get-cmake@latest
     - name: Install WiX
       run: |
         dotnet tool install -g wix --version 7.0.0
@@ -72,4 +78,6 @@ jobs:
       uses: actions/upload-artifact@v7
       with:
         name: msi_${{ matrix.vcver }}_${{ matrix.platform }}
-        path: build/*.msi
+        path: |
+          build/*.msi
+          build/sbom/ID-updater/*.spdx.json
